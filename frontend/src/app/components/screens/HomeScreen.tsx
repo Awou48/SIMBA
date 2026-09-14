@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Bell, ChevronRight, TrendingUp, Utensils, Syringe, Download, Scale } from "lucide-react";
+import { ChevronDown, Check, Plus, Utensils, Syringe, Download, Scale } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 import logo1 from "../../../imports/logo_1.png"; // Note the lowercase 'l' for safety!
-
-const sparklineData = [
-  { w: 10.2 }, { w: 10.5 }, { w: 10.8 }, { w: 11.1 }, { w: 11.0 }, { w: 11.3 }, { w: 11.6 },
-];
+import { api, formatAge, type Measurement } from "../../../lib/api";
+import { useChildren } from "../../ChildContext";
 
 const nutritionData = [
   { label: "Calories", value: 72, color: "#F47B20", unit: "864/1200 kcal" },
@@ -30,47 +28,30 @@ const recipes = [
 
 export function HomeScreen() {
   const navigate = useNavigate();
-  const [child, setChild] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { children, activeChild: child, isLoading, setActiveChild } = useChildren();
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [history, setHistory] = useState<Measurement[]>([]);
 
-  // Helper to dynamically calculate exact age from the database birth_date
-  const calculateAge = (dobString: string) => {
-    const dob = new Date(dobString);
-    const today = new Date();
-    let months = (today.getFullYear() - dob.getFullYear()) * 12 + today.getMonth() - dob.getMonth();
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-    if (years === 0) return `${remainingMonths} months old`;
-    return `${years} years, ${remainingMonths} months old`;
-  };
-
+  // Pull the active child's measurement history for the overview card.
   useEffect(() => {
-    const fetchMyChildren = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return navigate("/login");
+    if (!child) {
+      setHistory([]);
+      return;
+    }
+    let cancelled = false;
+    api.parent
+      .listMeasurements(child.id)
+      .then((rows) => { if (!cancelled) setHistory(rows); })
+      .catch(() => { if (!cancelled) setHistory([]); });
+    return () => { cancelled = true; };
+  }, [child?.id]);
 
-        const response = await fetch("http://127.0.0.1:8000/api/v1/user/children/", {
-          method: "GET",
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.length > 0) {
-            setChild(data[0]); 
-            localStorage.setItem("active_child_id", data[0].id.toString()); // Save ID for the Growth/Food screens
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch child profile", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMyChildren();
-  }, [navigate]);
+  const latest = history.length ? history[history.length - 1] : null;
+  const sparklineData = history.slice(-8).map((m) => ({ w: m.weight_kg }));
+  const growthStats = [
+    { label: "Weight", value: latest ? String(latest.weight_kg) : "--", unit: "kg", icon: "⚖️" },
+    { label: "Height", value: latest ? String(latest.height_cm) : "--", unit: "cm", icon: "📏" },
+  ];
 
   return (
     <div className="flex flex-col gap-0 min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
@@ -101,22 +82,57 @@ export function HomeScreen() {
              <p className="text-white text-sm font-['Nunito'] font-bold animate-pulse">Loading profile...</p>
            </div>
         ) : child ? (
-          <div
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(10px)" }}
-          >
-            <div className="rounded-full overflow-hidden flex items-center justify-center text-xl" style={{ width: 38, height: 38, background: "white" }}>
-              {child.gender === 'male' ? '👦' : '👧'}
-            </div>
-            <div className="flex-1">
-              <p style={{ fontSize: "14px", fontWeight: 800, color: "white", fontFamily: "'Nunito', sans-serif" }}>
-                {child.name}
-              </p>
-              <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.8)", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
-                {calculateAge(child.birth_date)}
-              </p>
-            </div>
-            <ChevronRight size={18} color="rgba(255,255,255,0.8)" />
+          <div className="relative">
+            <button
+              onClick={() => setSwitcherOpen((o) => !o)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-transform active:scale-[0.98]"
+              style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(10px)" }}
+            >
+              <div className="rounded-full overflow-hidden flex items-center justify-center text-xl" style={{ width: 38, height: 38, background: "white" }}>
+                {child.gender === "male" ? "👦" : "👧"}
+              </div>
+              <div className="flex-1">
+                <p style={{ fontSize: "14px", fontWeight: 800, color: "white", fontFamily: "'Nunito', sans-serif" }}>
+                  {child.name}
+                </p>
+                <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.8)", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
+                  {formatAge(child.birth_date)}{children.length > 1 ? ` · ${children.length} profiles` : ""}
+                </p>
+              </div>
+              <ChevronDown size={18} color="rgba(255,255,255,0.8)" style={{ transform: switcherOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+            </button>
+
+            {switcherOpen && (
+              <div
+                className="absolute left-0 right-0 z-30 mt-2 rounded-2xl overflow-hidden"
+                style={{ background: "white", boxShadow: "0 12px 32px rgba(0,0,0,0.18)" }}
+              >
+                {children.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setActiveChild(c.id); setSwitcherOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-gray-50"
+                    style={{ borderBottom: "1px solid #F5F5F5" }}
+                  >
+                    <span style={{ fontSize: 20 }}>{c.gender === "male" ? "👦" : "👧"}</span>
+                    <div className="flex-1">
+                      <p style={{ fontSize: "13px", fontWeight: 800, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>{c.name}</p>
+                      <p style={{ fontSize: "11px", color: "#9BA3B8", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>{formatAge(c.birth_date)}</p>
+                    </div>
+                    {c.id === child.id && <Check size={16} style={{ color: "#F47B20" }} />}
+                  </button>
+                ))}
+                <button
+                  onClick={() => navigate("/add-child")}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-gray-50"
+                >
+                  <div className="rounded-full flex items-center justify-center" style={{ width: 28, height: 28, background: "#FFF0E0" }}>
+                    <Plus size={14} style={{ color: "#F47B20" }} />
+                  </div>
+                  <span style={{ fontSize: "13px", fontWeight: 800, color: "#F47B20", fontFamily: "'Nunito', sans-serif" }}>Add another child</span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <button 
@@ -146,10 +162,7 @@ export function HomeScreen() {
             </button>
           </div>
           <div className="flex items-center gap-4 mb-3">
-            {[
-              { label: "Weight", value: "11.6", unit: "kg", icon: "⚖️" },
-              { label: "Height", value: "86", unit: "cm", icon: "📏" },
-            ].map(({ label, value, unit, icon }) => (
+            {growthStats.map(({ label, value, unit, icon }) => (
               <div key={label} className="flex-1 text-center">
                 <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
                   {icon} {label}
@@ -161,6 +174,15 @@ export function HomeScreen() {
             ))}
           </div>
           <div style={{ height: 50 }}>
+            {sparklineData.length < 2 ? (
+              <button
+                onClick={() => navigate("/growth")}
+                className="w-full h-full flex items-center justify-center rounded-xl"
+                style={{ background: "rgba(255,255,255,0.08)", fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.7)", fontFamily: "'Nunito', sans-serif" }}
+              >
+                {latest ? "Log one more entry to see the trend →" : "No measurements yet — log the first one →"}
+              </button>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={sparklineData}>
                 <Line type="monotone" dataKey="w" stroke="#FFC72C" strokeWidth={2.5} dot={false} />
@@ -171,7 +193,13 @@ export function HomeScreen() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            )}
           </div>
+          {latest && (
+            <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, marginTop: 6 }}>
+              {latest.stunting_status} · {latest.weight_status} · {new Date(latest.date_logged).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            </p>
+          )}
         </div>
 
         {/* Quick actions */}

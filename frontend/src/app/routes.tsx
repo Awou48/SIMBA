@@ -3,6 +3,8 @@ import { createBrowserRouter } from "react-router";
 import { MobileFrame } from "./components/MobileFrame";
 import { MainLayout } from "./components/MainLayout";
 import { HMLayout } from "./components/HMLayout";
+import { RequireAuth } from "./components/RequireAuth";
+import { ChildProvider } from "./ChildContext";
 import { SplashScreen } from "./components/screens/SplashScreen";
 import { OnboardingScreen } from "./components/screens/OnboardingScreen";
 import { LoginScreen } from "./components/screens/LoginScreen";
@@ -42,17 +44,23 @@ function FramedScreen({ children }: { children: React.ReactNode }) {
 
 function FramedLayout() {
   return (
-    <MobileFrame>
-      <MainLayout />
-    </MobileFrame>
+    <RequireAuth role="Parent">
+      <ChildProvider>
+        <MobileFrame>
+          <MainLayout />
+        </MobileFrame>
+      </ChildProvider>
+    </RequireAuth>
   );
 }
 
 function FramedHMLayout() {
   return (
-    <MobileFrame>
-      <HMLayout />
-    </MobileFrame>
+    <RequireAuth role="Health Manager">
+      <MobileFrame>
+        <HMLayout />
+      </MobileFrame>
+    </RequireAuth>
   );
 }
 
@@ -75,7 +83,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/add-child",
-    element: <FramedScreen><AddChildScreen /></FramedScreen>,
+    element: (
+      <RequireAuth role="Parent">
+        <FramedScreen><AddChildScreen /></FramedScreen>
+      </RequireAuth>
+    ),
   },
   // Parent main app with persistent bottom navigation
   {

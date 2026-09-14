@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Play, MessageCircle, ThumbsUp, MapPin } from "lucide-react";
+import { useChildren } from "../../ChildContext";
 
 // (Keeping your beautiful static data for the presentation)
 const videos = [
@@ -23,29 +24,9 @@ const forumQuestions = [
 
 export function ExploreScreen() {
   const navigate = useNavigate();
-  const [childName, setChildName] = useState("your toddler");
+  const { activeChild } = useChildren();
+  const childName = activeChild?.name ?? "your toddler";
 
-  // API Fetch for active child
-  useEffect(() => {
-    const fetchChild = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return;
-        
-        const response = await fetch("http://127.0.0.1:8000/api/v1/user/children/", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.length > 0) setChildName(data[0].name);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchChild();
-  }, []);
 
   return (
     <div className="flex flex-col min-h-screen pb-20" style={{ background: "#FFF8EF" }}>

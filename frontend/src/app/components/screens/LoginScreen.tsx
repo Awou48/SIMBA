@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Eye, EyeOff, Mail, Lock, Stethoscope, Baby, AlertCircle } from "lucide-react";
 import logo2 from "../../../imports/logo_2.png";
-
-type Role = "Parent" | "Health Manager";
+import { api, errorMessage as toMessage, session, type Role } from "../../../lib/api";
 
 export function LoginScreen() {
   const navigate = useNavigate();
@@ -20,39 +19,14 @@ export function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const endpoint = role === "Health Manager"
-        ? "http://127.0.0.1:8000/api/v1/admin/auth/login"
-        : "http://127.0.0.1:8000/api/v1/user/auth/login";
+      const data = role === "Health Manager"
+        ? await api.admin.login(email.trim(), password)
+        : await api.parent.login(email.trim(), password);
 
-      const formData = new URLSearchParams();
-      formData.append("username", email);
-      formData.append("password", password);
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to log in. Please check your credentials.");
-      }
-
-      const data = await response.json();
-      
-      localStorage.setItem("simba_token", data.access_token);
-      localStorage.setItem("simba_role", role);
-
-      if (role === "Health Manager") {
-        navigate("/hm/dashboard");
-      } else {
-        navigate("/home");
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message);
+      session.set(data.access_token, role);
+      navigate(role === "Health Manager" ? "/hm/dashboard" : "/home", { replace: true });
+    } catch (err) {
+      setErrorMessage(toMessage(err, "Failed to log in. Please check your credentials."));
     } finally {
       setIsLoading(false);
     }

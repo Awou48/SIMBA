@@ -1,21 +1,17 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import logo1 from "../../../imports/logo_1.png"; // Fixed import path
+import { session } from "../../../lib/api";
 
 export function SplashScreen() {
   const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const token = localStorage.getItem("simba_token");
-      const role = localStorage.getItem("simba_role");
-
-      if (token) {
-        if (role === "Health Manager") {
-          navigate("/hm/dashboard");
-        } else {
-          navigate("/home");
-        }
+      if (session.isLoggedInAs("Health Manager")) {
+        navigate("/hm/dashboard", { replace: true });
+      } else if (session.isLoggedInAs("Parent")) {
+        navigate("/home", { replace: true });
       } else {
         // New user, show onboarding
         navigate("/onboarding");
