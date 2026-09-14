@@ -200,6 +200,80 @@ def seed_milestones(db: Session, reset: bool = False) -> int:
     return len(rows)
 
 
+STARTER_ARTICLES = [
+    {
+        "title": "Membaca Kurva Pertumbuhan WHO",
+        "category": "Growth",
+        "author": "Tim SIMBA",
+        "read_time_min": 4,
+        "summary": "Apa arti z-score, garis hijau, dan kapan orang tua perlu waspada.",
+        "body": (
+            "Kurva pertumbuhan WHO membandingkan berat dan tinggi anak dengan ribuan anak sehat seusianya. "
+            "Z-score 0 berarti tepat di tengah (median). Antara -2 dan +2 dianggap normal. "
+            "Di bawah -2 pada tinggi-menurut-umur disebut pendek (stunting); di bawah -3 sangat pendek.\n\n"
+            "Yang paling penting bukan satu titik, melainkan arahnya: kurva yang mendatar atau menurun selama dua "
+            "bulan berturut-turut perlu dibicarakan dengan kader Posyandu atau dokter."
+        ),
+        "published": True,
+    },
+    {
+        "title": "Protein Hewani untuk Cegah Stunting",
+        "category": "Nutrition",
+        "author": "Tim SIMBA",
+        "read_time_min": 5,
+        "summary": "Telur, ikan, ayam, dan susu: porsi harian yang realistis untuk balita.",
+        "body": (
+            "Anak usia 1-3 tahun membutuhkan sekitar 20 g protein per hari (AKG 2019). Satu butir telur menyumbang "
+            "sekitar 6 g, 50 g ikan sekitar 10 g, dan satu gelas susu sekitar 6-8 g.\n\n"
+            "Usahakan protein hewani hadir di setiap makan utama. Tempe dan tahu tetap baik, namun protein hewani "
+            "lebih lengkap asam aminonya dan kaya zat besi serta zink yang dibutuhkan untuk tumbuh tinggi."
+        ),
+        "published": True,
+    },
+    {
+        "title": "Stimulasi Sederhana Sesuai Usia (KPSP)",
+        "category": "Development",
+        "author": "Tim SIMBA",
+        "read_time_min": 4,
+        "summary": "Permainan rumahan untuk motorik kasar, motorik halus, bicara, dan sosialisasi.",
+        "body": (
+            "KPSP memeriksa perkembangan anak setiap 3 bulan. Jika hasilnya 'Meragukan', lakukan stimulasi lebih sering "
+            "dan ulangi pemeriksaan dua minggu kemudian.\n\n"
+            "Contoh stimulasi: bermain lempar-tangkap bola (motorik kasar), menyusun balok atau mencoret dengan krayon "
+            "(motorik halus), membaca buku bergambar dan menyebut nama benda (bahasa), serta bermain bersama anak lain "
+            "(sosialisasi). Pujian kecil setiap kali anak mencoba membuat mereka ingin mengulanginya."
+        ),
+        "published": True,
+    },
+    {
+        "title": "Jadwal Imunisasi Dasar Lengkap",
+        "category": "Immunization",
+        "author": "Tim SIMBA",
+        "read_time_min": 3,
+        "summary": "Ringkasan imunisasi rutin 0-18 bulan dan apa yang harus dilakukan jika terlambat.",
+        "body": (
+            "Imunisasi rutin dimulai dengan Hepatitis B saat lahir, BCG dan Polio di usia 1 bulan, lalu DPT-HB-Hib, "
+            "Polio, PCV, dan Rotavirus pada usia 2, 3, dan 4 bulan. Campak-Rubella (MR) diberikan pada 9 bulan, "
+            "dan booster DPT-HB-Hib serta MR pada 18 bulan.\n\n"
+            "Jika ada dosis yang terlambat, jangan mulai dari awal: lanjutkan dosis yang tertinggal (catch-up) di "
+            "Posyandu atau Puskesmas terdekat. Bawa selalu buku KIA."
+        ),
+        "published": True,
+    },
+]
+
+
+def seed_articles(db: Session, reset: bool = False) -> int:
+    if reset:
+        db.query(models.Article).delete()
+        db.commit()
+    elif not _is_empty(db, models.Article):
+        return 0
+    db.add_all(models.Article(**a) for a in STARTER_ARTICLES)
+    db.commit()
+    return len(STARTER_ARTICLES)
+
+
 def seed_growth_standards(db: Session, reset: bool = False, max_months: int = 60) -> int:
     """Monthly WHO percentile curves (weight-, length/height- and BMI-for-age), 0..max_months.
 
@@ -249,6 +323,7 @@ def run(reset: bool = False) -> dict:
             "akg_targets": seed_akg(db, reset),
             "growth_standards": seed_growth_standards(db, reset),
             "milestones": seed_milestones(db, reset),
+            "articles": seed_articles(db, reset),
         }
     finally:
         db.close()
