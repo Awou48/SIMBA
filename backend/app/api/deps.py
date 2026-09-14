@@ -24,3 +24,11 @@ def get_owned_child(
     if child is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Child not found")
     return child
+
+
+def apply_food_search(query, q: str | None):
+    """Filter a FoodItem query so every whitespace-separated word of `q` appears
+    in the name (case-insensitive) — "bubur ayam" matches "Super bubur rasa ayam"."""
+    for token in (q or "").split():
+        query = query.filter(models.FoodItem.name.ilike(f"%{token}%"))
+    return query

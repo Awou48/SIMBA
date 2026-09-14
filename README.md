@@ -57,7 +57,7 @@ backend/
 │   │       │   ├── auth.py     # Parent register/login
 │   │       │   ├── children.py # CRUD for child profiles
 │   │       │   ├── growth.py   # Log + list measurements (WHO z-scores)
-│   │       │   └── logs.py     # Daily intake vs AKG targets
+│   │       │   └── logs.py     # Food search, meal logging, daily AKG summary
 │   │       └── admin/          # Endpoints ONLY accessible to Admins (Web)
 │   │           ├── auth.py     # Admin login, /me, superadmin-only register
 │   │           ├── datasets.py # Read/replace AKG targets
@@ -116,6 +116,7 @@ frontend/
 │   │   ├── ChildContext.tsx     # Active-child state shared by parent screens
 │   │   ├── components/
 |   |   |   |── RequireAuth.tsx
+|   |   |   |── FrameModal.tsx       # Overlay portal clipped to the phone frame
 |   |   |   |── BottomNav.tsx
 |   |   |   |── HMBottomNav.tsx
 |   |   |   |── HMLayout.tsx

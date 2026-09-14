@@ -11,6 +11,7 @@ export function MobileFrame({ children }: MobileFrameProps) {
       style={{ background: "#e8e0d8" }}
     >
       <div
+        id="mobile-frame"
         className="relative overflow-hidden"
         style={{
           width: "390px",
