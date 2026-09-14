@@ -91,7 +91,11 @@ export function GrowthScreen() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save measurement. Check your connection.");
+        const errorData = await response.json().catch(() => ({}));
+        const detail = Array.isArray(errorData.detail)
+          ? errorData.detail.map((d: any) => d.msg).join(" ")
+          : errorData.detail;
+        throw new Error(detail || "Failed to save measurement. Check your connection.");
       }
 
       const resultData = await response.json();

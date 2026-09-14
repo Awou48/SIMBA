@@ -1,48 +1,102 @@
-Backend Folder Structure
-To run: 
-cd backend
-uvicorn main:app --reload 
+# SIMBA
 
+Child growth & nutrition monitoring: a **FastAPI + PostgreSQL** backend, and a **React (Vite)** frontend
+with a parent mobile UI and a Health Manager (admin) portal.
+
+## Backend
+
+### Setup & run
+
+```bash
+cd backend
+python -m venv venv && source venv/Scripts/activate   # Windows Git Bash; use venv/bin/activate on macOS/Linux
+pip install -r requirements.txt
+cp .env.example .env            # then edit DATABASE_URL, SECRET_KEY, FIRST_ADMIN_*
+python seed_db.py               # create tables + load WHO / AKG / food reference data, bootstrap superadmin
+uvicorn main:app --reload       # http://127.0.0.1:8000/docs
+```
+
+`python seed_db.py` is idempotent (skips tables that already have rows); `python seed_db.py --reset`
+re-loads the reference tables (foods, AKG targets, growth standards). It never touches parents,
+children or measurements.
+
+### Tests
+
+```bash
+cd backend
+pytest
+```
+
+Tests run against an in-memory SQLite database; PostgreSQL does not need to be running.
+
+### Auth model
+
+| Role | Login | Token | Notes |
+|------|-------|-------|-------|
+| Parent | `POST /api/v1/user/auth/login` (OAuth2 form) | `role=parent`, 7 days | Register via JSON `POST /api/v1/user/auth/register` |
+| Admin | `POST /api/v1/admin/auth/login` (OAuth2 form) | `role=admin`, 7 days | New admins can only be created by a **superadmin** (`POST /api/v1/admin/auth/register`) |
+
+The first superadmin comes from `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` in `.env` (created or promoted by `seed_db.py`).
+Every `/api/v1/user/child/{id}/...` and `/nutrition/{id}/...` route checks that the child belongs to the caller.
+
+### Folder structure
+
+```
 backend/
 ├── main.py                     # App initialization, CORS setup, and route inclusion
-├── requirements.txt            
-├── alembic.ini                 # For PostgreSQL database migrations
-├── alembic/                    # Migration scripts (tracking schema changes)
+├── seed_db.py                  # Create tables + seed reference data (WHO, AKG, foods, superadmin)
+├── requirements.txt
+├── pytest.ini
+├── .env.example                # Copy to .env (gitignored)
+├── alembic.ini                 # Reserved for PostgreSQL migrations (not yet initialised)
 ├── app/
 │   ├── api/
-│   │   ├── v1/
-│   │   │   ├── user/           # Endpoints ONLY accessible to Parents (Mobile)
-│   │   │   │   ├── auth.py     # Parent login/register
-│   │   │   │   ├── children.py # CRUD for child profiles
-│   │   │   |   ├── growth.py
-│   │   │   │   └── logs.py     # Submitting daily weight/nutrition logs
-│   │   │   └── admin/          # Endpoints ONLY accessible to Admins (Web)
-│   │   │       ├── __ini__.py
-│   │   │       ├── auth.py     # Admin login
-│   │   │       ├── datasets.py # Uploading/updating WHO CSVs and AKG targets
-│   │   │       ├── food.py
-│   │   │       └── region.py   # Aggregated analytics for regional dashboards
-│   ├── core/                   
-│   │   ├── config.py           # DB connection strings, JWT secret keys
-│   │   └── security.py         # Password hashing, JWT token validation, RBAC logic
-│   ├── db/                     
-│   │   ├── database.py         # PostgreSQL connection pooling (SQLAlchemy)
-│   │   └── models.py           # Relational tables (User, Child, Measurement, Admin)
-│   ├── schemas/                
+│   │   ├── deps.py             # get_owned_child: child lookup + ownership check
+│   │   └── v1/
+│   │       ├── user/           # Endpoints ONLY accessible to Parents (Mobile)
+│   │       │   ├── auth.py     # Parent register/login
+│   │       │   ├── children.py # CRUD for child profiles
+│   │       │   ├── growth.py   # Log + list measurements (WHO z-scores)
+│   │       │   └── logs.py     # Daily intake vs AKG targets
+│   │       └── admin/          # Endpoints ONLY accessible to Admins (Web)
+│   │           ├── auth.py     # Admin login, /me, superadmin-only register
+│   │           ├── datasets.py # Read/replace AKG targets
+│   │           ├── food.py     # Food database CRUD (+ search/filter)
+│   │           └── region.py   # Aggregated stunting stats for the dashboard
+│   ├── core/
+│   │   ├── config.py           # Settings loaded from .env (pydantic-settings)
+│   │   └── security.py         # Password hashing, JWT creation/validation, role guards
+│   ├── db/
+│   │   ├── database.py         # SQLAlchemy engine/session
+│   │   └── models.py           # ParentUser, AdminUser, Child, MeasurementLog, FoodItem, AKGTarget, GrowthStandard
+│   ├── schemas/
 │   │   ├── user_schemas.py     # Pydantic models for mobile payloads
 │   │   └── admin_schemas.py    # Pydantic models for admin dashboard payloads
-│   └── services/               # The "Brain" (Business Logic)
-│       ├── zscore_calc.py      # Python LMS calculations using the WHO tables
-│       └── nutrition_calc.py   # AKG comparison logic
-└── data/                       # Initial seed data
-    └── local_reference/
-    └── who_lms_tables/        
+│   └── services/
+│       ├── zscore_calc.py      # WHO LMS z-scores (weight-for-age, length/height-for-age)
+│       └── nutrition_calc.py   # AKG 2019 comparison logic
+├── tests/                      # pytest suite (SQLite in-memory)
+└── data/
+    ├── local_reference/        # AKG 2019, Indonesian food composition, KPSP milestones
+    └── who_lms_tables/         # WHO LMS tables by day (0-1856)
+```
 
-Frontend Folder Structures
-To run:
+## Frontend
+
+### Setup & run
+
+```bash
 cd frontend
-npm run dev
+npm install
+npm run dev                     # http://localhost:5173
+```
 
+The frontend currently talks to `http://127.0.0.1:8000`. Log in as a Health Manager with the superadmin
+from `backend/.env` to reach the `/hm/*` portal.
+
+### Folder structure
+
+```
 frontend/
 ├── package.json
 |── index.html
@@ -142,3 +196,4 @@ frontend/
 │   │   ├── index.css
 │   │   ├── tailwind.css
 │   │   ├── theme.css            
+```
