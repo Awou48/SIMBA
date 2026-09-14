@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Camera, ChevronLeft, Calendar, AlertCircle } from "lucide-react";
+// Ensure this path matches exactly!
 import logo1 from "../../../imports/logo_1.png";
 
 export function AddChildScreen() {
@@ -9,6 +10,7 @@ export function AddChildScreen() {
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"boy" | "girl" | null>(null);
 
+  // API connection states
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -29,6 +31,7 @@ export function AddChildScreen() {
         return;
       }
 
+      // Map UI gender to backend standard
       const backendGender = gender === "boy" ? "male" : "female";
 
       const payload = {
@@ -51,6 +54,7 @@ export function AddChildScreen() {
         throw new Error(errorData.detail || "Failed to add child profile.");
       }
 
+      // Success! Go back to home, which will now automatically fetch this new child
       navigate("/home");
       
     } catch (err: any) {

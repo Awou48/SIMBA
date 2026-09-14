@@ -1,35 +1,57 @@
-from pydantic import BaseModel
 from typing import List, Optional
 
-class AdminLogin(BaseModel):
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class AdminCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+    name: str = Field(min_length=1, max_length=100)
+    is_superadmin: bool = False
+
+
+class AdminResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
     email: str
-    password: str
+    name: str
+    is_superadmin: bool
+
 
 class RegionStatsResponse(BaseModel):
     region_name: str
     total_children: int
-    stunted_count: int
-    severely_stunted_count: int
-    normal_count: int
+    total_measurements: int
+    stunted_cases: int
+    severely_stunted_cases: int
+    stunting_rate: float
+    warning: str
+
 
 class FoodItemBase(BaseModel):
-    name: str
-    category: str
-    energy: float
-    protein: float
-    carbs: float
-    fat: float
-    safe: bool
+    name: str = Field(min_length=1, max_length=200)
+    category: str = Field(min_length=1, max_length=50)
+    energy: float = Field(ge=0)
+    protein: float = Field(ge=0)
+    carbs: float = Field(ge=0)
+    fat: float = Field(ge=0)
+    safe: bool = True
+
 
 class FoodItemCreate(FoodItemBase):
     pass
 
+
 class FoodItemResponse(FoodItemBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
-    class Config:
-        from_attributes = True
+
 
 class AKGRow(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[int] = None
     ageGroup: str
     gender: str
@@ -37,10 +59,11 @@ class AKGRow(BaseModel):
     protein: str
     fat: str
     carbs: str
-    vitA: str
-    vitC: str
-    iron: str
-    calcium: str
+    vitA: Optional[str] = None
+    vitC: Optional[str] = None
+    iron: Optional[str] = None
+    calcium: Optional[str] = None
+
 
 class AKGUpdatePayload(BaseModel):
     akg_data: List[AKGRow]

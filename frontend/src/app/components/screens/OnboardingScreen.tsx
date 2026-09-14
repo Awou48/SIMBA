@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import logo1 from "../../../imports/logo_1.png"; 
+import logo1 from "../../../imports/logo_1.png"; // Fixed import path
 
 const slides = [
   {

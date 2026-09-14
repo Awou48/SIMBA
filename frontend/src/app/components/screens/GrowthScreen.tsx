@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { ChevronLeft, Save, AlertCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from "recharts";
 
+// Temporary static data for the chart visual
 const weightData = [
   { month: "Sep", weight: 10.1, height: 80, p3: 9.0, p97: 12.5 },
   { month: "Oct", weight: 10.4, height: 81, p3: 9.1, p97: 12.7 },
@@ -36,12 +37,14 @@ export function GrowthScreen() {
   const [height, setHeight] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   
+  // API States
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [latestResult, setLatestResult] = useState<any>(null); 
+  const [latestResult, setLatestResult] = useState<any>(null); // Holds the Z-Score response
   const [childId, setChildId] = useState<string | null>(null);
 
   useEffect(() => {
+    // When screen loads, grab the active child's ID that we saved in HomeScreen
     const id = localStorage.getItem("active_child_id");
     if (!id) {
       setErrorMessage("No child selected. Please add a child on the Home screen first.");
@@ -71,6 +74,7 @@ export function GrowthScreen() {
         return;
       }
 
+      // Format payload exactly as FastAPI expects
       const payload = {
         date_logged: `${date}T00:00:00`,
         weight_kg: parseFloat(weight),
@@ -87,12 +91,17 @@ export function GrowthScreen() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save measurement. Check your connection.");
+        const errorData = await response.json().catch(() => ({}));
+        const detail = Array.isArray(errorData.detail)
+          ? errorData.detail.map((d: any) => d.msg).join(" ")
+          : errorData.detail;
+        throw new Error(detail || "Failed to save measurement. Check your connection.");
       }
 
       const resultData = await response.json();
-      setLatestResult(resultData); 
+      setLatestResult(resultData); // This contains the wfa_zscore and statuses!
       
+      // Clear inputs for the next entry
       setWeight("");
       setHeight("");
       

@@ -17,6 +17,7 @@ import { ReportsScreen } from "./components/screens/ReportsScreen";
 import { ExploreScreen } from "./components/screens/ExploreScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
 import { AlertsScreen } from "./components/screens/AlertsScreen";
+// Health Manager screens
 import { HMDashboard } from "./components/screens/hm/HMDashboard";
 import { HMGrowthStandards } from "./components/screens/hm/HMGrowthStandards";
 import { HMAKGTargets } from "./components/screens/hm/HMAKGTargets";
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
     path: "/add-child",
     element: <FramedScreen><AddChildScreen /></FramedScreen>,
   },
+  // Parent main app with persistent bottom navigation
   {
     element: <FramedLayout />,
     children: [
@@ -90,6 +92,7 @@ export const router = createBrowserRouter([
       { path: "/alerts",       element: <AlertsScreen /> },
     ],
   },
+  // Health Manager portal with its own layout
   {
     path: "/hm",
     element: <FramedHMLayout />,

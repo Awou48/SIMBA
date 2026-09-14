@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Users, Database, Shield, RefreshCw, Download, Bell, Globe, Trash2, ChevronRight, LogOut, CheckCircle, AlertTriangle } from "lucide-react";
+// Watch the lowercase 'l' for Vite compatibility!
 import logo2 from "../../../../imports/logo_2.png";
 
 const systemStatus = [
@@ -17,6 +18,7 @@ const users = [
   { id: 4, name: "Admin System",          role: "Super Admin",    email: "admin@simba.id",    active: true },
 ];
 
+// Dynamically updated to today's timestamps
 const backupHistory = [
   { date: "May 11, 2026 · 02:00 AM", type: "Auto", size: "148 MB", status: "Success" },
   { date: "May 10, 2026 · 02:00 AM", type: "Auto", size: "146 MB", status: "Success" },
@@ -30,6 +32,7 @@ export function HMSystem() {
   const [showUsers,   setShowUsers]   = useState(false);
   const [showBackup,  setShowBackup]  = useState(false);
 
+  // Secure Logout Function
   const handleLogout = () => {
     localStorage.removeItem("simba_token");
     localStorage.removeItem("simba_role");

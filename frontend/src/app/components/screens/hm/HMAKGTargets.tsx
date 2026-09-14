@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { X, Edit3, Save, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 interface AKGRow {
-  id?: number; 
+  id?: number; // Added optional ID for database tracking
   ageGroup: string;
   gender: string;
   energy: string;
@@ -16,6 +16,7 @@ interface AKGRow {
   calcium: string;
 }
 
+// Fallback data in case the database is empty or offline
 const fallbackAkgData: AKGRow[] = [
   { ageGroup: "0–5 mo",   gender: "M/F", energy: "550",  protein: "9",  fat: "31", carbs: "59",  vitA: "375", vitC: "40",  iron: "0.3", calcium: "200" },
   { ageGroup: "6–11 mo",  gender: "M/F", energy: "800",  protein: "15", fat: "35", carbs: "105", vitA: "400", vitC: "50",  iron: "11",  calcium: "270" },
@@ -43,12 +44,14 @@ export function HMAKGTargets() {
   const [editBuf, setEditBuf] = useState<AKGRow | null>(null);
   const [activeNutrient, setActiveNutrient] = useState<typeof nutrients[number]["key"]>("energy");
 
+  // API States
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error", text: string } | null>(null);
 
   const nutrient = nutrients.find(n => n.key === activeNutrient)!;
 
+  // 1. Fetch live AKG targets from Python Backend
   useEffect(() => {
     const fetchAKG = async () => {
       try {
@@ -81,11 +84,13 @@ export function HMAKGTargets() {
       const next = [...rows];
       next[editIdx] = editBuf;
       setRows(next);
+      // Clear status message if they make a new edit so they know to save again
       setStatusMsg(null); 
     }
     setEditIdx(null); setEditBuf(null);
   };
 
+  // 2. Save entire table to Python Backend
   const saveAllToDatabase = async () => {
     setIsSaving(true);
     setStatusMsg(null);
@@ -93,7 +98,7 @@ export function HMAKGTargets() {
     try {
       const token = localStorage.getItem("simba_token");
       const response = await fetch("http://127.0.0.1:8000/api/v1/admin/datasets/update-akg", {
-        method: "POST", 
+        method: "POST", // Or PUT, depending on how your FastAPI is structured
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
@@ -104,7 +109,7 @@ export function HMAKGTargets() {
       if (!response.ok) throw new Error("Failed to save changes.");
       
       setStatusMsg({ type: "success", text: "AKG Targets successfully updated!" });
-      setTimeout(() => setStatusMsg(null), 4000); 
+      setTimeout(() => setStatusMsg(null), 4000); // Hide success after 4s
       
     } catch (err: any) {
       setStatusMsg({ type: "error", text: err.message || "Database connection error." });
