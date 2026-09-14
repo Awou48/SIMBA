@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ChevronLeft, Heart, ChevronRight, Clock, Users } from "lucide-react";
 
+// (Keeping your original static recipe data for the beautiful UI)
 const recipes = [
   {
     id: 1,

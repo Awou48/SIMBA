@@ -8,6 +8,7 @@ import {
 
 const regions = ["All Regions", "Tangerang Raya", "Jawa", "Sumatera", "Kalimantan", "Sulawesi", "Papua", "Bali & NTT"];
 
+// Static fallback data for the visual trends
 const trendData = [
   { month: "Jan", stunting: 24.1, wasting: 8.2, overweight: 4.1 },
   { month: "Feb", stunting: 23.5, wasting: 8.0, overweight: 4.3 },
@@ -27,6 +28,7 @@ export function HMRegionalTrends() {
   const [region, setRegion] = useState("All Regions");
   const [activeIndicator, setActiveIndicator] = useState("stunting");
   
+  // API States
   const [apiData, setApiData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,10 +60,12 @@ export function HMRegionalTrends() {
     fetchRegionalStats();
   }, [navigate]);
 
+  // Dynamically calculate the Live Stunting Rate based on the DB
   const liveStuntingRate = apiData && apiData.total_measurements > 0 
     ? ((apiData.stunted_cases / apiData.total_measurements) * 100).toFixed(1) 
     : "0.0";
 
+  // Merge Live API data with the static UI arrays
   const dynamicStunting = [
     { region: apiData?.region_name || "Tangerang Raya", rate: parseFloat(liveStuntingRate), prev: 21.2 },
     { region: "Jawa",       rate: 18.4, prev: 21.2 },

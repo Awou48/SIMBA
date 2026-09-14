@@ -3,6 +3,8 @@ import { useNavigate } from "react-router";
 import { ChevronLeft, ChevronRight, Plus, X, Syringe, Stethoscope, Activity } from "lucide-react";
 
 const daysInMonth = 31;
+
+// Initial Dummy Data
 const initialImmunizationDates = [3, 10, 18, 25];
 const initialCheckupDates = [7, 22];
 
@@ -32,6 +34,7 @@ export function ImmunizationScreen() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   
+  // Convert static arrays to React State!
   const [vaccinations, setVaccinations] = useState(initialVaccinations);
   const [immunizationDates, setImmunizationDates] = useState<number[]>(initialImmunizationDates);
   const [checkupDates, setCheckupDates] = useState<number[]>(initialCheckupDates);
@@ -41,12 +44,19 @@ export function ImmunizationScreen() {
   const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   const handleSaveEvent = () => {
-    if (!form.title || !form.date) return; 
+    if (!form.title || !form.date) return; // Prevent empty saves
+
+    // Extract the day number from the date string (e.g., "2026-05-15" -> 15)
     const [year, month, dayStr] = form.date.split('-');
     const dayNum = parseInt(dayStr, 10);
+
+    // Format the date to match our UI (e.g., "May 15, 2026")
     const formattedDate = new Date(parseInt(year), parseInt(month) - 1, dayNum).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+    // Grab the right colors for the event type
     const styling = typeColors[form.type] || typeColors["Other"];
 
+    // Build the new event object
     const newEvent = {
       id: Date.now(),
       name: form.title,
@@ -58,13 +68,17 @@ export function ImmunizationScreen() {
       notes: form.notes
     };
 
+    // 1. Add to the list of upcoming events (putting it at the top for visibility)
     setVaccinations([newEvent, ...vaccinations]);
+
+    // 2. Add the dot to the calendar
     if (form.type === "Vaccination") {
       setImmunizationDates([...immunizationDates, dayNum]);
     } else {
       setCheckupDates([...checkupDates, dayNum]);
     }
 
+    // 3. Reset form and close sheet
     setForm({ title: "", date: "", time: "", type: "Vaccination", notes: "" });
     setShowAddForm(false);
   };

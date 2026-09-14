@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { BarChart2, BookOpen, Utensils, Activity, TrendingUp, Settings, Target } from "lucide-react";
+// Ensure lowercase 'l' to prevent Vite crashes!
 import logo2 from "../../../../imports/logo_2.png";
 
 export function HMDashboard() {
@@ -43,6 +44,7 @@ export function HMDashboard() {
     { label: "Stunted Cases", value: statsData?.stunted_cases || "0", delta: statsData?.warning || "Normal", color: "#E53535", bg: "rgba(255,255,255,0.15)" },
   ];
 
+  // The navigation grid for all the admin tools we built
   const adminModules = [
     { title: "Regional Trends", desc: "Live stunting analytics", icon: <TrendingUp size={22} />, path: "/hm/regional-trends", color: "#4F46E5", bg: "#EEF2FF" },
     { title: "Growth Standards", desc: "WHO reference charts", icon: <BarChart2 size={22} />, path: "/hm/growth-standards", color: "#06B6D4", bg: "#ECFEFF" },

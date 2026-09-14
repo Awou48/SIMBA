@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Bell, ChevronRight, TrendingUp, Utensils, Syringe, Download, Scale } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
-import logo1 from "../../../imports/logo_1.png"; 
+import logo1 from "../../../imports/logo_1.png"; // Note the lowercase 'l' for safety!
 
 const sparklineData = [
   { w: 10.2 }, { w: 10.5 }, { w: 10.8 }, { w: 11.1 }, { w: 11.0 }, { w: 11.3 }, { w: 11.6 },
@@ -33,6 +33,7 @@ export function HomeScreen() {
   const [child, setChild] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper to dynamically calculate exact age from the database birth_date
   const calculateAge = (dobString: string) => {
     const dob = new Date(dobString);
     const today = new Date();
@@ -58,7 +59,7 @@ export function HomeScreen() {
           const data = await response.json();
           if (data.length > 0) {
             setChild(data[0]); 
-            localStorage.setItem("active_child_id", data[0].id.toString());
+            localStorage.setItem("active_child_id", data[0].id.toString()); // Save ID for the Growth/Food screens
           }
         }
       } catch (error) {

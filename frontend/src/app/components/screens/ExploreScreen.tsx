@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Play, MessageCircle, ThumbsUp, MapPin } from "lucide-react";
 
+// (Keeping your beautiful static data for the presentation)
 const videos = [
   { id: 1, title: "5 Finger Foods for Toddlers", duration: "4:32", thumb: "https://images.unsplash.com/photo-1610415946201-295954703dd9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2xvcmZ1bCUyMHRvZGRsZXIlMjBmb29kJTIwZnJ1aXRzJTIwdmVnZXRhYmxlc3xlbnwxfHx8fDE3NzgyNTIxODl8MA&ixlib=rb-4.1.0&q=80&w=1080" },
   { id: 2, title: "Building Healthy Habits Early", duration: "6:15", thumb: "https://images.unsplash.com/photo-1592783074241-ec3763189417?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJlbnQlMjB0b2RkbGVyJTIwY2hpbGQlMjBncm93dGglMjBoZWFsdGh5fGVufDF8fHx8MTc3ODI1MjE4OXww&ixlib=rb-4.1.0&q=80&w=1080" },
@@ -24,6 +25,7 @@ export function ExploreScreen() {
   const navigate = useNavigate();
   const [childName, setChildName] = useState("your toddler");
 
+  // API Fetch for active child
   useEffect(() => {
     const fetchChild = async () => {
       try {

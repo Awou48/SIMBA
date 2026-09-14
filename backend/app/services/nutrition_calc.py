@@ -1,43 +1,73 @@
-import pandas as pd
+"""AKG 2019 (Indonesian recommended dietary allowance) comparison for toddlers."""
 import os
 import re
+
+import pandas as pd
+
 from app.core.config import settings
 
-def calculate_akg_fulfillment(age_in_months: int, total_protein: float, total_energy: float) -> dict:
-    file_location = os.path.join(settings.DATA_DIR, 'local_reference', 'toddler_akg_2019.csv')
-    df = pd.read_csv(file_location)
-    target_row = pd.DataFrame()
+_AKG_PATH = os.path.join(settings.DATA_DIR, "local_reference", "toddler_akg_2019.csv")
 
-    for index, row in df.iterrows():
-        umur_str = str(row['Kelompok_Umur']).lower()
-        nums = re.findall(r'\d+', umur_str)
-        
-        if len(nums) == 2:
-            min_val = int(nums[0])
-            max_val = int(nums[1])
-            if 'th' in umur_str or 'tahun' in umur_str:
-                min_months = min_val * 12
-                max_months = (max_val * 12) + 11  
-            else:
-                min_months = min_val
-                max_months = max_val
-                
-            if min_months <= age_in_months <= max_months:
-                target_row = df.iloc[[index]]
-                break
-                
-    if target_row.empty:
+
+def _parse_bracket(label: str) -> tuple[int, int] | None:
+    """'0-5 bulan' -> (0, 5); '1-3 tahun' -> (12, 47). Returns None if unparseable."""
+    text = str(label).lower()
+    nums = re.findall(r"\d+", text)
+    if len(nums) != 2:
+        return None
+    lo, hi = int(nums[0]), int(nums[1])
+    if "th" in text or "tahun" in text or "yr" in text or "year" in text:
+        return lo * 12, hi * 12 + 11
+    return lo, hi
+
+
+def _load_brackets() -> list[dict]:
+    df = pd.read_csv(_AKG_PATH)
+    brackets = []
+    for _, row in df.iterrows():
+        span = _parse_bracket(row["Kelompok_Umur"])
+        if span is None:
+            continue
+        brackets.append(
+            {
+                "label": str(row["Kelompok_Umur"]),
+                "min_months": span[0],
+                "max_months": span[1],
+                "energy": float(row["Energi_kkal"]),
+                "protein": float(row["Protein_g"]),
+                "fat": float(row["Lemak_Total_g"]),
+                "carbs": float(row["Karbohidrat_g"]),
+            }
+        )
+    return brackets
+
+
+AKG_BRACKETS = _load_brackets()
+
+
+def find_akg_bracket(age_in_months: int) -> dict | None:
+    for b in AKG_BRACKETS:
+        if b["min_months"] <= age_in_months <= b["max_months"]:
+            return b
+    return None
+
+
+def _pct(actual: float, target: float) -> float:
+    return round(actual / target * 100, 2) if target else 0.0
+
+
+def calculate_akg_fulfillment(age_in_months: int, total_protein: float, total_energy: float) -> dict:
+    bracket = find_akg_bracket(age_in_months)
+    if bracket is None:
         return {"error": f"Age {age_in_months} months not found in AKG data brackets"}
-    target_protein = target_row['Protein_g'].values[0]
-    target_energy = target_row['Energi_kkal'].values[0]
-    
-    protein_percent = (total_protein / target_protein) * 100
-    energy_percent = (total_energy / target_energy) * 100
-    
+
     return {
-        "age_bracket_found": str(target_row['Kelompok_Umur'].values[0]), 
-        "target_protein": float(target_protein),
-        "target_energy": float(target_energy),
-        "protein_fulfillment_percent": round(float(protein_percent), 2),
-        "energy_fulfillment_percent": round(float(energy_percent), 2)
+        "age_in_months": age_in_months,
+        "age_bracket_found": bracket["label"],
+        "target_protein": bracket["protein"],
+        "target_energy": bracket["energy"],
+        "target_fat": bracket["fat"],
+        "target_carbs": bracket["carbs"],
+        "protein_fulfillment_percent": _pct(total_protein, bracket["protein"]),
+        "energy_fulfillment_percent": _pct(total_energy, bracket["energy"]),
     }
