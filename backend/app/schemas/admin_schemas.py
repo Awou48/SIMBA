@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -89,3 +91,43 @@ class MilestoneResponse(MilestoneBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
+
+class ArticleBase(BaseModel):
+    title: str = Field(min_length=3, max_length=160)
+    category: str = Field(min_length=1, max_length=40)
+    author: str = Field(min_length=1, max_length=80)
+    read_time_min: int = Field(default=3, ge=1, le=60)
+    summary: str = Field(min_length=1, max_length=400)
+    body: Optional[str] = Field(default=None, max_length=20000)
+    published: bool = False
+
+
+class ArticleCreate(ArticleBase):
+    pass
+
+
+class ArticleResponse(ArticleBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class GrowthStandardRow(BaseModel):
+    age_months: int
+    p3: float
+    p15: float
+    p50: float
+    p85: float
+    p97: float
+
+
+class SystemSummary(BaseModel):
+    version: str
+    database: str
+    counts: dict
+    reference: dict
+    last_measurement_at: Optional[datetime] = None
+    last_meal_on: Optional[str] = None
