@@ -138,3 +138,60 @@ def test_growth_standards_endpoint(client, parent_token, engine):
     twelve = points[12]
     assert abs(twelve["p50"] - 9.6) < 0.1
     assert twelve["p3"] < twelve["p15"] < twelve["p50"] < twelve["p85"] < twelve["p97"]
+
+
+# --- wasting (weight-for-length/height) and BMI-for-age -------------------------
+
+def test_wasting_and_bmi_services():
+    from app.services.zscore_calc import analyze_bmi, analyze_wasting, classify_wasting
+
+    assert abs(analyze_wasting("male", 365, 9.6, 75.7)["z_score"]) < 0.1
+    assert analyze_wasting("male", 365, 9.6, 75.7)["metric"] == "wfl"
+    assert analyze_wasting("male", 900, 12.0, 90.0)["metric"] == "wfh"
+    assert analyze_wasting("male", 365, 7.0, 75.7)["status"].startswith("Gizi Buruk")
+    assert "error" in analyze_wasting("male", 365, 9.6, 30.0)
+    assert abs(analyze_bmi("male", 365, 9.6, 75.7)["z_score"]) < 0.1
+    assert analyze_bmi("male", 365, 9.6, 75.7)["bmi"] == 16.75
+
+    assert classify_wasting(1.5).startswith("Berisiko")
+    assert classify_wasting(2.5).startswith("Gizi Lebih")
+    assert classify_wasting(3.5).startswith("Obesitas")
+
+
+def test_measurement_includes_wasting_and_bmi(client, parent_token, child):
+    r = client.post(measurements_url(child), json=MEDIAN_BOY_1Y, headers=auth(parent_token))
+    body = r.json()
+    assert abs(body["wfh_zscore"]) < 0.1
+    assert abs(body["bfa_zscore"]) < 0.1
+    assert body["bmi"] == 16.75
+    assert body["wasting_status"] == "Gizi Baik (Normal)"
+    assert body["bmi_status"] == "Gizi Baik (Normal)"
+
+    # History carries the same derived fields.
+    rows = client.get(measurements_url(child), headers=auth(parent_token)).json()
+    assert rows[0]["wasting_status"] == "Gizi Baik (Normal)"
+
+
+def test_measurement_with_height_outside_wfl_range_still_saves(client, parent_token, child):
+    # 44 cm at 12 months is far below the WHO wfl table (45 cm) but a valid stunting measurement.
+    r = client.post(measurements_url(child), json={**MEDIAN_BOY_1Y, "height_cm": 44.0}, headers=auth(parent_token))
+    assert r.status_code == 201, r.text
+    assert r.json()["wfh_zscore"] is None
+    assert r.json()["wasting_status"] is None
+    assert r.json()["stunting_status"].startswith("Sangat Pendek")
+
+
+def test_schema_sync_adds_new_nullable_column(engine):
+    from sqlalchemy import Column, Float, Table, inspect, text
+    from app.db.migrate import add_missing_columns
+    from app.db.database import Base
+
+    # Simulate an older database: drop a column the model now expects.
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE measurement_logs DROP COLUMN bfa_zscore"))
+    assert "bfa_zscore" not in {c["name"] for c in inspect(engine).get_columns("measurement_logs")}
+
+    added = add_missing_columns(engine)
+    assert added == ["measurement_logs.bfa_zscore"]
+    assert "bfa_zscore" in {c["name"] for c in inspect(engine).get_columns("measurement_logs")}
+    assert add_missing_columns(engine) == []

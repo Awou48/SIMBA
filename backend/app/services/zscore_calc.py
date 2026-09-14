@@ -13,19 +13,34 @@ from app.core.config import settings
 WHO_DIR = os.path.join(settings.DATA_DIR, "who_lms_tables")
 
 
-def _load(name: str) -> pd.DataFrame:
+def _load(name: str, index: str = "Day") -> pd.DataFrame:
     df = pd.read_csv(os.path.join(WHO_DIR, f"{name}.csv"))
-    return df.set_index("Day")[["L", "M", "S"]]
+    if index != "Day":
+        # Length/height tables are keyed in 0.1 cm steps; store as int tenths to avoid float keys.
+        df[index] = (df[index] * 10).round().astype(int)
+    return df.set_index(index)[["L", "M", "S"]]
 
 
+# Age-indexed tables (0..1856 days): length/height-for-age, weight-for-age, BMI-for-age.
 TABLES = {
     ("lhfa", "male"): _load("lhfa_boys"),
     ("lhfa", "female"): _load("lhfa_girls"),
     ("wfa", "male"): _load("wfa_boys"),
     ("wfa", "female"): _load("wfa_girls"),
+    ("bfa", "male"): _load("bfa_boys"),
+    ("bfa", "female"): _load("bfa_girls"),
+}
+
+# Length/height-indexed tables (tenths of cm): weight-for-length (<24 mo), weight-for-height (>=24 mo).
+LENGTH_TABLES = {
+    ("wfl", "male"): _load("wfl_boys", "Length"),
+    ("wfl", "female"): _load("wfl_girls", "Length"),
+    ("wfh", "male"): _load("wfh_boys", "Height"),
+    ("wfh", "female"): _load("wfh_girls", "Height"),
 }
 
 MAX_AGE_DAYS = int(TABLES[("lhfa", "male")].index.max())
+TWO_YEARS_DAYS = 731
 
 
 def normalize_gender(gender: str) -> str:
@@ -70,6 +85,21 @@ def classify_weight(z: float) -> str:
     return "Risiko Berat Badan Lebih"
 
 
+def classify_wasting(z: float) -> str:
+    """Weight-for-length/height and BMI-for-age share the Permenkes 2/2020 cut-offs."""
+    if z < -3.0:
+        return "Gizi Buruk (Severely Wasted)"
+    if z < -2.0:
+        return "Gizi Kurang (Wasted)"
+    if z <= 1.0:
+        return "Gizi Baik (Normal)"
+    if z <= 2.0:
+        return "Berisiko Gizi Lebih (Possible risk of overweight)"
+    if z <= 3.0:
+        return "Gizi Lebih (Overweight)"
+    return "Obesitas (Obese)"
+
+
 def _lookup(metric: str, gender: str, age_in_days: int):
     table = TABLES[(metric, normalize_gender(gender))]
     if age_in_days < 0 or age_in_days > MAX_AGE_DAYS:
@@ -99,3 +129,37 @@ def analyze_stunting(gender: str, age_in_days: int, height_cm: float) -> dict:
 def analyze_weight(gender: str, age_in_days: int, weight_kg: float) -> dict:
     """Weight-for-age."""
     return _analyze("wfa", gender, age_in_days, weight_kg, classify_weight)
+
+
+def bmi(weight_kg: float, height_cm: float) -> float:
+    return round(weight_kg / ((height_cm / 100) ** 2), 2)
+
+
+def analyze_bmi(gender: str, age_in_days: int, weight_kg: float, height_cm: float) -> dict:
+    """BMI-for-age."""
+    if height_cm <= 0 or weight_kg <= 0:
+        return {"error": "Measurement must be a positive number"}
+    result = _analyze("bfa", gender, age_in_days, bmi(weight_kg, height_cm), classify_wasting)
+    if "error" not in result:
+        result["bmi"] = bmi(weight_kg, height_cm)
+    return result
+
+
+def analyze_wasting(gender: str, age_in_days: int, weight_kg: float, height_cm: float) -> dict:
+    """Weight-for-length (under 2 years) or weight-for-height (2-5 years)."""
+    if weight_kg <= 0 or height_cm <= 0:
+        return {"error": "Measurement must be a positive number"}
+    metric = "wfl" if age_in_days < TWO_YEARS_DAYS else "wfh"
+    try:
+        table = LENGTH_TABLES[(metric, normalize_gender(gender))]
+    except ValueError as exc:
+        return {"error": str(exc)}
+    key = int(round(height_cm * 10))
+    lo, hi = int(table.index.min()), int(table.index.max())
+    if key < lo or key > hi:
+        return {
+            "error": f"Height {height_cm} cm is outside the WHO {metric} range ({lo / 10:.0f}-{hi / 10:.0f} cm)"
+        }
+    row = table.loc[key]
+    z = round(calculate_zscore(weight_kg, float(row["L"]), float(row["M"]), float(row["S"])), 2)
+    return {"z_score": float(z), "status": classify_wasting(z), "metric": metric}

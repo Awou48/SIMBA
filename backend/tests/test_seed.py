@@ -25,7 +25,7 @@ def test_seed_reference_tables_is_idempotent(engine):
         assert first["superadmin"] == 1
         assert first["foods"] > 1600
         assert first["akg"] == 4
-        assert first["growth"] == 4 * 61
+        assert first["growth"] == 6 * 61
 
         second = {
             "superadmin": seed_db.seed_superadmin(db),
