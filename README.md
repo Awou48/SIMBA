@@ -58,7 +58,8 @@ backend/
 │   │       │   ├── children.py # CRUD for child profiles
 │   │       │   ├── growth.py   # Log + list measurements (WHO z-scores)
 │   │       │   ├── logs.py     # Food search, meal logging, daily AKG summary
-│   │       │   └── milestones.py # KPSP checklist per child (answers + interpretation)
+│   │       │   ├── milestones.py # KPSP checklist per child (answers + interpretation)
+│   │       │   └── immunization.py # National vaccine schedule status + health calendar events
 │   │       └── admin/          # Endpoints ONLY accessible to Admins (Web)
 │   │           ├── auth.py     # Admin login, /me, superadmin-only register
 │   │           ├── datasets.py # Read/replace AKG targets
@@ -75,8 +76,9 @@ backend/
 │   │   ├── user_schemas.py     # Pydantic models for mobile payloads
 │   │   └── admin_schemas.py    # Pydantic models for admin dashboard payloads
 │   └── services/
-│       ├── zscore_calc.py      # WHO LMS z-scores (weight-for-age, length/height-for-age)
-│       └── nutrition_calc.py   # AKG 2019 comparison logic
+│       ├── zscore_calc.py      # WHO LMS z-scores (WFA, L/HFA, WFL/WFH wasting, BMI-for-age)
+│       ├── nutrition_calc.py   # AKG 2019 comparison logic
+│       └── immunization.py     # Kemenkes routine immunization schedule + dose status
 ├── tests/                      # pytest suite (SQLite in-memory)
 └── data/
     ├── local_reference/        # AKG 2019, Indonesian food composition, KPSP milestones
