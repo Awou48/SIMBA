@@ -60,12 +60,15 @@ backend/
 │   │       │   ├── logs.py     # Food search, meal logging, daily AKG summary
 │   │       │   ├── milestones.py # KPSP checklist per child (answers + interpretation)
 │   │       │   ├── immunization.py # National vaccine schedule status + health calendar events
-│   │       │   └── insights.py # Derived alerts, growth report (JSON + PDF)
+│   │       │   ├── insights.py # Derived alerts, growth report (JSON + PDF)
+│   │       │   └── articles.py # Published education articles
 │   │       └── admin/          # Endpoints ONLY accessible to Admins (Web)
 │   │           ├── auth.py     # Admin login, /me, superadmin-only register
-│   │           ├── datasets.py # Read/replace AKG targets
+│   │           ├── datasets.py # Read/replace AKG targets, read WHO curves
 │   │           ├── food.py     # Food database CRUD (+ search/filter)
 │   │           ├── milestones.py # KPSP question bank CRUD
+│   │           ├── articles.py # Education content CRUD (draft/publish)
+│   │           ├── system.py   # Data overview, admin accounts, on-demand reference seeding
 │   │           └── region.py   # Stunting prevalence overall and per child region
 │   ├── core/
 │   │   ├── config.py           # Settings loaded from .env (pydantic-settings)

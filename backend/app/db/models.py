@@ -161,3 +161,18 @@ class HealthEvent(Base):
     created_at = Column(DateTime, default=utcnow)
 
     child = relationship("Child", back_populates="health_events")
+
+
+class Article(Base):
+    """Education content written by Health Managers and shown to parents when published."""
+    __tablename__ = "articles"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    category = Column(String, nullable=False)  # Growth / Nutrition / Development / Immunization
+    author = Column(String, nullable=False)
+    read_time_min = Column(Integer, nullable=False, default=3)
+    summary = Column(String, nullable=False)
+    body = Column(Text, nullable=True)
+    published = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)

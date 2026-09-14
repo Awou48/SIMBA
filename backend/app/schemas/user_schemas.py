@@ -236,3 +236,16 @@ class AlertItem(BaseModel):
     description: str
     date: date
     action_path: str
+
+
+class ArticleView(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    category: str
+    author: str
+    read_time_min: int
+    summary: str
+    body: Optional[str] = None
+    updated_at: datetime
