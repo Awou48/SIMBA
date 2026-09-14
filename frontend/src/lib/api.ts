@@ -145,6 +145,7 @@ export interface Child {
   name: string;
   gender: "male" | "female";
   birth_date: string; // YYYY-MM-DD
+  region: string | null;
 }
 
 export interface Measurement {
@@ -290,6 +291,51 @@ export interface ImmunizationSummary {
   next_dose: VaccineDose | null;
 }
 
+export type AlertSeverity = "high" | "medium" | "low";
+export type AlertCategory = "Growth" | "Nutrition" | "Development" | "Immunization";
+
+export interface AlertItem {
+  id: string;
+  category: AlertCategory;
+  severity: AlertSeverity;
+  title: string;
+  description: string;
+  date: string;
+  action_path: string;
+}
+
+export interface ReportMeasurement {
+  date: string;
+  age_in_days: number;
+  weight_kg: number;
+  height_cm: number;
+  bmi: number;
+  wfa_zscore: number;
+  lhfa_zscore: number;
+  wfh_zscore: number | null;
+  bfa_zscore: number | null;
+}
+
+export interface GrowthReport {
+  generated_on: string;
+  child: { id: number; name: string; gender: "male" | "female"; birth_date: string; age_in_months: number; region: string | null };
+  measurements: ReportMeasurement[];
+  latest: ReportMeasurement | null;
+  change_since_first: { days: number; weight_kg: number; height_cm: number; bmi: number } | null;
+  status: { stunting: string; weight: string; wasting: string | null; bmi: string | null } | null;
+  nutrition_7d: {
+    window_days: number;
+    days_logged: number;
+    logged_today: boolean;
+    average: NutrientTotals;
+    targets: NutrientTotals | null;
+    fulfillment_percent: NutrientTotals | null;
+  };
+  milestones: { age_label: string | null; total: number; answered: number; achieved: number; interpretation: string | null };
+  immunization: { given: number; due: number; overdue: number; upcoming: number; total: number; next_dose: VaccineDose | null; overdue_names: string[] };
+  alerts: AlertItem[];
+}
+
 export interface FoodItem {
   id: number;
   name: string;
@@ -318,6 +364,7 @@ export interface AKGRow {
 export interface StuntingStats {
   region_name: string;
   total_children: number;
+  children_measured: number;
   total_measurements: number;
   stunted_cases: number;
   severely_stunted_cases: number;
@@ -357,8 +404,26 @@ export const api = {
       apiFetch<TokenResponse>("/api/v1/user/auth/login", { method: "POST", body: loginForm(email, password), auth: false }),
 
     listChildren: () => apiFetch<Child[]>("/api/v1/user/children/"),
-    createChild: (data: Pick<Child, "name" | "gender" | "birth_date">) =>
+    createChild: (data: Pick<Child, "name" | "gender" | "birth_date"> & { region?: string | null }) =>
       apiFetch<Child>("/api/v1/user/children/", { method: "POST", body: data }),
+    updateChild: (childId: number, data: Partial<Pick<Child, "name" | "gender" | "birth_date" | "region">>) =>
+      apiFetch<Child>(`/api/v1/user/children/${childId}`, { method: "PUT", body: data }),
+
+    alerts: (childId: number) => apiFetch<AlertItem[]>(`/api/v1/user/child/${childId}/alerts`),
+    report: (childId: number) => apiFetch<GrowthReport>(`/api/v1/user/child/${childId}/report`),
+    /** Fetches the PDF as a Blob (needs the bearer token, so no plain <a href>). */
+    reportPdf: async (childId: number): Promise<Blob> => {
+      const res = await fetch(`${API_URL}/api/v1/user/child/${childId}/report.pdf`, {
+        headers: { Authorization: `Bearer ${session.getToken() ?? ""}` },
+      });
+      if (res.status === 401) {
+        session.clear();
+        window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
+        throw new ApiError(401, "Your session has expired. Please log in again.");
+      }
+      if (!res.ok) throw new ApiError(res.status, `Could not generate the report (${res.status})`);
+      return res.blob();
+    },
 
     listMeasurements: (childId: number) => apiFetch<Measurement[]>(`/api/v1/user/child/${childId}/measurements`),
     logMeasurement: (childId: number, data: { weight_kg: number; height_cm: number; date_logged: string }) =>
@@ -408,7 +473,8 @@ export const api = {
       apiFetch<AdminTokenResponse>("/api/v1/admin/auth/login", { method: "POST", body: loginForm(email, password), auth: false }),
     me: () => apiFetch<AdminTokenResponse["admin_info"]>("/api/v1/admin/auth/me"),
 
-    stats: () => apiFetch<StuntingStats>("/api/v1/admin/dashboard/stunting-stats"),
+    stats: (region?: string) => apiFetch<StuntingStats>("/api/v1/admin/dashboard/stunting-stats", { query: { region } }),
+    regionStats: () => apiFetch<StuntingStats[]>("/api/v1/admin/dashboard/regions"),
 
     listFoods: (params: { q?: string; category?: string; safe_only?: boolean; limit?: number; offset?: number } = {}) =>
       apiFetch<FoodItem[]>("/api/v1/admin/foods", { query: params }),

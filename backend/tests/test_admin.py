@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from tests.conftest import auth
 
@@ -90,17 +90,20 @@ def test_stats_on_empty_database(client, admin_token):
 
 
 def test_stats_count_stunted_cases(client, admin_token, parent_token, child):
+    """Prevalence is per child (latest measurement), not per log."""
     url = f"/api/v1/user/child/{child['id']}/measurements"
-    today = date.today().isoformat()
-    client.post(url, json={"weight_kg": 9.6, "height_cm": 75.7, "date_logged": today}, headers=auth(parent_token))
-    # WHO boy @ 12 mo: -2 SD = 71.0 cm, -3 SD = 68.6 cm
-    client.post(url, json={"weight_kg": 9.6, "height_cm": 70.0, "date_logged": today}, headers=auth(parent_token))
-    client.post(url, json={"weight_kg": 9.6, "height_cm": 66.0, "date_logged": today}, headers=auth(parent_token))
+    birth = date.fromisoformat(child["birth_date"])
+    day = lambda d: (birth + timedelta(days=d)).isoformat()
+    # WHO boy: normal at 6 mo, then severely stunted at 9 mo, then stunted (latest) at 12 mo.
+    client.post(url, json={"weight_kg": 7.9, "height_cm": 67.6, "date_logged": day(182)}, headers=auth(parent_token))
+    client.post(url, json={"weight_kg": 8.9, "height_cm": 62.0, "date_logged": day(274)}, headers=auth(parent_token))
+    client.post(url, json={"weight_kg": 9.6, "height_cm": 70.0, "date_logged": day(365)}, headers=auth(parent_token))
 
     body = client.get("/api/v1/admin/dashboard/stunting-stats", headers=auth(admin_token)).json()
     assert body["total_children"] == 1
+    assert body["children_measured"] == 1
     assert body["total_measurements"] == 3
-    assert body["stunted_cases"] == 2
-    assert body["severely_stunted_cases"] == 1
-    assert body["stunting_rate"] > 0.2
+    assert body["stunted_cases"] == 1          # latest z is between -3 and -2
+    assert body["severely_stunted_cases"] == 0  # the -3 SD entry is not the latest
+    assert body["stunting_rate"] == 1.0
     assert body["warning"] == "Stunting rate exceeds 20%"
