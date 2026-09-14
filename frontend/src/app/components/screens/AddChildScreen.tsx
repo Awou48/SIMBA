@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Camera, ChevronLeft, Calendar, AlertCircle } from "lucide-react";
+import { Camera, ChevronLeft, Calendar, AlertCircle, MapPin } from "lucide-react";
 // Ensure this path matches exactly!
 import logo1 from "../../../imports/logo_1.png";
 import { api, errorMessage as toMessage, session } from "../../../lib/api";
@@ -10,6 +10,7 @@ export function AddChildScreen() {
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"boy" | "girl" | null>(null);
+  const [region, setRegion] = useState("");
 
   // API connection states
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +32,7 @@ export function AddChildScreen() {
         name: name.trim(),
         gender: gender === "boy" ? "male" : "female",
         birth_date: dob,
+        region: region.trim() || null,
       });
 
       // Make the new child the active profile, then go home (which refetches the list).
@@ -118,6 +120,27 @@ export function AddChildScreen() {
               className="flex-1 bg-transparent outline-none"
               style={{ fontSize: "14px", color: dob ? "#2D3047" : "#9BA3B8", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}
             />
+          </div>
+        </div>
+
+        {/* Region (used for the Health Manager's regional dashboards) */}
+        <div className="flex flex-col gap-1.5">
+          <label style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>
+            Area / Kecamatan <span style={{ color: "#9BA3B8", fontWeight: 600 }}>(optional)</span>
+          </label>
+          <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: "white", border: "1.5px solid #F0F1F5", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <MapPin size={18} style={{ color: "#9B8BF4" }} />
+            <input
+              list="simba-regions"
+              placeholder="e.g. Tangerang Selatan"
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              className="flex-1 bg-transparent outline-none"
+              style={{ fontSize: "14px", color: "#2D3047", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}
+            />
+            <datalist id="simba-regions">
+              {["Kota Tangerang", "Tangerang Selatan", "Kabupaten Tangerang", "Jakarta Barat", "Jakarta Selatan", "Depok", "Bogor", "Bekasi"].map((r) => <option key={r} value={r} />)}
+            </datalist>
           </div>
         </div>
 

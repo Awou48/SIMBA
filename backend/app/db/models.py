@@ -32,6 +32,7 @@ class Child(Base):
     name = Column(String)
     gender = Column(String)
     birth_date = Column(Date)
+    region = Column(String, nullable=True)  # kecamatan/kota used for aggregated admin dashboards
     
     parent = relationship("ParentUser", back_populates="children")
     measurements = relationship("MeasurementLog", back_populates="child")
