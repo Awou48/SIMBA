@@ -37,6 +37,7 @@ class Child(Base):
     measurements = relationship("MeasurementLog", back_populates="child")
     meals = relationship("MealLog", back_populates="child", cascade="all, delete-orphan")
     milestone_answers = relationship("MilestoneAnswer", back_populates="child", cascade="all, delete-orphan")
+    health_events = relationship("HealthEvent", back_populates="child", cascade="all, delete-orphan")
 
 class MeasurementLog(Base):
     __tablename__ = "measurement_logs"
@@ -138,3 +139,24 @@ class MilestoneAnswer(Base):
 
     child = relationship("Child", back_populates="milestone_answers")
     milestone = relationship("Milestone")
+
+
+class HealthEvent(Base):
+    """Calendar entry for a child: a given/planned vaccine dose, a doctor visit, a check-up, etc.
+
+    `vaccine_code` links the event to a dose in the national schedule
+    (app/services/immunization.py); it is NULL for free-form events."""
+    __tablename__ = "health_events"
+    __table_args__ = (UniqueConstraint("child_id", "vaccine_code", name="uq_child_vaccine_dose"),)
+    id = Column(Integer, primary_key=True, index=True)
+    child_id = Column(Integer, ForeignKey("children.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    event_type = Column(String, nullable=False)  # Vaccination / Doctor Visit / Checkup / Other
+    date = Column(Date, nullable=False, index=True)
+    time = Column(String, nullable=True)  # "HH:MM", optional
+    notes = Column(Text, nullable=True)
+    done = Column(Boolean, default=False, nullable=False)
+    vaccine_code = Column(String, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    child = relationship("Child", back_populates="health_events")
