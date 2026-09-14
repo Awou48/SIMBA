@@ -1,32 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Search, Plus, Edit3, Trash2, X, Save, ChevronRight, Loader2 } from "lucide-react";
+import { Search, Plus, Edit3, Trash2, X, Save, ChevronRight, Loader2, AlertCircle } from "lucide-react";
+import { api, errorMessage as toMessage, type FoodItem } from "../../../../lib/api";
 
-interface FoodItem {
-  id: number;
-  name: string;
-  category: string;
-  energy: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  safe: boolean;
-}
+const PAGE_SIZE = 100;
 
-const initialFoods: FoodItem[] = [
-  { id: 1, name: "Tempe Goreng",      category: "Protein",     energy: 193, protein: 14, carbs: 9,  fat: 11, safe: true },
-  { id: 2, name: "Bubur Ayam",        category: "Main Course", energy: 145, protein: 8,  carbs: 22, fat: 3,  safe: true },
-  { id: 3, name: "Pisang Kepok",      category: "Fruit",       energy: 116, protein: 1,  carbs: 31, fat: 0,  safe: true },
-  { id: 4, name: "Tahu Kukus",        category: "Protein",     energy: 78,  protein: 8,  carbs: 2,  fat: 5,  safe: true },
-  { id: 5, name: "Bayam Rebus",       category: "Vegetable",   energy: 22,  protein: 2,  carbs: 4,  fat: 0,  safe: true },
-  { id: 6, name: "Susu Formula",      category: "Dairy",       energy: 67,  protein: 1,  carbs: 7,  fat: 4,  safe: true },
-  { id: 7, name: "Nasi Tim Wortel",   category: "Main Course", energy: 138, protein: 3,  carbs: 30, fat: 1,  safe: true },
-  { id: 8, name: "Kerupuk Udang",     category: "Snack",       energy: 369, protein: 6,  carbs: 61, fat: 11, safe: false },
-  { id: 9, name: "Alpukat",           category: "Fruit",       energy: 160, protein: 2,  carbs: 9,  fat: 15, safe: true },
-  { id: 10, name: "Ubi Jalar Rebus",  category: "Carbs",       energy: 86,  protein: 2,  carbs: 20, fat: 0,  safe: true },
-];
-
-const categories = ["All", "Protein", "Main Course", "Fruit", "Vegetable", "Dairy", "Snack", "Carbs"];
+const categories = ["All", "Protein", "Main Course", "Fruit", "Vegetable", "Dairy", "Snack", "Carbs", "Other"];
 const categoryColors: Record<string, { color: string; bg: string }> = {
   Protein:     { color: "#4F46E5", bg: "#EEF2FF" },
   "Main Course": { color: "#F47B20", bg: "#FFF7ED" },
@@ -35,64 +14,78 @@ const categoryColors: Record<string, { color: string; bg: string }> = {
   Dairy:       { color: "#06B6D4", bg: "#ECFEFF" },
   Snack:       { color: "#FFC72C", bg: "#FEFCE8" },
   Carbs:       { color: "#9B8BF4", bg: "#F0EDFF" },
+  Other:       { color: "#717182", bg: "#F5F5F5" },
 };
 
 const emptyFood: Omit<FoodItem, "id"> = { name: "", category: "Protein", energy: 0, protein: 0, carbs: 0, fat: 0, safe: true };
 
 export function HMFoodDatabase() {
   const navigate = useNavigate();
-  const [foods, setFoods]         = useState<FoodItem[]>(initialFoods);
+  const [foods, setFoods]         = useState<FoodItem[]>([]);
   const [search, setSearch]       = useState("");
   const [catFilter, setCatFilter] = useState("All");
   const [showForm, setShowForm]   = useState(false);
   const [editId, setEditId]       = useState<number | null>(null);
   const [form, setForm]           = useState<Omit<FoodItem, "id">>(emptyFood);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving]   = useState(false);
+  const [error, setError]         = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
+  // Server-side search/filter, debounced so we don't hit the API on every keystroke.
   useEffect(() => {
-    const fetchFoods = async () => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
       setIsLoading(true);
-      try {
-        const token = localStorage.getItem("simba_token");
-        const response = await fetch("http://127.0.0.1:8000/api/v1/admin/foods", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            setFoods(data);
-          }
-        }
-      } catch (error) {
-        console.log("Using local food database fallback.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchFoods();
-  }, []);
-
-  const filtered = foods.filter(f =>
-    (catFilter === "All" || f.category === catFilter) &&
-    f.name.toLowerCase().includes(search.toLowerCase())
-  );
+      setError("");
+      api.admin
+        .listFoods({ q: search.trim() || undefined, category: catFilter === "All" ? undefined : catFilter, limit: PAGE_SIZE })
+        .then((data) => { if (!cancelled) setFoods(data); })
+        .catch((err) => { if (!cancelled) setError(toMessage(err, "Failed to load the food database.")); })
+        .finally(() => { if (!cancelled) setIsLoading(false); });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [search, catFilter, reloadKey]);
 
   const openAdd  = () => { setEditId(null); setForm(emptyFood); setShowForm(true); };
   const openEdit = (f: FoodItem) => { setEditId(f.id); setForm({ name: f.name, category: f.category, energy: f.energy, protein: f.protein, carbs: f.carbs, fat: f.fat, safe: f.safe }); setShowForm(true); };
-  
+
   const saveForm = async () => {
-    if (editId !== null) {
-      setFoods(prev => prev.map(f => f.id === editId ? { ...form, id: editId } : f));
-    } else {
-      setFoods(prev => [{ ...form, id: Date.now() }, ...prev]);
+    if (!form.name.trim()) {
+      setError("Food name is required.");
+      return;
     }
-    setShowForm(false);
+    setIsSaving(true);
+    setError("");
+    try {
+      if (editId !== null) {
+        const updated = await api.admin.updateFood(editId, { ...form, name: form.name.trim() });
+        setFoods(prev => prev.map(f => f.id === editId ? updated : f));
+      } else {
+        const created = await api.admin.createFood({ ...form, name: form.name.trim() });
+        setFoods(prev => [created, ...prev]);
+      }
+      setShowForm(false);
+    } catch (err) {
+      setError(toMessage(err, "Failed to save food item."));
+    } finally {
+      setIsSaving(false);
+    }
   };
-  
-  const deleteFood = (id: number) => {
-    setFoods(prev => prev.filter(f => f.id !== id));
+
+  const deleteFood = async (food: FoodItem) => {
+    if (!window.confirm(`Delete "${food.name}" from the database?`)) return;
+    setError("");
+    try {
+      await api.admin.deleteFood(food.id);
+      setFoods(prev => prev.filter(f => f.id !== food.id));
+    } catch (err) {
+      setError(toMessage(err, "Failed to delete food item."));
+      setReloadKey(k => k + 1);
+    }
   };
+
+  const filtered = foods;
 
   return (
     <div className="flex flex-col relative min-h-screen pb-6" style={{ background: "#EEF2FF" }}>
@@ -107,7 +100,7 @@ export function HMFoodDatabase() {
               🍎 Food Database
             </h1>
             <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
-              {foods.length} items · {foods.filter(f => !f.safe).length} flagged
+              {isLoading ? "Loading…" : `${foods.length}${foods.length === PAGE_SIZE ? "+" : ""} items · ${foods.filter(f => !f.safe).length} flagged`}
             </p>
           </div>
           <button onClick={openAdd} className="flex items-center gap-1.5 px-3 py-2 rounded-2xl transition-transform active:scale-95" style={{ background: "rgba(255,255,255,0.2)", fontSize: "12px", fontWeight: 800, color: "white", fontFamily: "'Nunito', sans-serif" }}>
@@ -143,6 +136,15 @@ export function HMFoodDatabase() {
       </div>
 
       <div className="px-4 pt-3 flex flex-col gap-3">
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+            <AlertCircle size={16} className="text-red-500" />
+            <p className="text-xs font-semibold text-red-600 font-['Nunito']">{error}</p>
+          </div>
+        )}
+        {!isLoading && foods.length === PAGE_SIZE && (
+          <p className="text-center text-[10px] font-bold text-[#9BA3B8] font-['Nunito']">Showing the first {PAGE_SIZE} matches — refine your search to narrow down.</p>
+        )}
         {isLoading ? (
           <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin text-[#4F46E5]" size={24} /></div>
         ) : filtered.length === 0 ? (
@@ -175,7 +177,7 @@ export function HMFoodDatabase() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <button onClick={() => openEdit(food)} className="rounded-xl p-2 transition-colors hover:bg-[#E0E7FF]" style={{ background: "#EEF2FF" }}><Edit3 size={14} style={{ color: "#4F46E5" }} /></button>
-                    <button onClick={() => deleteFood(food.id)} className="rounded-xl p-2 transition-colors hover:bg-[#FFE4E4]" style={{ background: "#FFF0F0" }}><Trash2 size={14} style={{ color: "#E53535" }} /></button>
+                    <button onClick={() => deleteFood(food)} className="rounded-xl p-2 transition-colors hover:bg-[#FFE4E4]" style={{ background: "#FFF0F0" }}><Trash2 size={14} style={{ color: "#E53535" }} /></button>
                   </div>
                 </div>
               </div>
@@ -224,8 +226,8 @@ export function HMFoodDatabase() {
                 <span style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>Safe for toddlers {form.safe ? "✅" : "⚠️ (Flagged)"}</span>
               </div>
               
-              <button onClick={saveForm} className="w-full py-4 rounded-full transition-transform active:scale-95 flex items-center justify-center gap-2 mt-2" style={{ background: "linear-gradient(90deg, #4F46E5, #818CF8)", color: "white", fontSize: "14px", fontWeight: 800, fontFamily: "'Nunito', sans-serif", boxShadow: "0 4px 16px rgba(79,70,229,0.3)" }}>
-                <Save size={16} /> Save Food Item
+              <button onClick={saveForm} disabled={isSaving} className="w-full py-4 rounded-full transition-transform active:scale-95 flex items-center justify-center gap-2 mt-2 disabled:opacity-70" style={{ background: "linear-gradient(90deg, #4F46E5, #818CF8)", color: "white", fontSize: "14px", fontWeight: 800, fontFamily: "'Nunito', sans-serif", boxShadow: "0 4px 16px rgba(79,70,229,0.3)" }}>
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {isSaving ? "Saving…" : "Save Food Item"}
               </button>
             </div>
           </div>

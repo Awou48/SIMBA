@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router";
 import { ChevronLeft, Download, FileText, CheckCircle2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from "recharts";
+import { useChildren } from "../../ChildContext";
 
 // We keep this as static demo data for the presentation, 
 // since a new account won't have 6 months of history yet!
@@ -43,37 +44,11 @@ export function ReportsScreen() {
   const config = metricConfig[activeMetric];
 
   // Dynamic States
-  const [childName, setChildName] = useState("Loading...");
+  const { activeChild, isLoading: childLoading } = useChildren();
+  const childName = childLoading ? "Loading..." : activeChild?.name ?? "Your Child";
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
 
-  // Fetch the active child's name so the report feels personalized
-  useEffect(() => {
-    const fetchChild = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return;
-
-        const response = await fetch("http://127.0.0.1:8000/api/v1/user/children/", {
-          method: "GET",
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.length > 0) {
-            setChildName(data[0].name);
-          } else {
-            setChildName("Your Child");
-          }
-        }
-      } catch (error) {
-        setChildName("Your Child");
-      }
-    };
-
-    fetchChild();
-  }, []);
 
   // Simulate a PDF generation delay for presentation polish
   const handleDownload = () => {

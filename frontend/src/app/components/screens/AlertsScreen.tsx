@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Bell, AlertTriangle, TrendingDown, Utensils, Activity, ChevronRight, Check, ChevronLeft } from "lucide-react";
+import { useChildren } from "../../ChildContext";
 
 type AlertSeverity = "high" | "medium" | "low";
 
@@ -90,27 +91,9 @@ export function AlertsScreen() {
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>(initialAlerts);
   const [activeFilter, setFilter] = useState("All");
-  const [childName, setChildName] = useState("Your child");
+  const { activeChild } = useChildren();
+  const childName = activeChild?.name ?? "Your child";
 
-  // Fetch the active child's name
-  useEffect(() => {
-    const fetchChild = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return;
-        const response = await fetch("http://127.0.0.1:8000/api/v1/user/children/", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.length > 0) setChildName(data[0].name);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchChild();
-  }, []);
 
   const unread = alerts.filter(a => !a.read).length;
 
