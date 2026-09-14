@@ -10,9 +10,13 @@ from app.db import models
 from app.db.database import get_db
 from app.schemas import user_schemas
 from app.services.zscore_calc import (
+    analyze_bmi,
     analyze_stunting,
+    analyze_wasting,
     analyze_weight,
+    bmi,
     classify_stunting,
+    classify_wasting,
     classify_weight,
 )
 
@@ -28,8 +32,13 @@ def _to_response(log: models.MeasurementLog) -> dict:
         "height_cm": log.height_cm,
         "wfa_zscore": log.wfa_zscore,
         "lhfa_zscore": log.lhfa_zscore,
+        "wfh_zscore": log.wfh_zscore,
+        "bfa_zscore": log.bfa_zscore,
+        "bmi": bmi(log.weight_kg, log.height_cm) if log.weight_kg and log.height_cm else None,
         "stunting_status": classify_stunting(log.lhfa_zscore),
         "weight_status": classify_weight(log.wfa_zscore),
+        "wasting_status": classify_wasting(log.wfh_zscore) if log.wfh_zscore is not None else None,
+        "bmi_status": classify_wasting(log.bfa_zscore) if log.bfa_zscore is not None else None,
     }
 
 
@@ -57,6 +66,10 @@ def log_measurement(
     if "error" in wfa:
         raise HTTPException(status_code=400, detail=f"Weight error: {wfa['error']}")
 
+    # Wasting indices are optional: a height outside the WHO wfl/wfh range just leaves them empty.
+    wasting = analyze_wasting(child.gender, age_in_days, measurement.weight_kg, measurement.height_cm)
+    bfa = analyze_bmi(child.gender, age_in_days, measurement.weight_kg, measurement.height_cm)
+
     new_log = models.MeasurementLog(
         child_id=child.id,
         date_logged=datetime.combine(measurement.date_logged, time.min),
@@ -65,6 +78,8 @@ def log_measurement(
         height_cm=measurement.height_cm,
         lhfa_zscore=lhfa["z_score"],
         wfa_zscore=wfa["z_score"],
+        wfh_zscore=wasting.get("z_score"),
+        bfa_zscore=bfa.get("z_score"),
     )
     db.add(new_log)
     db.commit()
@@ -88,7 +103,7 @@ def list_measurements(
 
 @router.get("/growth-standards", response_model=List[user_schemas.GrowthStandardPoint])
 def get_growth_standards(
-    metric: Literal["wfa", "lhfa"] = Query(..., description="wfa = weight-for-age, lhfa = length/height-for-age"),
+    metric: Literal["wfa", "lhfa", "bfa"] = Query(..., description="wfa = weight-for-age, lhfa = length/height-for-age, bfa = BMI-for-age"),
     gender: Literal["male", "female"] = Query(...),
     db: Session = Depends(get_db),
     _: models.ParentUser = Depends(get_current_user),

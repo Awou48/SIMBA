@@ -45,8 +45,10 @@ class MeasurementLog(Base):
     age_in_days = Column(Integer)
     weight_kg = Column(Float)
     height_cm = Column(Float)
-    wfa_zscore = Column(Float, nullable=True) 
-    lhfa_zscore = Column(Float, nullable=True) 
+    wfa_zscore = Column(Float, nullable=True)
+    lhfa_zscore = Column(Float, nullable=True)
+    wfh_zscore = Column(Float, nullable=True)  # weight-for-length/height (wasting)
+    bfa_zscore = Column(Float, nullable=True)  # BMI-for-age
     
     child = relationship("Child", back_populates="measurements")
 
