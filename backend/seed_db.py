@@ -17,7 +17,8 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.db import models
-from app.db.database import Base, SessionLocal, engine
+from app.db.database import SessionLocal, engine
+from app.db.migrate import sync_schema
 from app.services.zscore_calc import WHO_DIR, lms_value_at_z
 
 LOCAL_REF_DIR = os.path.join(settings.DATA_DIR, "local_reference")
@@ -69,7 +70,9 @@ def categorize_food(name: str) -> str:
 
 
 def create_tables() -> None:
-    Base.metadata.create_all(bind=engine)
+    added = sync_schema(engine)
+    for col in added:
+        print(f"  added column {col}")
 
 
 def _is_empty(db: Session, model) -> bool:
@@ -161,21 +164,26 @@ def seed_akg(db: Session, reset: bool = False) -> int:
 
 
 def seed_growth_standards(db: Session, reset: bool = False, max_months: int = 60) -> int:
-    """Monthly WHO percentile curves (weight-for-age, length/height-for-age), 0..max_months."""
+    """Monthly WHO percentile curves (weight-, length/height- and BMI-for-age), 0..max_months.
+
+    Idempotent per metric, so adding a new metric later only seeds the missing curves."""
     if reset:
         db.query(models.GrowthStandard).delete()
         db.commit()
-    elif not _is_empty(db, models.GrowthStandard):
-        return 0
 
     sources = {
         ("wfa", "male"): "wfa_boys.csv",
         ("wfa", "female"): "wfa_girls.csv",
         ("lhfa", "male"): "lhfa_boys.csv",
         ("lhfa", "female"): "lhfa_girls.csv",
+        ("bfa", "male"): "bfa_boys.csv",
+        ("bfa", "female"): "bfa_girls.csv",
     }
+    existing = {m for (m,) in db.query(models.GrowthStandard.metric).distinct()}
     rows = []
     for (metric, gender), filename in sources.items():
+        if metric in existing:
+            continue
         table = pd.read_csv(os.path.join(WHO_DIR, filename)).set_index("Day")
         for month in range(max_months + 1):
             day = min(round(month * DAYS_PER_MONTH), int(table.index.max()))

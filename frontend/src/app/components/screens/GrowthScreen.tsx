@@ -5,11 +5,13 @@ import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, 
 import { api, errorMessage as toMessage, type GrowthStandardPoint, type Measurement } from "../../../lib/api";
 import { useChildren } from "../../ChildContext";
 
-type Metric = "weight" | "height";
+type Metric = "weight" | "height" | "bmi";
+type Standard = "wfa" | "lhfa" | "bfa";
 
-const METRIC_CONFIG: Record<Metric, { label: string; unit: string; color: string; standard: "wfa" | "lhfa"; field: keyof Measurement; z: keyof Measurement; status: keyof Measurement }> = {
-  weight: { label: "Weight", unit: "kg", color: "#F47B20", standard: "wfa", field: "weight_kg", z: "wfa_zscore", status: "weight_status" },
-  height: { label: "Height", unit: "cm", color: "#5CC8C2", standard: "lhfa", field: "height_cm", z: "lhfa_zscore", status: "stunting_status" },
+const METRIC_CONFIG: Record<Metric, { label: string; tab: string; unit: string; color: string; standard: Standard; field: keyof Measurement; z: keyof Measurement; status: keyof Measurement }> = {
+  weight: { label: "Weight", tab: "⚖️ Weight", unit: "kg", color: "#F47B20", standard: "wfa", field: "weight_kg", z: "wfa_zscore", status: "weight_status" },
+  height: { label: "Height", tab: "📏 Height", unit: "cm", color: "#5CC8C2", standard: "lhfa", field: "height_cm", z: "lhfa_zscore", status: "stunting_status" },
+  bmi: { label: "BMI", tab: "🧮 BMI", unit: "kg/m²", color: "#9B8BF4", standard: "bfa", field: "bmi", z: "bfa_zscore", status: "bmi_status" },
 };
 
 const DAYS_PER_MONTH = 30.4375;
@@ -20,7 +22,9 @@ function buildChartData(standards: GrowthStandardPoint[], history: Measurement[]
     .filter((p) => p.age_months <= maxMonths)
     .map((p) => ({ age: p.age_months, p3: p.p3, p50: p.p50, p97: p.p97, value: null, band: p.p97 - p.p3 }));
   for (const m of history) {
-    rows.push({ age: +(m.age_in_days / DAYS_PER_MONTH).toFixed(2), value: m[field] as number, p3: null, p50: null, p97: null, band: null });
+    const value = m[field];
+    if (typeof value !== "number") continue;
+    rows.push({ age: +(m.age_in_days / DAYS_PER_MONTH).toFixed(2), value, p3: null, p50: null, p97: null, band: null });
   }
   return rows.sort((a, b) => (a.age as number) - (b.age as number));
 }
@@ -53,7 +57,7 @@ export function GrowthScreen() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
 
   const [history, setHistory] = useState<Measurement[]>([]);
-  const [standards, setStandards] = useState<Record<"wfa" | "lhfa", GrowthStandardPoint[]>>({ wfa: [], lhfa: [] });
+  const [standards, setStandards] = useState<Record<Standard, GrowthStandardPoint[]>>({ wfa: [], lhfa: [], bfa: [] });
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -69,11 +73,12 @@ export function GrowthScreen() {
       api.parent.listMeasurements(child.id),
       api.parent.growthStandards("wfa", child.gender),
       api.parent.growthStandards("lhfa", child.gender),
+      api.parent.growthStandards("bfa", child.gender),
     ])
-      .then(([rows, wfa, lhfa]) => {
+      .then(([rows, wfa, lhfa, bfa]) => {
         if (cancelled) return;
         setHistory(rows);
-        setStandards({ wfa, lhfa });
+        setStandards({ wfa, lhfa, bfa });
       })
       .catch((err) => { if (!cancelled) setErrorMessage(toMessage(err)); })
       .finally(() => { if (!cancelled) setIsLoadingData(false); });
@@ -120,13 +125,24 @@ export function GrowthScreen() {
     { label: "Latest Weight", value: latest ? `${latest.weight_kg} kg` : "--", icon: "⚖️", color: "#F47B20", bg: "#FFF0E0" },
     { label: "Latest Height", value: latest ? `${latest.height_cm} cm` : "--", icon: "📏", color: "#5CC8C2", bg: "#E8F9F8" },
     {
-      label: "Height-for-age",
-      value: latest ? `z ${latest.lhfa_zscore > 0 ? "+" : ""}${latest.lhfa_zscore}` : "--",
+      label: "Wasting (W/H)",
+      value: latest?.wfh_zscore != null ? `z ${latest.wfh_zscore > 0 ? "+" : ""}${latest.wfh_zscore}` : "--",
       icon: "📊",
-      color: latest ? statusTone(latest.lhfa_zscore).color : "#9BA3B8",
+      color: latest?.wfh_zscore != null ? statusTone(latest.wfh_zscore).color : "#9BA3B8",
       bg: "#F0EDFF",
     },
   ];
+
+  // Overall WHO verdict for the latest entry: the worst of the three indices.
+  const latestFlags = latest
+    ? [
+        { label: "Height-for-age", z: latest.lhfa_zscore, status: latest.stunting_status },
+        { label: "Weight-for-age", z: latest.wfa_zscore, status: latest.weight_status },
+        latest.wfh_zscore != null && latest.wasting_status
+          ? { label: "Weight-for-height", z: latest.wfh_zscore, status: latest.wasting_status }
+          : null,
+      ].filter((f): f is { label: string; z: number; status: string } => f !== null)
+    : [];
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "#FFF8EF" }}>
@@ -228,10 +244,34 @@ export function GrowthScreen() {
                 <p style={{ fontSize: "11px", fontWeight: 700, color: statusTone(lastSaved.wfa_zscore).color }}>
                   Weight-for-age z {lastSaved.wfa_zscore} · {lastSaved.weight_status}
                 </p>
+                {lastSaved.wfh_zscore != null && (
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: statusTone(lastSaved.wfh_zscore).color }}>
+                    Weight-for-height z {lastSaved.wfh_zscore} · {lastSaved.wasting_status}
+                  </p>
+                )}
+                {lastSaved.bfa_zscore != null && (
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: statusTone(lastSaved.bfa_zscore).color }}>
+                    BMI {lastSaved.bmi} (z {lastSaved.bfa_zscore}) · {lastSaved.bmi_status}
+                  </p>
+                )}
               </div>
             </div>
           )}
         </div>
+
+        {/* Latest WHO verdict */}
+        {latestFlags.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {latestFlags.map(({ label, z, status }) => {
+              const tone = statusTone(z);
+              return (
+                <span key={label} className="px-2.5 py-1 rounded-full" style={{ background: tone.bg, color: tone.color, fontSize: "10px", fontWeight: 800, fontFamily: "'Nunito', sans-serif" }}>
+                  {label}: {status.split(" (")[0]}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-2">
@@ -256,11 +296,11 @@ export function GrowthScreen() {
               </p>
             </div>
             <div className="flex gap-1 rounded-full p-0.5" style={{ background: "#F5F5F5" }}>
-              {(["weight", "height"] as const).map((type) => (
+              {(Object.keys(METRIC_CONFIG) as Metric[]).map((type) => (
                 <button
                   key={type}
                   onClick={() => setActiveChart(type)}
-                  className="rounded-full px-3 py-1 transition-all"
+                  className="rounded-full px-2.5 py-1 transition-all"
                   style={{
                     background: activeChart === type ? METRIC_CONFIG[type].color : "transparent",
                     fontSize: "11px", fontWeight: 800,
@@ -268,7 +308,7 @@ export function GrowthScreen() {
                     fontFamily: "'Nunito', sans-serif",
                   }}
                 >
-                  {type === "weight" ? "⚖️ Weight" : "📏 Height"}
+                  {METRIC_CONFIG[type].tab}
                 </button>
               ))}
             </div>
@@ -331,12 +371,19 @@ export function GrowthScreen() {
                         ⚖️ {m.weight_kg} kg · 📏 {m.height_cm} cm
                       </p>
                       <p style={{ fontSize: "10px", color: "#9BA3B8", fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
-                        WFA z {m.wfa_zscore} · HFA z {m.lhfa_zscore}
+                        WFA z {m.wfa_zscore} · HFA z {m.lhfa_zscore}{m.wfh_zscore != null ? ` · WFH z ${m.wfh_zscore}` : ""}
                       </p>
                     </div>
-                    <span className="px-2 py-1 rounded-full" style={{ background: tone.bg, color: tone.color, fontSize: "9px", fontWeight: 800, fontFamily: "'Nunito', sans-serif", maxWidth: 96, textAlign: "center" }}>
-                      {m.stunting_status.split(" (")[0]}
-                    </span>
+                    <div className="flex flex-col gap-1 items-end">
+                      <span className="px-2 py-1 rounded-full" style={{ background: tone.bg, color: tone.color, fontSize: "9px", fontWeight: 800, fontFamily: "'Nunito', sans-serif", maxWidth: 96, textAlign: "center" }}>
+                        {m.stunting_status.split(" (")[0]}
+                      </span>
+                      {m.wfh_zscore != null && m.wasting_status && (
+                        <span className="px-2 py-1 rounded-full" style={{ background: statusTone(m.wfh_zscore).bg, color: statusTone(m.wfh_zscore).color, fontSize: "9px", fontWeight: 800, fontFamily: "'Nunito', sans-serif", maxWidth: 96, textAlign: "center" }}>
+                          {m.wasting_status.split(" (")[0]}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
