@@ -336,6 +336,38 @@ export interface GrowthReport {
   alerts: AlertItem[];
 }
 
+export interface Article {
+  id: number;
+  title: string;
+  category: string;
+  author: string;
+  read_time_min: number;
+  summary: string;
+  body: string | null;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Parent-facing article (published only; no `published` flag exposed). */
+export type ArticleView = Omit<Article, "published" | "created_at">;
+
+export interface AdminInfo {
+  id: number;
+  email: string;
+  name: string;
+  is_superadmin: boolean;
+}
+
+export interface SystemSummary {
+  version: string;
+  database: string;
+  counts: Record<string, number>;
+  reference: Record<string, number>;
+  last_measurement_at: string | null;
+  last_meal_on: string | null;
+}
+
 export interface FoodItem {
   id: number;
   name: string;
@@ -408,6 +440,9 @@ export const api = {
       apiFetch<Child>("/api/v1/user/children/", { method: "POST", body: data }),
     updateChild: (childId: number, data: Partial<Pick<Child, "name" | "gender" | "birth_date" | "region">>) =>
       apiFetch<Child>(`/api/v1/user/children/${childId}`, { method: "PUT", body: data }),
+
+    listArticles: (category?: string) => apiFetch<ArticleView[]>("/api/v1/user/articles", { query: { category } }),
+    article: (id: number) => apiFetch<ArticleView>(`/api/v1/user/articles/${id}`),
 
     alerts: (childId: number) => apiFetch<AlertItem[]>(`/api/v1/user/child/${childId}/alerts`),
     report: (childId: number) => apiFetch<GrowthReport>(`/api/v1/user/child/${childId}/report`),
@@ -488,6 +523,21 @@ export const api = {
     updateMilestone: (id: number, data: Omit<Milestone, "id">) =>
       apiFetch<Milestone>(`/api/v1/admin/milestones/${id}`, { method: "PUT", body: data }),
     deleteMilestone: (id: number) => apiFetch<null>(`/api/v1/admin/milestones/${id}`, { method: "DELETE" }),
+
+    growthStandards: (metric: "wfa" | "lhfa" | "bfa", gender: "male" | "female") =>
+      apiFetch<GrowthStandardPoint[]>("/api/v1/admin/datasets/growth-standards", { query: { metric, gender } }),
+
+    listArticles: () => apiFetch<Article[]>("/api/v1/admin/articles"),
+    createArticle: (data: Omit<Article, "id" | "created_at" | "updated_at">) => apiFetch<Article>("/api/v1/admin/articles", { method: "POST", body: data }),
+    updateArticle: (id: number, data: Omit<Article, "id" | "created_at" | "updated_at">) =>
+      apiFetch<Article>(`/api/v1/admin/articles/${id}`, { method: "PUT", body: data }),
+    deleteArticle: (id: number) => apiFetch<null>(`/api/v1/admin/articles/${id}`, { method: "DELETE" }),
+
+    systemSummary: () => apiFetch<SystemSummary>("/api/v1/admin/system/summary"),
+    listAdmins: () => apiFetch<AdminInfo[]>("/api/v1/admin/system/admins"),
+    seedReferenceData: () => apiFetch<Record<string, number>>("/api/v1/admin/system/seed", { method: "POST" }),
+    registerAdmin: (data: { email: string; password: string; name: string; is_superadmin: boolean }) =>
+      apiFetch<AdminInfo>("/api/v1/admin/auth/register", { method: "POST", body: data }),
 
     getAkg: () => apiFetch<AKGRow[]>("/api/v1/admin/datasets/akg"),
     updateAkg: (rows: AKGRow[]) =>
