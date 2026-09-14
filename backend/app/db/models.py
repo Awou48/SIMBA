@@ -58,7 +58,7 @@ class FoodItem(Base):
 class AKGTarget(Base):
     __tablename__ = "akg_targets"
     id = Column(Integer, primary_key=True, index=True)
-    ageGroup = Column(String)  
+    ageGroup = Column(String)  # Matching frontend camelCase for easy JSON parsing
     gender = Column(String)
     energy = Column(String)
     protein = Column(String)

@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const mealCategories = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
+// We will keep the static meals for now to simulate a user adding food throughout the day
 const meals: Record<string, { name: string; portion: string; cal: number; protein: number; carbs: number; fat: number }[]> = {
   Breakfast: [
     { name: "Oatmeal with Banana", portion: "1 bowl (180g)", cal: 220, protein: 6, carbs: 42, fat: 4 },
@@ -28,10 +29,12 @@ export function FoodDiaryScreen() {
   const [activeCategory, setActiveCategory] = useState("Breakfast");
   const [dateOffset, setDateOffset] = useState(0);
 
+  // API States
   const [akgData, setAkgData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Calculate current totals from the meal list above
   const totalCal = Object.values(meals).flat().reduce((sum, f) => sum + f.cal, 0);
   const totalProtein = Object.values(meals).flat().reduce((sum, f) => sum + f.protein, 0);
   const totalCarbs = Object.values(meals).flat().reduce((sum, f) => sum + f.carbs, 0);
@@ -61,8 +64,9 @@ export function FoodDiaryScreen() {
           throw new Error("Missing authentication or child profile.");
         }
 
+        // Send the current totals to the backend for analysis
         const payload = {
-          age_in_months: 27, 
+          age_in_months: 27, // Using 27 months (2 yrs 3 mos) for Liam
           total_protein: totalProtein,
           total_energy: totalCal
         };
@@ -79,7 +83,7 @@ export function FoodDiaryScreen() {
         if (!response.ok) throw new Error("Failed to fetch AKG data.");
 
         const data = await response.json();
-        setAkgData(data.data || data); 
+        setAkgData(data.data || data); // Store the returned AKG targets
 
       } catch (err: any) {
         setError(err.message);

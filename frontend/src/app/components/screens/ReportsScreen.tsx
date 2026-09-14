@@ -2,6 +2,9 @@ import { useNavigate } from "react-router";
 import { ChevronLeft, Download, FileText, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from "recharts";
+
+// We keep this as static demo data for the presentation, 
+// since a new account won't have 6 months of history yet!
 const chartData = [
   { month: "Nov", weight: 10.8, height: 82, bmi: 16.0, p3w: 9.2, p97w: 12.9 },
   { month: "Dec", weight: 11.0, height: 83, bmi: 16.0, p3w: 9.3, p97w: 13.1 },
@@ -38,10 +41,13 @@ export function ReportsScreen() {
   const navigate = useNavigate();
   const [activeMetric, setActiveMetric] = useState<"weight" | "height" | "bmi">("weight");
   const config = metricConfig[activeMetric];
+
+  // Dynamic States
   const [childName, setChildName] = useState("Loading...");
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
 
+  // Fetch the active child's name so the report feels personalized
   useEffect(() => {
     const fetchChild = async () => {
       try {
@@ -69,11 +75,14 @@ export function ReportsScreen() {
     fetchChild();
   }, []);
 
+  // Simulate a PDF generation delay for presentation polish
   const handleDownload = () => {
     setIsDownloading(true);
     setTimeout(() => {
       setIsDownloading(false);
       setDownloadComplete(true);
+      
+      // Reset the button after 3 seconds
       setTimeout(() => setDownloadComplete(false), 3000);
     }, 1500);
   };

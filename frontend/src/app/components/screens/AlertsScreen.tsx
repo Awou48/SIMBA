@@ -92,6 +92,7 @@ export function AlertsScreen() {
   const [activeFilter, setFilter] = useState("All");
   const [childName, setChildName] = useState("Your child");
 
+  // Fetch the active child's name
   useEffect(() => {
     const fetchChild = async () => {
       try {
@@ -193,6 +194,7 @@ export function AlertsScreen() {
         ) : (
           filtered.map(alert => {
             const sev = severityConfig[alert.severity];
+            // Dynamically replace "Liam" or "Liam's" with the active child's name
             const personalizedTitle = alert.title.replace(/Liam/g, childName);
             const personalizedDescription = alert.description.replace(/Liam's/g, `${childName}'s`).replace(/Liam/g, childName);
 

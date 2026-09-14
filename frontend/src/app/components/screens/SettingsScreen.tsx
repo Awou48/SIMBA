@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Bell, Globe, Shield, CreditCard, HelpCircle, LogOut, ChevronRight, Edit3, Plus } from "lucide-react";
+// Make sure to use lowercase for the imports if that's how your files are named!
 import logo1 from "../../../imports/logo_1.png"; 
 import logo2 from "../../../imports/logo_2.png";
 
@@ -26,6 +27,8 @@ export function SettingsScreen() {
   const navigate = useNavigate();
   const [children, setChildren] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Calculate age helper
   const calculateAge = (dobString: string) => {
     const dob = new Date(dobString);
     const today = new Date();
@@ -60,6 +63,8 @@ export function SettingsScreen() {
 
     fetchChildren();
   }, [navigate]);
+
+  // Secure Logout Function
   const handleLogout = () => {
     localStorage.removeItem("simba_token");
     localStorage.removeItem("simba_role");

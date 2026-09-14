@@ -30,21 +30,26 @@ export function HMGrowthStandards() {
   const [gender, setGender]   = useState<GenderTab>("Boys");
   const [metric, setMetric]   = useState<MetricTab>("Weight-for-Age");
   
+  // Convert tables to state so we can add rows
   const [boysData, setBoysData] = useState<Standard[]>(initialBoysWeight);
   const [girlsData, setGirlsData] = useState<Standard[]>(initialGirlsWeight);
 
   const data = gender === "Boys" ? boysData : girlsData;
   const setData = gender === "Boys" ? setBoysData : setGirlsData;
 
+  // Edit states
   const [editRow, setEditRow] = useState<number | null>(null);
   const [editData, setEditData] = useState<Standard | null>(null);
   
+  // Add Row Modal states
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRowForm, setNewRowForm] = useState<Standard>(emptyRow);
 
+  // Save states
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Inline editing actions
   const startEdit = (i: number) => { setEditRow(i); setEditData({ ...data[i] }); };
   const cancelEdit = () => { setEditRow(null); setEditData(null); };
   
@@ -59,6 +64,7 @@ export function HMGrowthStandards() {
     setSaved(false); 
   };
 
+  // Modal actions
   const handleAddNewRow = () => {
     setData([...data, newRowForm]);
     setShowAddForm(false);

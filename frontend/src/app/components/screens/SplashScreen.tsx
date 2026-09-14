@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import logo1 from "../../../imports/logo_1.png"; 
+import logo1 from "../../../imports/logo_1.png"; // Fixed import path
 
 export function SplashScreen() {
   const navigate = useNavigate();
@@ -17,6 +17,7 @@ export function SplashScreen() {
           navigate("/home");
         }
       } else {
+        // New user, show onboarding
         navigate("/onboarding");
       }
     }, 2800);
