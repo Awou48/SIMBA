@@ -1,83 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Bell, AlertTriangle, TrendingDown, Utensils, Activity, ChevronRight, Check, ChevronLeft } from "lucide-react";
+import { Bell, AlertTriangle, TrendingDown, Utensils, Activity, ChevronRight, Check, ChevronLeft, Syringe, Loader2, AlertCircle } from "lucide-react";
+import { api, errorMessage as toMessage, type AlertCategory, type AlertItem, type AlertSeverity } from "../../../lib/api";
 import { useChildren } from "../../ChildContext";
 
-type AlertSeverity = "high" | "medium" | "low";
+const READ_KEY = "simba_alerts_read";
 
-interface Alert {
-  id: number;
-  title: string;
-  description: string;
-  time: string;
-  severity: AlertSeverity;
-  category: string;
-  icon: React.ReactNode;
-  read: boolean;
+/** Read-state lives per browser (alerts are recomputed on every visit, so there is nothing to persist server-side). */
+function loadRead(childId: number): Set<string> {
+  try {
+    const all = JSON.parse(localStorage.getItem(READ_KEY) ?? "{}");
+    return new Set<string>(all[childId] ?? []);
+  } catch {
+    return new Set();
+  }
+}
+function saveRead(childId: number, ids: Set<string>) {
+  try {
+    const all = JSON.parse(localStorage.getItem(READ_KEY) ?? "{}");
+    all[childId] = [...ids];
+    localStorage.setItem(READ_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore */
+  }
 }
 
-const initialAlerts: Alert[] = [
-  {
-    id: 1,
-    title: "Weight Gain Concern",
-    description: "Liam's weight gain rate has slowed below the 15th percentile over the past 2 months. Consider consulting a pediatrician.",
-    time: "Today, 08:30 AM",
-    severity: "high",
-    category: "Growth",
-    icon: <TrendingDown size={18} />,
-    read: false,
-  },
-  {
-    id: 2,
-    title: "Low Protein Intake",
-    description: "Average daily protein intake this week is 8g — below the recommended 20g for Liam's age group.",
-    time: "Yesterday, 06:00 PM",
-    severity: "high",
-    category: "Nutrition",
-    icon: <Utensils size={18} />,
-    read: false,
-  },
-  {
-    id: 3,
-    title: "Milestone Check Due",
-    description: "Liam is 27 months old. It's time to verify the 24-month development milestones.",
-    time: "May 8, 2026",
-    severity: "medium",
-    category: "Development",
-    icon: <Activity size={18} />,
-    read: false,
-  },
-  {
-    id: 4,
-    title: "Calorie Target Not Met",
-    description: "Liam's calorie intake has been below 900 kcal/day for 3 consecutive days.",
-    time: "May 7, 2026",
-    severity: "medium",
-    category: "Nutrition",
-    icon: <Utensils size={18} />,
-    read: true,
-  },
-  {
-    id: 5,
-    title: "Height Growth On Track",
-    description: "Liam's height growth is tracking nicely along the 50th percentile. Keep up the great work!",
-    time: "May 5, 2026",
-    severity: "low",
-    category: "Growth",
-    icon: <Activity size={18} />,
-    read: true,
-  },
-  {
-    id: 6,
-    title: "Immunization Reminder",
-    description: "MMR Vaccine (2nd dose) is scheduled for May 10, 2026 at 10:00 AM. Don't forget to bring the immunization card.",
-    time: "May 3, 2026",
-    severity: "low",
-    category: "Immunization",
-    icon: <Bell size={18} />,
-    read: true,
-  },
-];
+const categoryIcons: Record<AlertCategory, React.ReactNode> = {
+  Growth: <TrendingDown size={18} />,
+  Nutrition: <Utensils size={18} />,
+  Development: <Activity size={18} />,
+  Immunization: <Syringe size={18} />,
+};
 
 const severityConfig: Record<AlertSeverity, { color: string; bg: string; label: string }> = {
   high:   { color: "#E53535", bg: "#FFF0F0", label: "High" },
@@ -89,20 +42,53 @@ const filterTabs = ["All", "Growth", "Nutrition", "Development", "Immunization"]
 
 export function AlertsScreen() {
   const navigate = useNavigate();
-  const [alerts, setAlerts] = useState<Alert[]>(initialAlerts);
-  const [activeFilter, setFilter] = useState("All");
-  const { activeChild } = useChildren();
+  const { activeChild, isLoading: childLoading } = useChildren();
   const childName = activeChild?.name ?? "Your child";
 
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [activeFilter, setFilter] = useState("All");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const unread = alerts.filter(a => !a.read).length;
+  useEffect(() => {
+    if (childLoading) return;
+    if (!activeChild) { setIsLoading(false); return; }
+    let cancelled = false;
+    setIsLoading(true);
+    setError("");
+    setReadIds(loadRead(activeChild.id));
+    api.parent
+      .alerts(activeChild.id)
+      .then((data) => { if (!cancelled) setAlerts(data); })
+      .catch((err) => { if (!cancelled) setError(toMessage(err, "Failed to load alerts.")); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeChild?.id, childLoading]);
 
-  const filtered = alerts.filter(a =>
-    activeFilter === "All" ? true : a.category === activeFilter
-  );
+  const isRead = (a: AlertItem) => readIds.has(a.id);
+  const unread = alerts.filter((a) => !isRead(a)).length;
+  const highCount = alerts.filter((a) => a.severity === "high").length;
+  const filtered = alerts.filter((a) => (activeFilter === "All" ? true : a.category === activeFilter));
 
-  const markAllRead = () => setAlerts(prev => prev.map(a => ({ ...a, read: true })));
-  const markRead = (id: number) => setAlerts(prev => prev.map(a => a.id === id ? { ...a, read: true } : a));
+  const persist = (ids: Set<string>) => {
+    setReadIds(new Set(ids));
+    if (activeChild) saveRead(activeChild.id, ids);
+  };
+  const markAllRead = () => persist(new Set(alerts.map((a) => a.id)));
+  const openAlert = (a: AlertItem) => {
+    persist(new Set([...readIds, a.id]));
+    navigate(a.action_path);
+  };
+
+  const fmtDate = (iso: string) => {
+    const d = new Date(iso + "T00:00:00");
+    const today = new Date();
+    const diff = Math.round((new Date(today.toDateString()).getTime() - d.getTime()) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined });
+  };
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
@@ -167,7 +153,19 @@ export function AlertsScreen() {
 
       {/* Alerts list */}
       <div className="px-4 flex flex-col gap-3 pt-2 pb-6">
-        {filtered.length === 0 ? (
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+            <AlertCircle size={16} className="text-red-500" />
+            <p className="text-xs font-semibold text-red-600 font-['Nunito']">{error}</p>
+          </div>
+        )}
+        {isLoading ? (
+          <div className="flex justify-center py-10"><Loader2 className="animate-spin" size={22} style={{ color: "#F47B20" }} /></div>
+        ) : !activeChild ? (
+          <button onClick={() => navigate("/add-child")} className="w-full py-3 rounded-2xl font-bold text-white font-['Nunito']" style={{ background: "linear-gradient(90deg, #F47B20, #FFC72C)" }}>
+            ➕ Add a child profile to get early warnings
+          </button>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="rounded-full flex items-center justify-center" style={{ width: 64, height: 64, background: "#F5F5F5" }}>
               <Bell size={28} style={{ color: "#C0C4D0" }} />
@@ -177,20 +175,17 @@ export function AlertsScreen() {
         ) : (
           filtered.map(alert => {
             const sev = severityConfig[alert.severity];
-            // Dynamically replace "Liam" or "Liam's" with the active child's name
-            const personalizedTitle = alert.title.replace(/Liam/g, childName);
-            const personalizedDescription = alert.description.replace(/Liam's/g, `${childName}'s`).replace(/Liam/g, childName);
-
+            const read = isRead(alert);
             return (
               <button
                 key={alert.id}
-                onClick={() => markRead(alert.id)}
+                onClick={() => openAlert(alert)}
                 className="w-full rounded-2xl p-4 text-left transition-transform active:scale-95"
                 style={{
-                  background: alert.read ? "white" : "#FFFBF5",
+                  background: read ? "white" : "#FFFBF5",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
                   borderLeft: `4px solid ${sev.color}`,
-                  opacity: alert.read ? 0.8 : 1,
+                  opacity: read ? 0.8 : 1,
                 }}
               >
                 <div className="flex items-start gap-3">
@@ -198,15 +193,15 @@ export function AlertsScreen() {
                     className="rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ width: 38, height: 38, background: sev.bg }}
                   >
-                    <span style={{ color: sev.color }}>{alert.icon}</span>
+                    <span style={{ color: sev.color }}>{categoryIcons[alert.category]}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <p style={{ fontSize: "13px", fontWeight: 800, color: "#2D3047", fontFamily: "'Nunito', sans-serif", flex: 1 }}>
-                        {!alert.read && (
+                        {!read && (
                           <span className="inline-block rounded-full mr-1.5" style={{ width: 7, height: 7, background: sev.color, verticalAlign: "middle" }} />
                         )}
-                        {personalizedTitle}
+                        {alert.title}
                       </p>
                       <span
                         className="px-2 py-0.5 rounded-full flex-shrink-0"
@@ -216,10 +211,10 @@ export function AlertsScreen() {
                       </span>
                     </div>
                     <p style={{ fontSize: "11px", color: "#717182", fontFamily: "'Nunito', sans-serif", fontWeight: 600, lineHeight: 1.5 }}>
-                      {personalizedDescription}
+                      {alert.description}
                     </p>
                     <p style={{ fontSize: "10px", color: "#C0C4D0", fontFamily: "'Nunito', sans-serif", fontWeight: 700, marginTop: 4 }}>
-                      {alert.time}
+                      {fmtDate(alert.date)} · {alert.category}
                     </p>
                   </div>
                   <ChevronRight size={16} style={{ color: "#C0C4D0", flexShrink: 0, marginTop: 2 }} />
@@ -231,6 +226,7 @@ export function AlertsScreen() {
       </div>
 
       {/* Consult recommendation banner */}
+      {highCount > 0 && (
       <div className="px-4 pb-4">
         <div
           className="rounded-2xl p-4 flex items-center gap-3"
@@ -242,17 +238,19 @@ export function AlertsScreen() {
               Consult a Pediatrician
             </p>
             <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.8)", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
-              High-priority alerts detected. Professional advice recommended.
+              {highCount} high-priority alert{highCount > 1 ? "s" : ""} detected. Bring this month's report to your Posyandu/Puskesmas.
             </p>
           </div>
           <button
+            onClick={() => navigate("/reports")}
             className="px-3 py-2 rounded-xl flex-shrink-0 transition-transform active:scale-95"
             style={{ background: "rgba(255,255,255,0.2)", fontSize: "11px", fontWeight: 800, color: "white", fontFamily: "'Nunito', sans-serif" }}
           >
-            Learn →
+            Report →
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

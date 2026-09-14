@@ -22,6 +22,7 @@ class AdminResponse(BaseModel):
 class RegionStatsResponse(BaseModel):
     region_name: str
     total_children: int
+    children_measured: int = 0
     total_measurements: int
     stunted_cases: int
     severely_stunted_cases: int

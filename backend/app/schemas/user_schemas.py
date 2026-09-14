@@ -13,6 +13,7 @@ class ChildBase(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     gender: Literal["male", "female"]
     birth_date: date
+    region: Optional[str] = Field(default=None, max_length=100)
 
 
 class ChildCreate(ChildBase):
@@ -218,3 +219,20 @@ class ImmunizationSummary(BaseModel):
 class MarkGivenIn(BaseModel):
     given_on: Optional[date] = None  # defaults to today
     notes: Optional[str] = Field(default=None, max_length=500)
+
+
+class ChildUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    gender: Optional[Literal["male", "female"]] = None
+    birth_date: Optional[date] = None
+    region: Optional[str] = Field(default=None, max_length=100)
+
+
+class AlertItem(BaseModel):
+    id: str
+    category: Literal["Growth", "Nutrition", "Development", "Immunization"]
+    severity: Literal["high", "medium", "low"]
+    title: str
+    description: str
+    date: date
+    action_path: str
