@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Search, Plus, Edit3, Trash2, X, Save, ChevronRight, Loader2, AlertCircle } from "lucide-react";
 import { api, errorMessage as toMessage, type FoodItem } from "../../../../lib/api";
+import { FrameModal } from "../../FrameModal";
 
 const PAGE_SIZE = 100;
 
@@ -188,14 +189,14 @@ export function HMFoodDatabase() {
 
       {/* CENTERED MODAL */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(30,58,138,0.6)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-md rounded-3xl p-5 flex flex-col gap-4" style={{ background: "white", boxShadow: "0 24px 48px rgba(0,0,0,0.2)", animation: "slideUp 0.3s ease-out forwards" }}>
+        <FrameModal align="center" onClose={() => !isSaving && setShowForm(false)}>
+          <div className="w-full rounded-3xl p-5 flex flex-col gap-4" style={{ background: "white", boxShadow: "0 24px 48px rgba(0,0,0,0.2)", animation: "slideUp 0.3s ease-out forwards" }}>
             <div className="flex items-center justify-between mb-2">
               <p style={{ fontSize: "17px", fontWeight: 900, color: "#1E3A8A", fontFamily: "'Nunito', sans-serif" }}>{editId ? "Edit Food Item" : "Add New Food Item"}</p>
               <button onClick={() => setShowForm(false)} className="rounded-full p-1.5 transition-transform active:scale-95" style={{ background: "#F5F5F5" }}><X size={18} style={{ color: "#2D3047" }} /></button>
             </div>
             
-            <div className="overflow-y-auto flex flex-col gap-4" style={{ maxHeight: "65vh", paddingRight: "4px" }}>
+            <div className="overflow-y-auto flex flex-col gap-4" style={{ maxHeight: 520, paddingRight: "4px" }}>
               <div className="flex flex-col gap-1.5">
                 <label style={{ fontSize: "12px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>Food Name</label>
                 <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Nasi Tim Ayam" className="px-4 py-3 rounded-2xl outline-none" style={{ background: "#F8F9FD", border: "1.5px solid #F0F1F5", fontSize: "13px", fontWeight: 600, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }} />
@@ -231,7 +232,7 @@ export function HMFoodDatabase() {
               </button>
             </div>
           </div>
-        </div>
+        </FrameModal>
       )}
       <style>{`@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
     </div>

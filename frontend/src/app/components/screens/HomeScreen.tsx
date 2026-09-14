@@ -3,15 +3,15 @@ import { useNavigate } from "react-router";
 import { ChevronDown, Check, Plus, Utensils, Syringe, Download, Scale } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 import logo1 from "../../../imports/logo_1.png"; // Note the lowercase 'l' for safety!
-import { api, formatAge, type Measurement } from "../../../lib/api";
+import { api, formatAge, toDateString, type DailyMealSummary, type Measurement } from "../../../lib/api";
 import { useChildren } from "../../ChildContext";
 
-const nutritionData = [
-  { label: "Calories", value: 72, color: "#F47B20", unit: "864/1200 kcal" },
-  { label: "Protein", value: 55, color: "#5CC8C2", unit: "11/20g" },
-  { label: "Carbs", value: 80, color: "#FFC72C", unit: "96/120g" },
-  { label: "Fat", value: 40, color: "#FF7BAC", unit: "12/30g" },
-];
+const NUTRIENTS = [
+  { key: "energy", label: "Calories", color: "#F47B20", unit: "kcal" },
+  { key: "protein", label: "Protein", color: "#5CC8C2", unit: "g" },
+  { key: "carbs", label: "Carbs", color: "#FFC72C", unit: "g" },
+  { key: "fat", label: "Fat", color: "#FF7BAC", unit: "g" },
+] as const;
 
 const quickActions = [
   { icon: <Scale size={22} />, label: "Log Weight\n& Height", color: "#F47B20", bg: "#FFF0E0", path: "/growth" },
@@ -31,6 +31,7 @@ export function HomeScreen() {
   const { children, activeChild: child, isLoading, setActiveChild } = useChildren();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [history, setHistory] = useState<Measurement[]>([]);
+  const [today, setToday] = useState<DailyMealSummary | null>(null);
 
   // Pull the active child's measurement history for the overview card.
   useEffect(() => {
@@ -43,8 +44,23 @@ export function HomeScreen() {
       .listMeasurements(child.id)
       .then((rows) => { if (!cancelled) setHistory(rows); })
       .catch(() => { if (!cancelled) setHistory([]); });
+    api.parent
+      .dailyMeals(child.id, toDateString(new Date()))
+      .then((s) => { if (!cancelled) setToday(s); })
+      .catch(() => { if (!cancelled) setToday(null); });
     return () => { cancelled = true; };
   }, [child?.id]);
+
+  const nutritionData = NUTRIENTS.map(({ key, label, color, unit }) => {
+    const actual = today?.totals[key] ?? 0;
+    const target = today?.targets?.[key] ?? null;
+    return {
+      label,
+      color,
+      value: target ? Math.min(100, (actual / target) * 100) : 0,
+      unit: target ? `${Math.round(actual)}/${Math.round(target)}${unit === "g" ? "g" : " kcal"}` : `${Math.round(actual)} ${unit}`,
+    };
+  });
 
   const latest = history.length ? history[history.length - 1] : null;
   const sparklineData = history.slice(-8).map((m) => ({ w: m.weight_kg }));
@@ -235,7 +251,9 @@ export function HomeScreen() {
             <h3 style={{ fontSize: "15px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>
               🥗 Today's Nutrition
             </h3>
-            <button onClick={() => navigate("/food-diary")} style={{ fontSize: "11px", color: "#F47B20", fontWeight: 800, fontFamily: "'Nunito', sans-serif" }}>View →</button>
+            <button onClick={() => navigate("/food-diary")} style={{ fontSize: "11px", color: "#F47B20", fontWeight: 800, fontFamily: "'Nunito', sans-serif" }}>
+              {today && today.meals.length === 0 ? "Log a meal →" : "View →"}
+            </button>
           </div>
           <div className="flex flex-col gap-3">
             {nutritionData.map(({ label, value, color, unit }) => (
