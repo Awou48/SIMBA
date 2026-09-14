@@ -1,8 +1,13 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.db.database import Base
 from sqlalchemy import Boolean
+
+
+def utcnow() -> datetime:
+    """Naive UTC timestamp (columns are timezone-less DateTime)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class ParentUser(Base):
     __tablename__ = "parents"
@@ -30,12 +35,13 @@ class Child(Base):
     
     parent = relationship("ParentUser", back_populates="children")
     measurements = relationship("MeasurementLog", back_populates="child")
+    meals = relationship("MealLog", back_populates="child", cascade="all, delete-orphan")
 
 class MeasurementLog(Base):
     __tablename__ = "measurement_logs"
     id = Column(Integer, primary_key=True, index=True)
     child_id = Column(Integer, ForeignKey("children.id"))
-    date_logged = Column(DateTime, default=datetime.utcnow)
+    date_logged = Column(DateTime, default=utcnow)
     age_in_days = Column(Integer)
     weight_kg = Column(Float)
     height_cm = Column(Float)
@@ -43,6 +49,27 @@ class MeasurementLog(Base):
     lhfa_zscore = Column(Float, nullable=True) 
     
     child = relationship("Child", back_populates="measurements")
+
+class MealLog(Base):
+    """One food item eaten by a child at a meal. Nutrients are snapshotted at
+    log time (already multiplied by `servings`) so history survives later edits
+    or deletions in the food database."""
+    __tablename__ = "meal_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    child_id = Column(Integer, ForeignKey("children.id", ondelete="CASCADE"), nullable=False, index=True)
+    food_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
+    food_name = Column(String, nullable=False)
+    meal_type = Column(String, nullable=False)  # Breakfast / Lunch / Dinner / Snack
+    date = Column(Date, nullable=False, index=True)
+    servings = Column(Float, nullable=False, default=1.0)
+    energy = Column(Float, nullable=False, default=0.0)
+    protein = Column(Float, nullable=False, default=0.0)
+    carbs = Column(Float, nullable=False, default=0.0)
+    fat = Column(Float, nullable=False, default=0.0)
+    created_at = Column(DateTime, default=utcnow)
+
+    child = relationship("Child", back_populates="meals")
+
 
 class FoodItem(Base):
     __tablename__ = "foods"

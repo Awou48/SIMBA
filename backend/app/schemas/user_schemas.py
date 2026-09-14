@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -70,3 +70,58 @@ class GrowthStandardPoint(BaseModel):
     p50: float
     p85: float
     p97: float
+
+
+MealType = Literal["Breakfast", "Lunch", "Dinner", "Snack"]
+
+
+class FoodSearchItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    category: str
+    energy: float
+    protein: float
+    carbs: float
+    fat: float
+    safe: bool
+
+
+class MealCreate(BaseModel):
+    food_id: int
+    meal_type: MealType
+    date: date
+    servings: float = Field(default=1.0, gt=0, le=20)
+
+
+class MealResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    food_id: Optional[int]
+    food_name: str
+    meal_type: MealType
+    date: date
+    servings: float
+    energy: float
+    protein: float
+    carbs: float
+    fat: float
+
+
+class NutrientTotals(BaseModel):
+    energy: float
+    protein: float
+    carbs: float
+    fat: float
+
+
+class DailyMealSummary(BaseModel):
+    date: date
+    age_in_months: int
+    meals: List[MealResponse]
+    totals: NutrientTotals
+    targets: Optional[NutrientTotals] = None
+    fulfillment_percent: Optional[NutrientTotals] = None
+    akg_bracket: Optional[str] = None
