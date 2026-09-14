@@ -57,11 +57,13 @@ backend/
 │   │       │   ├── auth.py     # Parent register/login
 │   │       │   ├── children.py # CRUD for child profiles
 │   │       │   ├── growth.py   # Log + list measurements (WHO z-scores)
-│   │       │   └── logs.py     # Food search, meal logging, daily AKG summary
+│   │       │   ├── logs.py     # Food search, meal logging, daily AKG summary
+│   │       │   └── milestones.py # KPSP checklist per child (answers + interpretation)
 │   │       └── admin/          # Endpoints ONLY accessible to Admins (Web)
 │   │           ├── auth.py     # Admin login, /me, superadmin-only register
 │   │           ├── datasets.py # Read/replace AKG targets
 │   │           ├── food.py     # Food database CRUD (+ search/filter)
+│   │           ├── milestones.py # KPSP question bank CRUD
 │   │           └── region.py   # Aggregated stunting stats for the dashboard
 │   ├── core/
 │   │   ├── config.py           # Settings loaded from .env (pydantic-settings)
