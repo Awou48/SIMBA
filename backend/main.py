@@ -7,10 +7,11 @@ from app.api.v1.user import auth as user_auth
 from app.api.v1.user import children, growth, logs
 from app.core.config import settings
 from app.db import models  # noqa: F401  (register models with Base before create_all)
-from app.db.database import Base, engine
+from app.db.database import engine
+from app.db.migrate import sync_schema
 
-# Dev convenience: create missing tables on startup. Use seed_db.py for data.
-Base.metadata.create_all(bind=engine)
+# Dev convenience: create missing tables/columns on startup. Use seed_db.py for data.
+sync_schema(engine)
 
 app = FastAPI(title="SIMBA Backend API", version="1.1.0")
 

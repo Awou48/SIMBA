@@ -213,7 +213,7 @@ export function HomeScreen() {
           </div>
           {latest && (
             <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, marginTop: 6 }}>
-              {latest.stunting_status} · {latest.weight_status} · {new Date(latest.date_logged).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+              {latest.stunting_status.split(" (")[0]} · {latest.weight_status.split(" (")[0]}{latest.wasting_status ? ` · ${latest.wasting_status.split(" (")[0]}` : ""} · {new Date(latest.date_logged).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
             </p>
           )}
         </div>

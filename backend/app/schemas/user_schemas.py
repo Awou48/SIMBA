@@ -52,8 +52,13 @@ class MeasurementResponse(BaseModel):
     height_cm: float
     wfa_zscore: float
     lhfa_zscore: float
+    wfh_zscore: Optional[float] = None
+    bfa_zscore: Optional[float] = None
+    bmi: Optional[float] = None
     stunting_status: str
     weight_status: str
+    wasting_status: Optional[str] = None
+    bmi_status: Optional[str] = None
 
 
 class NutritionIntake(BaseModel):

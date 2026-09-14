@@ -155,8 +155,13 @@ export interface Measurement {
   height_cm: number;
   wfa_zscore: number;
   lhfa_zscore: number;
+  wfh_zscore: number | null; // weight-for-length/height (wasting)
+  bfa_zscore: number | null; // BMI-for-age
+  bmi: number | null;
   stunting_status: string;
   weight_status: string;
+  wasting_status: string | null;
+  bmi_status: string | null;
 }
 
 export interface GrowthStandardPoint {
@@ -286,7 +291,7 @@ export const api = {
     logMeasurement: (childId: number, data: { weight_kg: number; height_cm: number; date_logged: string }) =>
       apiFetch<Measurement>(`/api/v1/user/child/${childId}/measurements`, { method: "POST", body: data }),
 
-    growthStandards: (metric: "wfa" | "lhfa", gender: Child["gender"]) =>
+    growthStandards: (metric: "wfa" | "lhfa" | "bfa", gender: Child["gender"]) =>
       apiFetch<GrowthStandardPoint[]>("/api/v1/user/growth-standards", { query: { metric, gender } }),
 
     analyzeNutrition: (childId: number, totals: { total_protein: number; total_energy: number }) =>
