@@ -130,3 +130,29 @@ class DailyMealSummary(BaseModel):
     targets: Optional[NutrientTotals] = None
     fulfillment_percent: Optional[NutrientTotals] = None
     akg_bracket: Optional[str] = None
+
+
+class MilestoneItem(BaseModel):
+    id: int
+    min_months: int
+    max_months: int
+    age_label: str
+    domain: str
+    question: str
+    expected: Optional[str] = None
+    achieved: Optional[bool] = None  # None = not answered yet
+    answered_on: Optional[date] = None
+
+
+class MilestoneAnswerIn(BaseModel):
+    achieved: bool
+
+
+class MilestoneChecklist(BaseModel):
+    age_in_months: int
+    age_label: Optional[str] = None
+    items: List[MilestoneItem]
+    total: int
+    answered: int
+    achieved: int
+    interpretation: Optional[str] = None  # Sesuai / Meragukan / Penyimpangan (KPSP), None until all answered

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ChevronDown, Check, Plus, Utensils, Syringe, Download, Scale } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Plus, Utensils, Syringe, Download, Scale } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 import logo1 from "../../../imports/logo_1.png"; // Note the lowercase 'l' for safety!
-import { api, formatAge, toDateString, type DailyMealSummary, type Measurement } from "../../../lib/api";
+import { api, formatAge, toDateString, type DailyMealSummary, type Measurement, type MilestoneChecklist } from "../../../lib/api";
 import { useChildren } from "../../ChildContext";
 
 const NUTRIENTS = [
@@ -32,6 +32,7 @@ export function HomeScreen() {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [history, setHistory] = useState<Measurement[]>([]);
   const [today, setToday] = useState<DailyMealSummary | null>(null);
+  const [milestones, setMilestones] = useState<MilestoneChecklist | null>(null);
 
   // Pull the active child's measurement history for the overview card.
   useEffect(() => {
@@ -48,6 +49,10 @@ export function HomeScreen() {
       .dailyMeals(child.id, toDateString(new Date()))
       .then((s) => { if (!cancelled) setToday(s); })
       .catch(() => { if (!cancelled) setToday(null); });
+    api.parent
+      .milestones(child.id)
+      .then((m) => { if (!cancelled) setMilestones(m); })
+      .catch(() => { if (!cancelled) setMilestones(null); });
     return () => { cancelled = true; };
   }, [child?.id]);
 
@@ -244,6 +249,28 @@ export function HomeScreen() {
             ))}
           </div>
         </div>
+
+        {/* Development milestones (KPSP) */}
+        {milestones && milestones.total > 0 && (
+          <button
+            onClick={() => navigate("/milestones")}
+            className="rounded-3xl p-4 flex items-center gap-3 text-left transition-transform active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #9B8BF4 0%, #6D5BD0 100%)", boxShadow: "0 8px 24px rgba(155,139,244,0.3)" }}
+          >
+            <span style={{ fontSize: 30 }}>🏁</span>
+            <div className="flex-1">
+              <p style={{ fontSize: "14px", fontWeight: 900, color: "white", fontFamily: "'Nunito', sans-serif" }}>Development Milestones</p>
+              <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
+                {milestones.age_label}: {milestones.achieved}/{milestones.total} achieved
+                {milestones.interpretation ? ` · ${milestones.interpretation.split(" (")[0]}` : milestones.answered < milestones.total ? ` · ${milestones.total - milestones.answered} to answer` : ""}
+              </p>
+              <div className="w-full bg-white/30 rounded-full h-1.5 mt-2">
+                <div className="bg-white h-1.5 rounded-full" style={{ width: `${(milestones.achieved / milestones.total) * 100}%` }} />
+              </div>
+            </div>
+            <ChevronRight size={18} color="rgba(255,255,255,0.8)" />
+          </button>
+        )}
 
         {/* Today's Nutrition */}
         <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
