@@ -3,6 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.deps import apply_food_search
 from app.core.security import get_current_admin
 from app.db import models
 from app.db.database import get_db
@@ -27,9 +28,7 @@ def list_foods(
     limit: int = Query(200, ge=1, le=2000),
     offset: int = Query(0, ge=0),
 ):
-    query = db.query(models.FoodItem)
-    if q:
-        query = query.filter(models.FoodItem.name.ilike(f"%{q}%"))
+    query = apply_food_search(db.query(models.FoodItem), q)
     if category and category.lower() != "all":
         query = query.filter(models.FoodItem.category == category)
     if safe_only:
@@ -64,6 +63,8 @@ def update_food(food_id: int, food: admin_schemas.FoodItemCreate, db: Session = 
 @router.delete("/{food_id}")
 def delete_food(food_id: int, db: Session = Depends(get_db)):
     db_food = _get_food_or_404(food_id, db)
+    # Keep parents' meal history intact: detach logs from the food before removing it.
+    db.query(models.MealLog).filter(models.MealLog.food_id == food_id).update({models.MealLog.food_id: None})
     db.delete(db_food)
     db.commit()
     return {"status": "success", "message": "Food item deleted"}

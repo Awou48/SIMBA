@@ -71,3 +71,17 @@ def calculate_akg_fulfillment(age_in_months: int, total_protein: float, total_en
         "protein_fulfillment_percent": _pct(total_protein, bracket["protein"]),
         "energy_fulfillment_percent": _pct(total_energy, bracket["energy"]),
     }
+
+
+def daily_targets(age_in_months: int) -> dict | None:
+    """Energy/protein/fat/carbs AKG targets for an age, or None if out of range."""
+    bracket = find_akg_bracket(age_in_months)
+    if bracket is None:
+        return None
+    return {
+        "label": bracket["label"],
+        "energy": bracket["energy"],
+        "protein": bracket["protein"],
+        "carbs": bracket["carbs"],
+        "fat": bracket["fat"],
+    }

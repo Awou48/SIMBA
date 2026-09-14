@@ -179,6 +179,39 @@ export interface NutritionAnalysis {
   energy_fulfillment_percent: number;
 }
 
+export type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack";
+export const MEAL_TYPES: MealType[] = ["Breakfast", "Lunch", "Dinner", "Snack"];
+
+export interface MealLog {
+  id: number;
+  food_id: number | null;
+  food_name: string;
+  meal_type: MealType;
+  date: string; // YYYY-MM-DD
+  servings: number;
+  energy: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface NutrientTotals {
+  energy: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface DailyMealSummary {
+  date: string;
+  age_in_months: number;
+  meals: MealLog[];
+  totals: NutrientTotals;
+  targets: NutrientTotals | null;
+  fulfillment_percent: NutrientTotals | null;
+  akg_bracket: string | null;
+}
+
 export interface FoodItem {
   id: number;
   name: string;
@@ -261,6 +294,15 @@ export const api = {
         method: "POST",
         body: totals,
       }),
+
+    searchFoods: (params: { q?: string; category?: string; limit?: number } = {}) =>
+      apiFetch<FoodItem[]>("/api/v1/user/foods", { query: params }),
+    dailyMeals: (childId: number, date: string) =>
+      apiFetch<DailyMealSummary>(`/api/v1/user/child/${childId}/meals`, { query: { date } }),
+    logMeal: (childId: number, data: { food_id: number; meal_type: MealType; date: string; servings: number }) =>
+      apiFetch<MealLog>(`/api/v1/user/child/${childId}/meals`, { method: "POST", body: data }),
+    deleteMeal: (childId: number, mealId: number) =>
+      apiFetch<null>(`/api/v1/user/child/${childId}/meals/${mealId}`, { method: "DELETE" }),
   },
 
   admin: {
@@ -309,6 +351,14 @@ export function ageInMonths(birthDate: string, on: Date = new Date()): number {
   let months = (on.getFullYear() - dob.getFullYear()) * 12 + on.getMonth() - dob.getMonth();
   if (on.getDate() < dob.getDate()) months -= 1;
   return Math.max(months, 0);
+}
+
+/** Local calendar date as YYYY-MM-DD (avoids the UTC shift of toISOString()). */
+export function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function errorMessage(err: unknown, fallback = "Something went wrong."): string {
