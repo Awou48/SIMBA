@@ -3,6 +3,38 @@
 Child growth & nutrition monitoring: a **FastAPI + PostgreSQL** backend, and a **React (Vite)** frontend
 with a parent mobile UI and a Health Manager (admin) portal.
 
+## Features
+
+| Area | Parent app | Health Manager portal |
+|------|-----------|-----------------------|
+| Growth | Log weight/height; WHO z-scores for weight-for-age, height-for-age, weight-for-length/height (wasting) and BMI-for-age; charts with WHO 3rd–97th percentile bands; history | Read-only WHO percentile tables/curves; stunting prevalence overall and per region (latest measurement per child) |
+| Nutrition | Food diary per day and meal type over a 1,651-item Indonesian food DB; AKG 2019 targets and fulfillment for the child's age | Food DB CRUD with search; editable AKG targets |
+| Development | KPSP milestone checklist by age bracket with Sesuai / Meragukan / Penyimpangan result | KPSP question bank CRUD |
+| Immunization | Kemenkes routine schedule computed from birth date (given / due / overdue), record doses, health calendar events | — |
+| Insights | Early-warning alerts derived from all of the above; growth report screen + PDF download | Education articles (draft/publish) shown in the parent Explore tab; system panel with data overview, reference seeding and admin accounts |
+
+Every parent route is scoped to the authenticated parent's own children; admin routes require an admin token
+(account creation requires a superadmin).
+
+### API map (all under `/api/v1`)
+
+```
+user/auth            POST register, login
+user/children        GET/POST /, GET/PUT /{id}
+user/child/{id}      GET/POST measurements · GET/POST meals, DELETE meals/{mid}
+                     GET/PUT milestones[/{mid}] · GET immunizations, POST/DELETE immunizations/{code}/given
+                     GET/POST events, PUT/DELETE events/{eid} · GET alerts · GET report, GET report.pdf
+user/foods           GET (search)          user/growth-standards   GET ?metric=&gender=
+user/nutrition/{id}  POST analyze          user/articles           GET, GET /{id}
+admin/auth           POST login, POST register (superadmin), GET me
+admin/foods          GET/POST, GET/PUT/DELETE /{id}         admin/milestones   GET/POST, PUT/DELETE /{id}
+admin/articles       GET/POST, PUT/DELETE /{id}             admin/datasets     GET akg, POST update-akg, GET growth-standards
+admin/dashboard      GET stunting-stats[?region=], GET regions
+admin/system         GET summary, GET admins, POST seed (superadmin)
+```
+
+Interactive docs: `http://127.0.0.1:8000/docs`.
+
 ## Backend
 
 ### Setup & run
@@ -28,6 +60,12 @@ pytest
 ```
 
 Tests run against an in-memory SQLite database; PostgreSQL does not need to be running.
+
+### Schema changes
+
+`main.py` and `seed_db.py` call `app/db/migrate.sync_schema`, which creates missing tables and adds new
+**nullable** columns to existing tables — enough for development. For production, initialise Alembic
+(`alembic.ini` is already present) and generate proper migrations.
 
 ### Auth model
 
@@ -99,6 +137,7 @@ backend/
 cd frontend
 npm install
 npm run dev                     # http://localhost:5173
+npm run typecheck               # tsc --noEmit (strict); `npm run build` runs it too
 ```
 
 The API base URL comes from `VITE_API_URL` (copy `frontend/.env.example` to `frontend/.env`; defaults to
@@ -116,6 +155,7 @@ frontend/
 |── postcss.config.mjs
 |── vite.config.ts
 ├── .env.example             # VITE_API_URL
+├── tsconfig.json            # strict TypeScript; `npm run typecheck`
 ├── src/
 |   |── main.tsx
 |   |── lib/
