@@ -2,7 +2,7 @@
 
 Usage (from backend/):
     python seed_db.py            # create tables, seed any empty reference table
-    python seed_db.py --reset    # wipe reference tables (foods, akg, growth standards) first
+    python seed_db.py --reset    # wipe reference tables (foods, akg, growth standards, milestones) first
 
 Seeding is idempotent: a table that already holds rows is skipped unless --reset
 is given. Parent/child/measurement data is never touched.
@@ -163,6 +163,43 @@ def seed_akg(db: Session, reset: bool = False) -> int:
     return len(rows)
 
 
+def _parse_age_label(label: str) -> tuple[int, int]:
+    """'0 - 6 Months' -> (0, 6); '2 - 3 Years' -> (24, 36)."""
+    nums = [int(n) for n in re.findall(r"\d+", label)]
+    lo, hi = nums[0], nums[1]
+    if "year" in label.lower() or "tahun" in label.lower():
+        return lo * 12, hi * 12
+    return lo, hi
+
+
+def seed_milestones(db: Session, reset: bool = False) -> int:
+    if reset:
+        db.query(models.MilestoneAnswer).delete()
+        db.query(models.Milestone).delete()
+        db.commit()
+    elif not _is_empty(db, models.Milestone):
+        return 0
+
+    df = pd.read_csv(os.path.join(LOCAL_REF_DIR, "Digitize_the_KPSP.csv"))
+    rows = []
+    for order, (_, r) in enumerate(df.iterrows()):
+        lo, hi = _parse_age_label(str(r["Age Bracket"]))
+        rows.append(
+            models.Milestone(
+                min_months=lo,
+                max_months=hi,
+                age_label=str(r["Age Bracket"]).strip(),
+                domain=str(r["Category"]).strip(),
+                question=str(r["Milestone Question (Indonesian)"]).strip(),
+                active=True,
+                sort_order=order,
+            )
+        )
+    db.add_all(rows)
+    db.commit()
+    return len(rows)
+
+
 def seed_growth_standards(db: Session, reset: bool = False, max_months: int = 60) -> int:
     """Monthly WHO percentile curves (weight-, length/height- and BMI-for-age), 0..max_months.
 
@@ -211,6 +248,7 @@ def run(reset: bool = False) -> dict:
             "foods": seed_foods(db, reset),
             "akg_targets": seed_akg(db, reset),
             "growth_standards": seed_growth_standards(db, reset),
+            "milestones": seed_milestones(db, reset),
         }
     finally:
         db.close()

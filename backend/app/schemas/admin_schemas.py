@@ -67,3 +67,24 @@ class AKGRow(BaseModel):
 
 class AKGUpdatePayload(BaseModel):
     akg_data: List[AKGRow]
+
+
+class MilestoneBase(BaseModel):
+    min_months: int = Field(ge=0, le=72)
+    max_months: int = Field(ge=0, le=72)
+    age_label: str = Field(min_length=1, max_length=50)
+    domain: str = Field(min_length=1, max_length=50)
+    question: str = Field(min_length=3, max_length=500)
+    expected: Optional[str] = Field(default=None, max_length=200)
+    active: bool = True
+    sort_order: int = 0
+
+
+class MilestoneCreate(MilestoneBase):
+    pass
+
+
+class MilestoneResponse(MilestoneBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int

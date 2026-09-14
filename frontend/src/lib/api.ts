@@ -217,6 +217,40 @@ export interface DailyMealSummary {
   akg_bracket: string | null;
 }
 
+export interface Milestone {
+  id: number;
+  min_months: number;
+  max_months: number; // exclusive
+  age_label: string;
+  domain: string;
+  question: string;
+  expected: string | null;
+  active: boolean;
+  sort_order: number;
+}
+
+export interface MilestoneItem {
+  id: number;
+  min_months: number;
+  max_months: number;
+  age_label: string;
+  domain: string;
+  question: string;
+  expected: string | null;
+  achieved: boolean | null;
+  answered_on: string | null;
+}
+
+export interface MilestoneChecklist {
+  age_in_months: number;
+  age_label: string | null;
+  items: MilestoneItem[];
+  total: number;
+  answered: number;
+  achieved: number;
+  interpretation: string | null;
+}
+
 export interface FoodItem {
   id: number;
   name: string;
@@ -308,6 +342,11 @@ export const api = {
       apiFetch<MealLog>(`/api/v1/user/child/${childId}/meals`, { method: "POST", body: data }),
     deleteMeal: (childId: number, mealId: number) =>
       apiFetch<null>(`/api/v1/user/child/${childId}/meals/${mealId}`, { method: "DELETE" }),
+
+    milestones: (childId: number, bracketMonths?: number) =>
+      apiFetch<MilestoneChecklist>(`/api/v1/user/child/${childId}/milestones`, { query: { bracket_months: bracketMonths } }),
+    answerMilestone: (childId: number, milestoneId: number, achieved: boolean) =>
+      apiFetch<MilestoneChecklist>(`/api/v1/user/child/${childId}/milestones/${milestoneId}`, { method: "PUT", body: { achieved } }),
   },
 
   admin: {
@@ -323,6 +362,12 @@ export const api = {
     updateFood: (id: number, data: Omit<FoodItem, "id">) =>
       apiFetch<FoodItem>(`/api/v1/admin/foods/${id}`, { method: "PUT", body: data }),
     deleteFood: (id: number) => apiFetch<{ status: string }>(`/api/v1/admin/foods/${id}`, { method: "DELETE" }),
+
+    listMilestones: () => apiFetch<Milestone[]>("/api/v1/admin/milestones"),
+    createMilestone: (data: Omit<Milestone, "id">) => apiFetch<Milestone>("/api/v1/admin/milestones", { method: "POST", body: data }),
+    updateMilestone: (id: number, data: Omit<Milestone, "id">) =>
+      apiFetch<Milestone>(`/api/v1/admin/milestones/${id}`, { method: "PUT", body: data }),
+    deleteMilestone: (id: number) => apiFetch<null>(`/api/v1/admin/milestones/${id}`, { method: "DELETE" }),
 
     getAkg: () => apiFetch<AKGRow[]>("/api/v1/admin/datasets/akg"),
     updateAkg: (rows: AKGRow[]) =>

@@ -29,7 +29,7 @@ export function BottomNav() {
           const isActive = 
             location.pathname === tab.path || 
             (tab.path === "/home" && location.pathname === "/recipes") ||
-            (tab.path === "/growth" && (location.pathname === "/food-diary" || location.pathname === "/reports"));
+            (tab.path === "/growth" && ["/food-diary", "/reports", "/milestones"].includes(location.pathname));
             
           const Icon = tab.icon;
           

@@ -19,6 +19,7 @@ import { ReportsScreen } from "./components/screens/ReportsScreen";
 import { ExploreScreen } from "./components/screens/ExploreScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
 import { AlertsScreen } from "./components/screens/AlertsScreen";
+import { MilestonesScreen } from "./components/screens/MilestonesScreen";
 // Health Manager screens
 import { HMDashboard } from "./components/screens/hm/HMDashboard";
 import { HMGrowthStandards } from "./components/screens/hm/HMGrowthStandards";
@@ -102,6 +103,7 @@ export const router = createBrowserRouter([
       { path: "/explore",      element: <ExploreScreen /> },
       { path: "/settings",     element: <SettingsScreen /> },
       { path: "/alerts",       element: <AlertsScreen /> },
+      { path: "/milestones",   element: <MilestonesScreen /> },
     ],
   },
   // Health Manager portal with its own layout
