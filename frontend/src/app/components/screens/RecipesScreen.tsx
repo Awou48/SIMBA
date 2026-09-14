@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ChevronLeft, Heart, ChevronRight, Clock, Users } from "lucide-react";
+import { useChildren } from "../../ChildContext";
 
 // (Keeping your original static recipe data for the beautiful UI)
 const recipes = [
@@ -92,26 +93,9 @@ export function RecipesScreen() {
   const navigate = useNavigate();
   const [savedRecipes, setSavedRecipes] = useState<number[]>([2, 4]);
   const [selectedRecipe, setSelectedRecipe] = useState<typeof recipes[0] | null>(null);
-  const [childName, setChildName] = useState("your toddler");
+  const { activeChild } = useChildren();
+  const childName = activeChild?.name ?? "your toddler";
 
-  useEffect(() => {
-    const fetchChild = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return;
-        const response = await fetch("http://127.0.0.1:8000/api/v1/user/children/", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.length > 0) setChildName(data[0].name);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchChild();
-  }, []);
 
   if (selectedRecipe) {
     return (

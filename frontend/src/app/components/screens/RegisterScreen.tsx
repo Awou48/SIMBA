@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle } from "lucide-react";
 // Ensure this path matches the exact casing of your file!
 import logo2 from "../../../imports/logo_2.png";
+import { api, errorMessage as toMessage } from "../../../lib/api";
 
 export function RegisterScreen() {
   const navigate = useNavigate();
@@ -25,29 +26,13 @@ export function RegisterScreen() {
         throw new Error("Email and password are required.");
       }
 
-      // Credentials travel in the JSON body, never in the URL.
-      const response = await fetch("http://127.0.0.1:8000/api/v1/user/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: form.email, password: form.password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        // FastAPI validation errors arrive as an array of {msg} objects.
-        const detail = Array.isArray(errorData.detail)
-          ? errorData.detail.map((d: any) => d.msg).join(" ")
-          : errorData.detail;
-        throw new Error(detail || "Failed to create account. Email might already exist.");
-      }
+      await api.parent.register(form.email.trim(), form.password);
 
       // If successful, navigate directly to the login screen
       navigate("/login");
       
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err) {
+      setErrorMessage(toMessage(err, "Failed to create account. Email might already exist."));
     } finally {
       setIsLoading(false);
     }

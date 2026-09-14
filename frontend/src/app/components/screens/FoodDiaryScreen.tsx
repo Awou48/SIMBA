@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ChevronLeft, ChevronRight, Plus, AlertCircle } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { api, errorMessage as toMessage, type NutritionAnalysis } from "../../../lib/api";
+import { useChildren } from "../../ChildContext";
 
 const mealCategories = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
@@ -26,11 +28,12 @@ const meals: Record<string, { name: string; portion: string; cal: number; protei
 
 export function FoodDiaryScreen() {
   const navigate = useNavigate();
+  const { activeChild: child, isLoading: childLoading } = useChildren();
   const [activeCategory, setActiveCategory] = useState("Breakfast");
   const [dateOffset, setDateOffset] = useState(0);
 
   // API States
-  const [akgData, setAkgData] = useState<any>(null);
+  const [akgData, setAkgData] = useState<NutritionAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -54,46 +57,25 @@ export function FoodDiaryScreen() {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  // Compare today's totals against the AKG target for the child's real age
+  // (the backend derives the age from the child's birth date).
   useEffect(() => {
-    const fetchNutritionAnalysis = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        const childId = localStorage.getItem("active_child_id");
-        
-        if (!token || !childId) {
-          throw new Error("Missing authentication or child profile.");
-        }
-
-        // Send the current totals to the backend for analysis
-        const payload = {
-          age_in_months: 27, // Using 27 months (2 yrs 3 mos) for Liam
-          total_protein: totalProtein,
-          total_energy: totalCal
-        };
-
-        const response = await fetch(`http://127.0.0.1:8000/api/v1/user/nutrition/${childId}/analyze`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch AKG data.");
-
-        const data = await response.json();
-        setAkgData(data.data || data); // Store the returned AKG targets
-
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNutritionAnalysis();
-  }, [totalCal, totalProtein]);
+    if (childLoading) return;
+    if (!child) {
+      setError("No child profile yet. Add one from the Home screen.");
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    setError("");
+    api.parent
+      .analyzeNutrition(child.id, { total_protein: totalProtein, total_energy: totalCal })
+      .then((res) => { if (!cancelled) setAkgData(res.data); })
+      .catch((err) => { if (!cancelled) setError(toMessage(err, "Failed to fetch AKG data.")); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, [child?.id, childLoading, totalCal, totalProtein]);
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>

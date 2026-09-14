@@ -117,3 +117,24 @@ def test_stunted_child_is_flagged(client, parent_token, child):
     r = client.post(measurements_url(child), json={**MEDIAN_BOY_1Y, "height_cm": 66.0}, headers=auth(parent_token))
     assert r.json()["lhfa_zscore"] < -3.0
     assert r.json()["stunting_status"].startswith("Sangat Pendek")
+
+
+def test_growth_standards_endpoint(client, parent_token, engine):
+    from sqlalchemy.orm import sessionmaker
+    import seed_db
+    db = sessionmaker(bind=engine)()
+    try:
+        seed_db.seed_growth_standards(db)
+    finally:
+        db.close()
+
+    assert client.get("/api/v1/user/growth-standards?metric=wfa&gender=male").status_code == 401
+    assert client.get("/api/v1/user/growth-standards?metric=bmi&gender=male", headers=auth(parent_token)).status_code == 422
+
+    r = client.get("/api/v1/user/growth-standards?metric=wfa&gender=male", headers=auth(parent_token))
+    assert r.status_code == 200, r.text
+    points = r.json()
+    assert [p["age_months"] for p in points] == list(range(61))
+    twelve = points[12]
+    assert abs(twelve["p50"] - 9.6) < 0.1
+    assert twelve["p3"] < twelve["p15"] < twelve["p50"] < twelve["p85"] < twelve["p97"]

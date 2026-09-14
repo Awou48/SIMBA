@@ -3,41 +3,20 @@ import { useEffect, useState } from "react";
 import { BarChart2, BookOpen, Utensils, Activity, TrendingUp, Settings, Target } from "lucide-react";
 // Ensure lowercase 'l' to prevent Vite crashes!
 import logo2 from "../../../../imports/logo_2.png";
+import { api, type StuntingStats } from "../../../../lib/api";
 
 export function HMDashboard() {
   const navigate = useNavigate();
-  const [statsData, setStatsData] = useState<any>(null);
+  const [statsData, setStatsData] = useState<StuntingStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return navigate("/login");
-
-        const response = await fetch("http://127.0.0.1:8000/api/v1/admin/dashboard/stunting-stats", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setStatsData(data);
-        } else {
-          localStorage.removeItem("simba_token");
-          navigate("/login");
-        }
-      } catch (error) {
-        console.error("Failed to fetch admin stats", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-  }, [navigate]);
+    api.admin
+      .stats()
+      .then(setStatsData)
+      .catch((error) => console.error("Failed to fetch admin stats", error))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const dynamicStats = [
     { label: "Total Measurements", value: statsData?.total_measurements || "0", delta: "Database Records", color: "#4F46E5", bg: "rgba(255,255,255,0.15)" },

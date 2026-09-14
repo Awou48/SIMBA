@@ -91,8 +91,11 @@ npm install
 npm run dev                     # http://localhost:5173
 ```
 
-The frontend currently talks to `http://127.0.0.1:8000`. Log in as a Health Manager with the superadmin
-from `backend/.env` to reach the `/hm/*` portal.
+The API base URL comes from `VITE_API_URL` (copy `frontend/.env.example` to `frontend/.env`; defaults to
+`http://127.0.0.1:8000`). All requests go through `src/lib/api.ts`, which attaches the bearer token and, on a
+401, clears the session and redirects to `/login`. Parent screens share the active child via
+`src/app/ChildContext.tsx` (switch children from the Home header or Settings). Log in as a Health Manager
+with the superadmin from `backend/.env` to reach the `/hm/*` portal.
 
 ### Folder structure
 
@@ -102,12 +105,17 @@ frontend/
 |── index.html
 |── postcss.config.mjs
 |── vite.config.ts
+├── .env.example             # VITE_API_URL
 ├── src/
 |   |── main.tsx
+|   |── lib/
+|   |   |── api.ts               # Typed API client + session helpers (single place that knows the backend)
 │   ├── app
 │   │   ├── App.tsx
-│   │   ├── routes.tsx
+│   │   ├── routes.tsx           # Routes; parent/admin subtrees wrapped in RequireAuth
+│   │   ├── ChildContext.tsx     # Active-child state shared by parent screens
 │   │   ├── components/
+|   |   |   |── RequireAuth.tsx
 |   |   |   |── BottomNav.tsx
 |   |   |   |── HMBottomNav.tsx
 |   |   |   |── HMLayout.tsx
