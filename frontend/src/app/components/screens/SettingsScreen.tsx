@@ -88,7 +88,7 @@ export function SettingsScreen() {
                     <div className="flex-1">
                       <p style={{ fontSize: "14px", fontWeight: 800, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>{child.name}</p>
                       <p style={{ fontSize: "11px", color: "#9BA3B8", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
-                        {formatAge(child.birth_date, true)} · {child.gender === "male" ? "Boy" : "Girl"}{isActive ? " · Active" : ""}
+                        {formatAge(child.birth_date, true)} · {child.gender === "male" ? "Boy" : "Girl"}{child.region ? ` · ${child.region}` : ""}{isActive ? " · Active" : ""}
                       </p>
                     </div>
                     {isActive ? (

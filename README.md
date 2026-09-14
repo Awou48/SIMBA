@@ -59,13 +59,14 @@ backend/
 │   │       │   ├── growth.py   # Log + list measurements (WHO z-scores)
 │   │       │   ├── logs.py     # Food search, meal logging, daily AKG summary
 │   │       │   ├── milestones.py # KPSP checklist per child (answers + interpretation)
-│   │       │   └── immunization.py # National vaccine schedule status + health calendar events
+│   │       │   ├── immunization.py # National vaccine schedule status + health calendar events
+│   │       │   └── insights.py # Derived alerts, growth report (JSON + PDF)
 │   │       └── admin/          # Endpoints ONLY accessible to Admins (Web)
 │   │           ├── auth.py     # Admin login, /me, superadmin-only register
 │   │           ├── datasets.py # Read/replace AKG targets
 │   │           ├── food.py     # Food database CRUD (+ search/filter)
 │   │           ├── milestones.py # KPSP question bank CRUD
-│   │           └── region.py   # Aggregated stunting stats for the dashboard
+│   │           └── region.py   # Stunting prevalence overall and per child region
 │   ├── core/
 │   │   ├── config.py           # Settings loaded from .env (pydantic-settings)
 │   │   └── security.py         # Password hashing, JWT creation/validation, role guards
@@ -78,7 +79,9 @@ backend/
 │   └── services/
 │       ├── zscore_calc.py      # WHO LMS z-scores (WFA, L/HFA, WFL/WFH wasting, BMI-for-age)
 │       ├── nutrition_calc.py   # AKG 2019 comparison logic
-│       └── immunization.py     # Kemenkes routine immunization schedule + dose status
+│       ├── immunization.py     # Kemenkes routine immunization schedule + dose status
+│       ├── insights.py         # Early-warning alerts + report data derived from all child records
+│       └── report_pdf.py       # reportlab renderer for the growth report
 ├── tests/                      # pytest suite (SQLite in-memory)
 └── data/
     ├── local_reference/        # AKG 2019, Indonesian food composition, KPSP milestones

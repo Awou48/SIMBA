@@ -41,3 +41,16 @@ def get_my_children(
 @router.get("/{child_id}", response_model=user_schemas.ChildResponse)
 def get_child(child: models.Child = Depends(get_owned_child)):
     return child
+
+
+@router.put("/{child_id}", response_model=user_schemas.ChildResponse)
+def update_child(
+    payload: user_schemas.ChildUpdate,
+    child: models.Child = Depends(get_owned_child),
+    db: Session = Depends(get_db),
+):
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(child, key, value)
+    db.commit()
+    db.refresh(child)
+    return child
