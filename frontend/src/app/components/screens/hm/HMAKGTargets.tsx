@@ -1,20 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { X, Edit3, Save, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { api, errorMessage as toMessage, type AKGRow } from "../../../../lib/api";
 
-interface AKGRow {
-  id?: number; // Added optional ID for database tracking
-  ageGroup: string;
-  gender: string;
-  energy: string;
-  protein: string;
-  fat: string;
-  carbs: string;
-  vitA: string;
-  vitC: string;
-  iron: string;
-  calcium: string;
-}
 
 // Fallback data in case the database is empty or offline
 const fallbackAkgData: AKGRow[] = [
@@ -53,27 +41,11 @@ export function HMAKGTargets() {
 
   // 1. Fetch live AKG targets from Python Backend
   useEffect(() => {
-    const fetchAKG = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        const response = await fetch("http://127.0.0.1:8000/api/v1/admin/datasets/akg", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            setRows(data);
-          }
-        }
-      } catch (err) {
-        console.warn("Using fallback AKG data.", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchAKG();
+    api.admin
+      .getAkg()
+      .then((data) => { if (data.length > 0) setRows(data); })
+      .catch((err) => console.warn("Using fallback AKG data.", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const startEdit = (i: number) => { setEditIdx(i); setEditBuf({ ...rows[i] }); };
@@ -96,23 +68,14 @@ export function HMAKGTargets() {
     setStatusMsg(null);
     
     try {
-      const token = localStorage.getItem("simba_token");
-      const response = await fetch("http://127.0.0.1:8000/api/v1/admin/datasets/update-akg", {
-        method: "POST", // Or PUT, depending on how your FastAPI is structured
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ akg_data: rows })
-      });
-
-      if (!response.ok) throw new Error("Failed to save changes.");
-      
+      await api.admin.updateAkg(rows);
+      // Reload so rows carry their fresh database ids.
+      setRows(await api.admin.getAkg());
       setStatusMsg({ type: "success", text: "AKG Targets successfully updated!" });
       setTimeout(() => setStatusMsg(null), 4000); // Hide success after 4s
       
-    } catch (err: any) {
-      setStatusMsg({ type: "error", text: err.message || "Database connection error." });
+    } catch (err) {
+      setStatusMsg({ type: "error", text: toMessage(err, "Database connection error.") });
     } finally {
       setIsSaving(false);
     }
@@ -226,7 +189,7 @@ export function HMAKGTargets() {
                 </span>
                 {editIdx === i && editBuf ? (
                   <input
-                    value={editBuf[activeNutrient as keyof AKGRow]}
+                    value={editBuf[activeNutrient as keyof AKGRow] ?? ""}
                     onChange={e => setEditBuf({ ...editBuf, [activeNutrient]: e.target.value })}
                     className="rounded-lg px-2 py-1 outline-none w-full"
                     style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif", background: "white", border: "1.5px solid #818CF8" }}
@@ -237,13 +200,13 @@ export function HMAKGTargets() {
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.min(100, (parseInt(row[activeNutrient as keyof AKGRow]) / parseInt(rows[rows.length - 1][activeNutrient as keyof AKGRow] || "1")) * 100)}%`,
+                          width: `${Math.min(100, (parseFloat(String(row[activeNutrient as keyof AKGRow] ?? "0")) / (Math.max(...rows.map(r => parseFloat(String(r[activeNutrient as keyof AKGRow] ?? "0")) || 0)) || 1)) * 100)}%`,
                           background: nutrient.color,
                         }}
                       />
                     </div>
                     <span style={{ fontSize: "12px", fontWeight: 800, color: "#2D3047", fontFamily: "'Nunito', sans-serif", flexShrink: 0 }}>
-                      {row[activeNutrient as keyof AKGRow]}
+                      {row[activeNutrient as keyof AKGRow] ?? "—"}
                     </span>
                   </div>
                 )}

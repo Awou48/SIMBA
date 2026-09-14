@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Camera, ChevronLeft, Calendar, AlertCircle } from "lucide-react";
 // Ensure this path matches exactly!
 import logo1 from "../../../imports/logo_1.png";
+import { api, errorMessage as toMessage, session } from "../../../lib/api";
 
 export function AddChildScreen() {
   const navigate = useNavigate();
@@ -25,40 +26,18 @@ export function AddChildScreen() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("simba_token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       // Map UI gender to backend standard
-      const backendGender = gender === "boy" ? "male" : "female";
-
-      const payload = {
-        name: name,
-        gender: backendGender,
-        birth_date: dob
-      };
-
-      const response = await fetch("http://127.0.0.1:8000/api/v1/user/children/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload),
+      const created = await api.parent.createChild({
+        name: name.trim(),
+        gender: gender === "boy" ? "male" : "female",
+        birth_date: dob,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to add child profile.");
-      }
-
-      // Success! Go back to home, which will now automatically fetch this new child
+      // Make the new child the active profile, then go home (which refetches the list).
+      session.setActiveChildId(created.id);
       navigate("/home");
-      
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err) {
+      setErrorMessage(toMessage(err, "Failed to add child profile."));
     } finally {
       setIsLoading(false);
     }

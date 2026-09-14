@@ -61,3 +61,12 @@ class NutritionIntake(BaseModel):
     age_in_months: Optional[int] = None
     total_protein: float = Field(ge=0)
     total_energy: float = Field(ge=0)
+
+
+class GrowthStandardPoint(BaseModel):
+    age_months: int
+    p3: float
+    p15: float
+    p50: float
+    p85: float
+    p97: float

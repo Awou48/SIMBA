@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Bell, Globe, Shield, CreditCard, HelpCircle, LogOut, ChevronRight, Edit3, Plus } from "lucide-react";
+import { Bell, Globe, Shield, CreditCard, HelpCircle, LogOut, ChevronRight, Edit3, Plus, Check } from "lucide-react";
+import { formatAge, session } from "../../../lib/api";
+import { useChildren } from "../../ChildContext";
 // Make sure to use lowercase for the imports if that's how your files are named!
 import logo1 from "../../../imports/logo_1.png"; 
 import logo2 from "../../../imports/logo_2.png";
@@ -25,51 +26,12 @@ const settingsGroups = [
 
 export function SettingsScreen() {
   const navigate = useNavigate();
-  const [children, setChildren] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Calculate age helper
-  const calculateAge = (dobString: string) => {
-    const dob = new Date(dobString);
-    const today = new Date();
-    let months = (today.getFullYear() - dob.getFullYear()) * 12 + today.getMonth() - dob.getMonth();
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-    if (years === 0) return `${remainingMonths} months`;
-    return `${years} yrs, ${remainingMonths} mos`;
-  };
-
-  useEffect(() => {
-    const fetchChildren = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return navigate("/login");
-
-        const response = await fetch("http://127.0.0.1:8000/api/v1/user/children/", {
-          method: "GET",
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setChildren(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch children", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchChildren();
-  }, [navigate]);
+  const { children, activeChild, isLoading, setActiveChild } = useChildren();
 
   // Secure Logout Function
   const handleLogout = () => {
-    localStorage.removeItem("simba_token");
-    localStorage.removeItem("simba_role");
-    localStorage.removeItem("active_child_id");
-    navigate("/login");
+    session.clear();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -111,22 +73,32 @@ export function SettingsScreen() {
             ) : children.length === 0 ? (
               <p className="text-center text-sm text-gray-400 font-['Nunito'] py-2">No children added yet.</p>
             ) : (
-              children.map((child, index) => (
-                <div key={child.id} className="flex items-center gap-3 pb-3 mb-3" style={{ borderBottom: index < children.length - 1 ? "1px solid #F5F5F5" : "none" }}>
-                  <div className="rounded-full overflow-hidden flex items-center justify-center text-xl" style={{ width: 48, height: 48, background: "#FFF0E0" }}>
-                    {child.gender === 'male' ? '👦' : '👧'}
-                  </div>
-                  <div className="flex-1">
-                    <p style={{ fontSize: "14px", fontWeight: 800, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>{child.name}</p>
-                    <p style={{ fontSize: "11px", color: "#9BA3B8", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
-                      {calculateAge(child.birth_date)} · {child.gender === 'male' ? 'Boy' : 'Girl'}
-                    </p>
-                  </div>
-                  <button className="rounded-full p-2 transition-transform active:scale-95" style={{ background: "#F5F5F5" }}>
-                    <Edit3 size={14} style={{ color: "#717182" }} />
+              children.map((child, index) => {
+                const isActive = child.id === activeChild?.id;
+                return (
+                  <button
+                    key={child.id}
+                    onClick={() => setActiveChild(child.id)}
+                    className="w-full flex items-center gap-3 pb-3 mb-3 text-left transition-transform active:scale-[0.98]"
+                    style={{ borderBottom: index < children.length - 1 ? "1px solid #F5F5F5" : "none" }}
+                  >
+                    <div className="rounded-full overflow-hidden flex items-center justify-center text-xl" style={{ width: 48, height: 48, background: isActive ? "#FFF0E0" : "#F5F5F5", border: isActive ? "2px solid #F47B20" : "2px solid transparent" }}>
+                      {child.gender === "male" ? "👦" : "👧"}
+                    </div>
+                    <div className="flex-1">
+                      <p style={{ fontSize: "14px", fontWeight: 800, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>{child.name}</p>
+                      <p style={{ fontSize: "11px", color: "#9BA3B8", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
+                        {formatAge(child.birth_date, true)} · {child.gender === "male" ? "Boy" : "Girl"}{isActive ? " · Active" : ""}
+                      </p>
+                    </div>
+                    {isActive ? (
+                      <div className="rounded-full p-2" style={{ background: "#FFF0E0" }}><Check size={14} style={{ color: "#F47B20" }} /></div>
+                    ) : (
+                      <div className="rounded-full p-2" style={{ background: "#F5F5F5" }}><Edit3 size={14} style={{ color: "#717182" }} /></div>
+                    )}
                   </button>
-                </div>
-              ))
+                );
+              })
             )}
 
             {/* Add child button */}

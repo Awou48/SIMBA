@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { X, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import { api, errorMessage as toMessage, type StuntingStats } from "../../../../lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Legend,
@@ -29,36 +30,17 @@ export function HMRegionalTrends() {
   const [activeIndicator, setActiveIndicator] = useState("stunting");
   
   // API States
-  const [apiData, setApiData] = useState<any>(null);
+  const [apiData, setApiData] = useState<StuntingStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchRegionalStats = async () => {
-      try {
-        const token = localStorage.getItem("simba_token");
-        if (!token) return navigate("/login");
-
-        const response = await fetch("http://127.0.0.1:8000/api/v1/admin/dashboard/stunting-stats", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) throw new Error("Failed to load live regional data.");
-
-        const data = await response.json();
-        setApiData(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRegionalStats();
-  }, [navigate]);
+    api.admin
+      .stats()
+      .then(setApiData)
+      .catch((err) => setError(toMessage(err, "Failed to load live regional data.")))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   // Dynamically calculate the Live Stunting Rate based on the DB
   const liveStuntingRate = apiData && apiData.total_measurements > 0 

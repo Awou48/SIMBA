@@ -1,10 +1,11 @@
 from datetime import date, datetime, time
-from typing import List
+from typing import List, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_owned_child
+from app.core.security import get_current_user
 from app.db import models
 from app.db.database import get_db
 from app.schemas import user_schemas
@@ -83,3 +84,30 @@ def list_measurements(
         .all()
     )
     return [_to_response(log) for log in logs]
+
+
+@router.get("/growth-standards", response_model=List[user_schemas.GrowthStandardPoint])
+def get_growth_standards(
+    metric: Literal["wfa", "lhfa"] = Query(..., description="wfa = weight-for-age, lhfa = length/height-for-age"),
+    gender: Literal["male", "female"] = Query(...),
+    db: Session = Depends(get_db),
+    _: models.ParentUser = Depends(get_current_user),
+):
+    """Monthly WHO percentile curves (seeded by seed_db.py) for drawing chart reference bands."""
+    rows = (
+        db.query(models.GrowthStandard)
+        .filter(models.GrowthStandard.metric == metric, models.GrowthStandard.gender == gender)
+        .all()
+    )
+    points = [
+        {
+            "age_months": int(r.age),
+            "p3": float(r.p3),
+            "p15": float(r.p15),
+            "p50": float(r.p50),
+            "p85": float(r.p85),
+            "p97": float(r.p97),
+        }
+        for r in rows
+    ]
+    return sorted(points, key=lambda p: p["age_months"])
