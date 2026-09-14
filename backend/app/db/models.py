@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, DateTime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.db.database import Base
@@ -36,6 +36,7 @@ class Child(Base):
     parent = relationship("ParentUser", back_populates="children")
     measurements = relationship("MeasurementLog", back_populates="child")
     meals = relationship("MealLog", back_populates="child", cascade="all, delete-orphan")
+    milestone_answers = relationship("MilestoneAnswer", back_populates="child", cascade="all, delete-orphan")
 
 class MeasurementLog(Base):
     __tablename__ = "measurement_logs"
@@ -109,3 +110,31 @@ class GrowthStandard(Base):
     p50 = Column(String)
     p85 = Column(String)
     p97 = Column(String)
+
+class Milestone(Base):
+    """KPSP (Kuesioner Pra Skrining Perkembangan) screening question, managed by admins."""
+    __tablename__ = "milestones"
+    id = Column(Integer, primary_key=True, index=True)
+    min_months = Column(Integer, nullable=False)
+    max_months = Column(Integer, nullable=False)  # exclusive upper bound (half-open bracket)
+    age_label = Column(String, nullable=False)  # e.g. "6 - 12 Months"
+    domain = Column(String, nullable=False)  # Motorik Kasar / Motorik Halus / Bicara & Bahasa / Sosialisasi / Kemandirian
+    question = Column(Text, nullable=False)
+    expected = Column(String, nullable=True)
+    active = Column(Boolean, default=True, nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False)
+
+
+class MilestoneAnswer(Base):
+    """A parent's yes/no answer for one child and one milestone."""
+    __tablename__ = "milestone_answers"
+    __table_args__ = (UniqueConstraint("child_id", "milestone_id", name="uq_child_milestone"),)
+    id = Column(Integer, primary_key=True, index=True)
+    child_id = Column(Integer, ForeignKey("children.id", ondelete="CASCADE"), nullable=False, index=True)
+    milestone_id = Column(Integer, ForeignKey("milestones.id", ondelete="CASCADE"), nullable=False, index=True)
+    achieved = Column(Boolean, nullable=False)
+    answered_on = Column(Date, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    child = relationship("Child", back_populates="milestone_answers")
+    milestone = relationship("Milestone")
