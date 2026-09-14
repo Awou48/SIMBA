@@ -156,3 +156,65 @@ class MilestoneChecklist(BaseModel):
     answered: int
     achieved: int
     interpretation: Optional[str] = None  # Sesuai / Meragukan / Penyimpangan (KPSP), None until all answered
+
+
+EventType = Literal["Vaccination", "Doctor Visit", "Checkup", "Other"]
+
+
+class HealthEventCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    event_type: EventType = "Vaccination"
+    date: date
+    time: Optional[str] = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    notes: Optional[str] = Field(default=None, max_length=500)
+    done: bool = False
+
+
+class HealthEventUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    event_type: Optional[EventType] = None
+    date: Optional[date] = None
+    time: Optional[str] = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    notes: Optional[str] = Field(default=None, max_length=500)
+    done: Optional[bool] = None
+
+
+class HealthEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    event_type: EventType
+    date: date
+    time: Optional[str] = None
+    notes: Optional[str] = None
+    done: bool
+    vaccine_code: Optional[str] = None
+
+
+class VaccineDoseStatus(BaseModel):
+    code: str
+    name: str
+    vaccine: str
+    dose: str
+    due_age_months: int
+    due_date: date
+    late_after: date
+    note: str
+    status: Literal["given", "due", "overdue", "upcoming"]
+    given_on: Optional[date] = None
+    event_id: Optional[int] = None
+
+
+class ImmunizationSummary(BaseModel):
+    schedule: List[VaccineDoseStatus]
+    given: int
+    due: int
+    overdue: int
+    upcoming: int
+    next_dose: Optional[VaccineDoseStatus] = None
+
+
+class MarkGivenIn(BaseModel):
+    given_on: Optional[date] = None  # defaults to today
+    notes: Optional[str] = Field(default=None, max_length=500)

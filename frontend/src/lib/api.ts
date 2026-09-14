@@ -251,6 +251,45 @@ export interface MilestoneChecklist {
   interpretation: string | null;
 }
 
+export type EventType = "Vaccination" | "Doctor Visit" | "Checkup" | "Other";
+export const EVENT_TYPES: EventType[] = ["Vaccination", "Doctor Visit", "Checkup", "Other"];
+
+export interface HealthEvent {
+  id: number;
+  title: string;
+  event_type: EventType;
+  date: string; // YYYY-MM-DD
+  time: string | null; // HH:MM
+  notes: string | null;
+  done: boolean;
+  vaccine_code: string | null;
+}
+
+export type DoseStatus = "given" | "due" | "overdue" | "upcoming";
+
+export interface VaccineDose {
+  code: string;
+  name: string;
+  vaccine: string;
+  dose: string;
+  due_age_months: number;
+  due_date: string;
+  late_after: string;
+  note: string;
+  status: DoseStatus;
+  given_on: string | null;
+  event_id: number | null;
+}
+
+export interface ImmunizationSummary {
+  schedule: VaccineDose[];
+  given: number;
+  due: number;
+  overdue: number;
+  upcoming: number;
+  next_dose: VaccineDose | null;
+}
+
 export interface FoodItem {
   id: number;
   name: string;
@@ -342,6 +381,21 @@ export const api = {
       apiFetch<MealLog>(`/api/v1/user/child/${childId}/meals`, { method: "POST", body: data }),
     deleteMeal: (childId: number, mealId: number) =>
       apiFetch<null>(`/api/v1/user/child/${childId}/meals/${mealId}`, { method: "DELETE" }),
+
+    immunizations: (childId: number) => apiFetch<ImmunizationSummary>(`/api/v1/user/child/${childId}/immunizations`),
+    markDoseGiven: (childId: number, code: string, data: { given_on?: string; notes?: string } = {}) =>
+      apiFetch<ImmunizationSummary>(`/api/v1/user/child/${childId}/immunizations/${code}/given`, { method: "POST", body: data }),
+    unmarkDoseGiven: (childId: number, code: string) =>
+      apiFetch<ImmunizationSummary>(`/api/v1/user/child/${childId}/immunizations/${code}/given`, { method: "DELETE" }),
+
+    listEvents: (childId: number, params: { month?: string; upcoming_only?: boolean } = {}) =>
+      apiFetch<HealthEvent[]>(`/api/v1/user/child/${childId}/events`, { query: params }),
+    createEvent: (childId: number, data: { title: string; event_type: EventType; date: string; time?: string | null; notes?: string | null }) =>
+      apiFetch<HealthEvent>(`/api/v1/user/child/${childId}/events`, { method: "POST", body: data }),
+    updateEvent: (childId: number, eventId: number, data: Partial<Omit<HealthEvent, "id" | "vaccine_code">>) =>
+      apiFetch<HealthEvent>(`/api/v1/user/child/${childId}/events/${eventId}`, { method: "PUT", body: data }),
+    deleteEvent: (childId: number, eventId: number) =>
+      apiFetch<null>(`/api/v1/user/child/${childId}/events/${eventId}`, { method: "DELETE" }),
 
     milestones: (childId: number, bracketMonths?: number) =>
       apiFetch<MilestoneChecklist>(`/api/v1/user/child/${childId}/milestones`, { query: { bracket_months: bracketMonths } }),
