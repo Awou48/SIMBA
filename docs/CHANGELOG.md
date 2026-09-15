@@ -3,6 +3,19 @@
 All notable changes on the `claude/project-build-improve-548c26` branch (September 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
 
+## 1.3.1 — Portal polish & data cleanup
+- Logo: `logo_mark.png` (lion head cropped from the padded source PNG) now fills the sidebar and login boxes.
+- Login page: animated hero — drifting gradient, floating blurred orbs, masked grid, bobbing mascot, fade-up
+  form. Everything is disabled under `prefers-reduced-motion`.
+- Dashboard: greeting hero with the signed-in manager's name and headline numbers, KPI cards with accent bars
+  and icon wells, **Needs attention** list (children ranked wasted > stunted > underweight > overweight >
+  stale > no data), donut with centred total, region bars with track, quick links, staggered fade-in and
+  hover lift on panels.
+- Tables: first/last cells get 1.25rem side padding so flush panel tables no longer hug the left edge.
+- `backend/scripts/cleanup_legacy.py`: plan-first script to delete prototype accounts (cascading), drop
+  orphan tables, and purge impossible measurements. Used to clean the dev database (legacy parents/admins,
+  `immunization_events` / `nutrition_logs` / `immunization_logs` tables, rows with |z| > 6).
+
 ## 1.3.0 — Health Manager web portal
 - New desktop website at `/hm/*` (`frontend/src/web`): sidebar shell with grouped navigation, top bar, drawer
   below 1024px; dedicated `/hm/login` split page; portal theme tokens (`styles/portal.css`).
