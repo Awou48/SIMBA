@@ -120,7 +120,7 @@ export function Dashboard() {
 
         {/* Right column: this month's pulse + mascot */}
         {overview && (
-          <div className="hidden lg:flex items-center gap-16 shrink-0 pr-2">
+          <div className="hidden lg:flex flex-1 items-center justify-between gap-8 pl-2">
             <div className="hidden xl:grid gap-2.5 w-64">
               <HeroTile icon={<CalendarDays size={15} />} label="Last 30 days" value={overview.last_30_days.measurements} unit="measurements" hint={`${overview.last_30_days.children_measured} children · ${overview.last_30_days.meals} meals logged`} />
               <HeroTile icon={<TrendingUp size={15} />} label="Stunting rate" value={pct(overview.stunting_rate)} hint={`${overview.status.stunted} of ${overview.children_measured} measured`} accent={rateAccent} />
