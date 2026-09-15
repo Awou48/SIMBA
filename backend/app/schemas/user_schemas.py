@@ -51,8 +51,8 @@ class MeasurementResponse(BaseModel):
     age_in_days: int
     weight_kg: float
     height_cm: float
-    wfa_zscore: float
-    lhfa_zscore: float
+    wfa_zscore: Optional[float] = None  # None only for rows imported before z-scores existed
+    lhfa_zscore: Optional[float] = None
     wfh_zscore: Optional[float] = None
     bfa_zscore: Optional[float] = None
     bmi: Optional[float] = None

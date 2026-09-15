@@ -45,7 +45,7 @@ export function LoginScreen() {
           {(["Parent", "Health Manager"] as Role[]).map(r => (
             <button
               key={r}
-              onClick={() => { setRole(r); setErrorMessage(""); }}
+              onClick={() => { if (r === "Health Manager") { window.location.assign("/hm/login"); return; } setRole(r); setErrorMessage(""); }}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all"
               style={{
                 background:

@@ -1,0 +1,35 @@
+/* Health Manager web portal theme: SIMBA indigo/orange on top of the shadcn tokens. */
+.hm-portal {
+  --background: #f5f6fb;
+  --foreground: #1b1d33;
+  --card: #ffffff;
+  --card-foreground: #1b1d33;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #eef2ff;
+  --secondary-foreground: #1e3a8a;
+  --muted: #eef0f6;
+  --muted-foreground: #6b7089;
+  --accent: #eef2ff;
+  --accent-foreground: #1e3a8a;
+  --border: #e4e7f0;
+  --input-background: #ffffff;
+  --ring: #4f46e5;
+  --sidebar: #1e2a5a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --chart-1: #4f46e5;
+  --chart-2: #f47b20;
+  --chart-3: #5cc8c2;
+  --chart-4: #e53535;
+  --chart-5: #9b8bf4;
+  font-family: "Nunito", "Poppins", system-ui, sans-serif;
+}
+
+.hm-portal h1, .hm-portal h2, .hm-portal h3 { letter-spacing: -0.01em; }
+.hm-portal table { font-size: 13px; }
+.hm-portal th { font-weight: 700; color: var(--muted-foreground); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }

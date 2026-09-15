@@ -368,6 +368,62 @@ export interface SystemSummary {
   last_meal_on: string | null;
 }
 
+// ---- Health Manager portal ------------------------------------------------
+
+export type ChildFlag = "normal" | "stunted" | "underweight" | "wasted" | "overweight" | "stale" | "no_data";
+
+export interface RegistryChild {
+  id: number;
+  name: string;
+  gender: "male" | "female";
+  birth_date: string;
+  age_in_months: number;
+  region: string | null;
+  parent_email_masked: string;
+  measurements_count: number;
+  last_measured_on: string | null;
+  latest: {
+    weight_kg: number;
+    height_cm: number;
+    wfa_zscore: number;
+    lhfa_zscore: number;
+    wfh_zscore: number | null;
+    stunting_status: string;
+    weight_status: string;
+    wasting_status: string | null;
+  } | null;
+  flags: ChildFlag[];
+}
+
+export interface DashboardOverview {
+  children_total: number;
+  children_measured: number;
+  stunting_rate: number;
+  status: Record<"normal" | "stunted" | "severely_stunted" | "underweight" | "wasted" | "overweight" | "stale" | "unmeasured", number>;
+  parents_total: number;
+  regions_total: number;
+  last_30_days: { measurements: number; children_measured: number; meals: number; milestone_answers: number };
+  immunization: { children_with_overdue: number; overdue_doses: number };
+}
+
+export interface RecentMeasurement {
+  id: number;
+  child_id: number;
+  child_name: string;
+  gender: "male" | "female";
+  region: string | null;
+  age_in_months: number;
+  date: string;
+  weight_kg: number;
+  height_cm: number;
+  lhfa_zscore: number;
+  wfa_zscore: number;
+  wfh_zscore: number | null;
+  stunting_status: string;
+}
+
+export type AdminChildDetail = GrowthReport & { child: GrowthReport["child"] & { parent_email_masked: string } };
+
 export interface FoodItem {
   id: number;
   name: string;
@@ -417,6 +473,30 @@ interface AdminTokenResponse extends TokenResponse {
 // Endpoints
 // ---------------------------------------------------------------------------
 
+/** Authenticated binary download (PDF). Plain <a href> cannot carry the bearer token. */
+async function fetchPdf(path: string): Promise<Blob> {
+  const res = await fetch(`${API_URL}${path}`, { headers: { Authorization: `Bearer ${session.getToken() ?? ""}` } });
+  if (res.status === 401) {
+    session.clear();
+    window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
+    throw new ApiError(401, "Your session has expired. Please log in again.");
+  }
+  if (!res.ok) throw new ApiError(res.status, `Could not generate the report (${res.status})`);
+  return res.blob();
+}
+
+/** Trigger a browser download for a Blob. */
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 function loginForm(email: string, password: string) {
   const form = new URLSearchParams();
   form.append("username", email);
@@ -447,18 +527,7 @@ export const api = {
     alerts: (childId: number) => apiFetch<AlertItem[]>(`/api/v1/user/child/${childId}/alerts`),
     report: (childId: number) => apiFetch<GrowthReport>(`/api/v1/user/child/${childId}/report`),
     /** Fetches the PDF as a Blob (needs the bearer token, so no plain <a href>). */
-    reportPdf: async (childId: number): Promise<Blob> => {
-      const res = await fetch(`${API_URL}/api/v1/user/child/${childId}/report.pdf`, {
-        headers: { Authorization: `Bearer ${session.getToken() ?? ""}` },
-      });
-      if (res.status === 401) {
-        session.clear();
-        window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
-        throw new ApiError(401, "Your session has expired. Please log in again.");
-      }
-      if (!res.ok) throw new ApiError(res.status, `Could not generate the report (${res.status})`);
-      return res.blob();
-    },
+    reportPdf: (childId: number) => fetchPdf(`/api/v1/user/child/${childId}/report.pdf`),
 
     listMeasurements: (childId: number) => apiFetch<Measurement[]>(`/api/v1/user/child/${childId}/measurements`),
     logMeasurement: (childId: number, data: { weight_kg: number; height_cm: number; date_logged: string }) =>
@@ -509,6 +578,13 @@ export const api = {
     me: () => apiFetch<AdminTokenResponse["admin_info"]>("/api/v1/admin/auth/me"),
 
     stats: (region?: string) => apiFetch<StuntingStats>("/api/v1/admin/dashboard/stunting-stats", { query: { region } }),
+    overview: () => apiFetch<DashboardOverview>("/api/v1/admin/dashboard/overview"),
+    recentMeasurements: (limit = 10) => apiFetch<RecentMeasurement[]>("/api/v1/admin/dashboard/recent-measurements", { query: { limit } }),
+    listChildren: (params: { q?: string; region?: string; flag?: string; limit?: number; offset?: number } = {}) =>
+      apiFetch<{ total: number; items: RegistryChild[] }>("/api/v1/admin/children", { query: params }),
+    childDetail: (id: number) => apiFetch<AdminChildDetail>(`/api/v1/admin/children/${id}`),
+    childMeals: (id: number, days = 7) => apiFetch<MealLog[]>(`/api/v1/admin/children/${id}/meals`, { query: { days } }),
+    childReportPdf: (id: number) => fetchPdf(`/api/v1/admin/children/${id}/report.pdf`),
     regionStats: () => apiFetch<StuntingStats[]>("/api/v1/admin/dashboard/regions"),
 
     listFoods: (params: { q?: string; category?: string; safe_only?: boolean; limit?: number; offset?: number } = {}) =>

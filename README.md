@@ -1,7 +1,12 @@
 # SIMBA
 
-Child growth & nutrition monitoring: a **FastAPI + PostgreSQL** backend, and a **React (Vite)** frontend
-with a parent mobile UI and a Health Manager (admin) portal.
+Child growth & nutrition monitoring: a **FastAPI + PostgreSQL** backend and a **React (Vite)** frontend that
+serves two audiences from one codebase:
+
+- **Health Manager web portal** (`/hm/*`) — a desktop website: sidebar navigation, dashboard, children registry,
+  regional prevalence, reference-data management, content and system administration.
+- **Parent app** (`/`, `/home`, …) — the mobile experience, currently rendered inside a phone mock-up as the
+  reference implementation for the upcoming native mobile app.
 
 📚 **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Step-by-step test guide](docs/TESTING.md) · [Changelog](docs/CHANGELOG.md)
 
@@ -13,8 +18,9 @@ cd backend && pip install -r requirements.txt && cp .env.example .env && python 
 # frontend (new terminal)
 cd frontend && npm install && npm run dev
 ```
-Open http://localhost:5173 — register a parent, or log in as Health Manager with the superadmin from `backend/.env`
-(`admin@simba.id` / `admin1234` by default — change it).
+- **Web portal:** http://localhost:5173/hm/login — sign in with the superadmin from `backend/.env`
+  (`admin@simba.id` / `admin1234` by default — change it).
+- **Parent app (mobile prototype):** http://localhost:5173 — register a parent account.
 
 ## Features
 
@@ -24,7 +30,7 @@ Open http://localhost:5173 — register a parent, or log in as Health Manager wi
 | Nutrition | Food diary per day and meal type over a 1,651-item Indonesian food DB; AKG 2019 targets and fulfillment for the child's age | Food DB CRUD with search; editable AKG targets |
 | Development | KPSP milestone checklist by age bracket with Sesuai / Meragukan / Penyimpangan result | KPSP question bank CRUD |
 | Immunization | Kemenkes routine schedule computed from birth date (given / due / overdue), record doses, health calendar events | — |
-| Insights | Early-warning alerts derived from all of the above; growth report screen + PDF download | Education articles (draft/publish) shown in the parent Explore tab; system panel with data overview, reference seeding and admin accounts |
+| Insights | Early-warning alerts derived from all of the above; growth report screen + PDF download | **Children registry** (search, region/status filters, masked parent contact) and per-child detail page (WHO chart, attention points, history, nutrition, KPSP, immunization, PDF); education articles (draft/publish) shown in the parent Explore tab; system panel with data overview, reference seeding and admin accounts |
 
 Every parent route is scoped to the authenticated parent's own children; admin routes require an admin token
 (account creation requires a superadmin).
@@ -42,7 +48,8 @@ user/nutrition/{id}  POST analyze          user/articles           GET, GET /{id
 admin/auth           POST login, POST register (superadmin), GET me
 admin/foods          GET/POST, GET/PUT/DELETE /{id}         admin/milestones   GET/POST, PUT/DELETE /{id}
 admin/articles       GET/POST, PUT/DELETE /{id}             admin/datasets     GET akg, POST update-akg, GET growth-standards
-admin/dashboard      GET stunting-stats[?region=], GET regions
+admin/dashboard      GET overview, GET stunting-stats[?region=], GET regions, GET recent-measurements
+admin/children       GET (q, region, flag, limit, offset), GET /{id} (report), GET /{id}/report.pdf, GET /{id}/meals
 admin/system         GET summary, GET admins, POST seed (superadmin)
 ```
 
@@ -164,9 +171,14 @@ npm run typecheck               # tsc --noEmit (strict); `npm run build` runs it
 
 The API base URL comes from `VITE_API_URL` (copy `frontend/.env.example` to `frontend/.env`; defaults to
 `http://127.0.0.1:8000`). All requests go through `src/lib/api.ts`, which attaches the bearer token and, on a
-401, clears the session and redirects to `/login`. Parent screens share the active child via
-`src/app/ChildContext.tsx` (switch children from the Home header or Settings). Log in as a Health Manager
-with the superadmin from `backend/.env` to reach the `/hm/*` portal.
+401, clears the session and redirects to the right login page.
+
+- `src/web/` — the **Health Manager portal** (desktop web): `HMShell` (sidebar + top bar, collapses to a
+  drawer below 1024px), `pages/` (Dashboard, Children, ChildDetail, Regions, GrowthStandards, AkgTargets,
+  Foods, Milestones, Education, System) and `components/ui.tsx` (PageHeader, Panel, StatCard, badges).
+  Styled with the shadcn/ui primitives in `app/components/ui` plus `styles/portal.css` tokens.
+- `src/app/` — the **parent mobile prototype** (phone frame, bottom nav). Parent screens share the active
+  child via `ChildContext.tsx`.
 
 ### Folder structure
 
@@ -182,16 +194,19 @@ frontend/
 |   |── main.tsx
 |   |── lib/
 |   |   |── api.ts               # Typed API client + session helpers (single place that knows the backend)
-│   ├── app
+|   |── web/                     # Health Manager web portal (desktop)
+|   |   |── HMShell.tsx          # Sidebar + top bar layout
+|   |   |── components/ui.tsx    # Portal building blocks
+|   |   |── pages/               # Login, Dashboard, Children, ChildDetail, Regions, GrowthStandards,
+|   |   |                        # AkgTargets, Foods, Milestones, Education, System
+│   ├── app                      # Parent mobile prototype
 │   │   ├── App.tsx
-│   │   ├── routes.tsx           # Routes; parent/admin subtrees wrapped in RequireAuth
+│   │   ├── routes.tsx           # Routes; parent tree in RequireAuth("Parent"), /hm/* in RequireAuth("Health Manager")
 │   │   ├── ChildContext.tsx     # Active-child state shared by parent screens
 │   │   ├── components/
 |   |   |   |── RequireAuth.tsx
 |   |   |   |── FrameModal.tsx       # Overlay portal clipped to the phone frame
 |   |   |   |── BottomNav.tsx
-|   |   |   |── HMBottomNav.tsx
-|   |   |   |── HMLayout.tsx
 |   |   |   |── MainLayout.tsx
 |   |   |   |── MobileFrame.tsx
 |   |   |   |── figma/
@@ -211,15 +226,6 @@ frontend/
 |   |   |   |   |── ReportsScreen.tsx
 |   |   |   |   |── SettingsScreen.tsx
 |   |   |   |   |── SplashScreen.tsx
-|   |   |   |   |── hm/
-|   |   |   |   |   |── HMAKGTargets.tsx
-|   |   |   |   |   |── HMDashboard.tsx
-|   |   |   |   |   |── HMEducation.tsx
-|   |   |   |   |   |── HMFoodDatabase.tsx
-|   |   |   |   |   |── HMGrowthStandards.tsx
-|   |   |   |   |   |── HMMilestones.tsx
-|   |   |   |   |   |── HMRegionalTrends.tsx
-|   |   |   |   |   |── HMSystem.tsx
 |   |   |   |── ui/
 |   |   |   |   |── accordion.tsx
 |   |   |   |   |── alert-dialog.tsx
@@ -276,5 +282,6 @@ frontend/
 │   │   ├── fonts.css
 │   │   ├── index.css
 │   │   ├── tailwind.css
-│   │   ├── theme.css            
+│   │   ├── theme.css
+│   │   ├── portal.css           # Health Manager portal tokens
 ```
