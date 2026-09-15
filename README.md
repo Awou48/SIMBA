@@ -1,12 +1,13 @@
 # SIMBA
 
-Child growth & nutrition monitoring: a **FastAPI + PostgreSQL** backend and a **React (Vite)** frontend that
-serves two audiences from one codebase:
+Child growth & nutrition monitoring: one **FastAPI + PostgreSQL** backend, three clients:
 
-- **Health Manager web portal** (`/hm/*`) — a desktop website: sidebar navigation, dashboard, children registry,
-  regional prevalence, reference-data management, content and system administration.
-- **Parent app** (`/`, `/home`, …) — the mobile experience, currently rendered inside a phone mock-up as the
-  reference implementation for the upcoming native mobile app.
+- **Health Manager web portal** (`frontend/`, routes `/hm/*`) — a desktop website: sidebar navigation, dashboard,
+  children registry, regional prevalence, reference-data management, content and system administration.
+- **SIMBA Mobile** (`mobile/`) — the native parent app (Expo / React Native, Android + iOS): growth chart with
+  WHO bands, meal logging, KPSP, immunization, calendar, alerts, shareable PDF report. See [mobile/README.md](mobile/README.md).
+- **Parent web prototype** (`frontend/`, routes `/`, `/home`, …) — the original phone-framed UI, kept as the
+  design reference; the mobile app supersedes it.
 
 📚 **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Step-by-step test guide](docs/TESTING.md) · [Changelog](docs/CHANGELOG.md)
 
@@ -17,10 +18,14 @@ serves two audiences from one codebase:
 cd backend && pip install -r requirements.txt && cp .env.example .env && python seed_db.py && uvicorn main:app --reload
 # frontend (new terminal)
 cd frontend && npm install && npm run dev
+# mobile app (new terminal) — Android emulator / iOS simulator / Expo Go / web
+cd mobile && npm install && cp .env.example .env && npx expo start
 ```
 - **Web portal:** http://localhost:5173/hm/login — sign in with the superadmin from `backend/.env`
   (`admin@simba.id` / `admin1234` by default — change it).
 - **Parent app (mobile prototype):** http://localhost:5173 — register a parent account.
+- **Mobile app:** press `a`/`i`/`w` in the Expo terminal or scan the QR with Expo Go; point
+  `EXPO_PUBLIC_API_URL` at the backend as seen from the phone (details in `mobile/README.md`).
 
 ## Features
 
