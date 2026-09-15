@@ -97,7 +97,7 @@ export function Dashboard() {
         <div className="absolute -right-10 -top-16 size-64 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute right-24 bottom-0 size-40 rounded-full bg-[#f47b20]/40 blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center gap-8">
-        <div className="relative max-w-2xl flex-1">
+        <div className="relative max-w-xl flex-1">
           <p className="text-sm font-semibold text-white/80 flex items-center gap-2"><Sparkles size={14} /> {greeting()}, {me?.name ?? "Health Manager"} · {today}</p>
           <h1 className="text-3xl md:text-4xl font-extrabold mt-2 leading-tight">
             {overview?.children_total ?? 0} children monitored{overview && overview.regions_total > 0 ? ` across ${overview.regions_total} region${overview.regions_total === 1 ? "" : "s"}` : ""}.
@@ -120,8 +120,8 @@ export function Dashboard() {
 
         {/* Right column: this month's pulse + mascot */}
         {overview && (
-          <div className="hidden lg:flex flex-1 items-center justify-between gap-8 pl-2">
-            <div className="hidden xl:grid gap-2.5 w-64">
+          <div className="hidden lg:flex flex-1 items-center justify-between gap-8 pr-8">
+            <div className="hidden xl:grid gap-2.5 w-80">
               <HeroTile icon={<CalendarDays size={15} />} label="Last 30 days" value={overview.last_30_days.measurements} unit="measurements" hint={`${overview.last_30_days.children_measured} children · ${overview.last_30_days.meals} meals logged`} />
               <HeroTile icon={<TrendingUp size={15} />} label="Stunting rate" value={pct(overview.stunting_rate)} hint={`${overview.status.stunted} of ${overview.children_measured} measured`} accent={rateAccent} />
               <HeroTile icon={<ShieldCheck size={15} />} label="Immunization" value={overview.immunization.children_with_overdue} unit="overdue" hint={overview.immunization.children_with_overdue === 0 ? "everyone is on schedule" : `${overview.immunization.overdue_doses} doses to catch up`} accent={overview.immunization.children_with_overdue > 0 ? "#f47b20" : "#10b981"} />
