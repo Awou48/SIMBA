@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard, Users, Map, LineChart, Salad, Apple, Flag, BookOpen, Settings, LogOut, Menu, X, ExternalLink, Crown, Stethoscope, type LucideIcon,
 } from "lucide-react";
-import logo2 from "../imports/logo_2.png";
+import logoMark from "../imports/logo_mark.png";
 import { API_URL, api, session, type AdminInfo } from "../lib/api";
 import { cn } from "../app/components/ui/utils";
 import { Button } from "../app/components/ui/button";
@@ -45,8 +45,8 @@ export function HMShell() {
   const sidebar = (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex items-center gap-3 px-5 h-16 border-b border-sidebar-border">
-        <div className="size-9 rounded-lg bg-white/90 flex items-center justify-center shrink-0">
-          <img src={logo2} alt="SIMBA" className="size-7 object-contain" />
+        <div className="size-11 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
+          <img src={logoMark} alt="SIMBA" className="size-10 object-contain" />
         </div>
         <div className="min-w-0">
           <p className="font-extrabold leading-tight">SIMBA</p>
