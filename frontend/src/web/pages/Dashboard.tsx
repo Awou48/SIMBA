@@ -120,8 +120,8 @@ export function Dashboard() {
 
         {/* Right column: this month's pulse + mascot */}
         {overview && (
-          <div className="hidden lg:flex items-center gap-6 shrink-0">
-            <div className="grid gap-2.5 w-64">
+          <div className="hidden lg:flex items-center gap-16 shrink-0 pr-2">
+            <div className="hidden xl:grid gap-2.5 w-64">
               <HeroTile icon={<CalendarDays size={15} />} label="Last 30 days" value={overview.last_30_days.measurements} unit="measurements" hint={`${overview.last_30_days.children_measured} children · ${overview.last_30_days.meals} meals logged`} />
               <HeroTile icon={<TrendingUp size={15} />} label="Stunting rate" value={pct(overview.stunting_rate)} hint={`${overview.status.stunted} of ${overview.children_measured} measured`} accent={rateAccent} />
               <HeroTile icon={<ShieldCheck size={15} />} label="Immunization" value={overview.immunization.children_with_overdue} unit="overdue" hint={overview.immunization.children_with_overdue === 0 ? "everyone is on schedule" : `${overview.immunization.overdue_doses} doses to catch up`} accent={overview.immunization.children_with_overdue > 0 ? "#f47b20" : "#10b981"} />
