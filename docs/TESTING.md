@@ -257,7 +257,53 @@ least ~1024px wide to see the sidebar; below that it collapses into a ☰ drawer
 
 ---
 
-## 10. Database migrations (for deployment)
+## 10. Mobile app (Expo)
+
+### 10.1 Start
+1. `cd mobile && npm install && cp .env.example .env`.
+2. Backend must be reachable from the device: run `uvicorn main:app --host 0.0.0.0 --port 8000` and set
+   `EXPO_PUBLIC_API_URL` (Android emulator `http://10.0.2.2:8000`, iOS simulator/web `http://127.0.0.1:8000`,
+   real phone `http://<PC LAN IP>:8000`).
+3. `npx expo start` → `a` (Android), `i` (iOS), `w` (web at http://localhost:8081) or scan the QR in Expo Go.
+   Expect the splash lion, then the Sign In screen.
+
+### 10.2 Auth & children
+- Sign in with `uitest_0914@example.com` / `secret123` → Home shows "How is Sari doing?" with the child switcher.
+- Tap the switcher → sheet lists Sari and Budi; pick Budi → every tab now shows Budi's data; relaunch the app →
+  Budi is still selected.
+- **Create an account** → after registering you land on "Add your child"; save → Home.
+- More → Sign out → back to Sign In; the token is removed from SecureStore.
+
+### 10.3 Growth
+- Growth tab: chart shows teal 3rd–97th / 15th–85th bands, the WHO median and Sari's purple curve; switch
+  Weight / Height / BMI. Latest grid shows z-scores with coloured pills; WFH shows "Not computed" above 24 mo.
+- Home → **Log new measurement** → 10.4 kg / 80 cm today → result screen with the Permenkes classification and
+  four z-score rows → Done → Home hero and Growth history update.
+- Future date or 0 kg → red validation message.
+
+### 10.4 Nutrition
+- Nutrition tab shows today's totals against AKG 1–3 tahun. **Add a meal** → type "telur" → pick an item →
+  Lunch, 1.5 servings → **Log meal** → totals and progress bars update; trash icon removes it (confirm dialog).
+- Arrows move a day back; the forward arrow is disabled at today.
+
+### 10.5 Development, immunization, calendar
+- Growth+ tab: answer Yes / Not yet → hero counts update; 4/5 → "Meragukan", 5/5 → "Sesuai".
+- More → Immunization: tap an unchecked dose → becomes Given (today) and counters update; tap again → Undo.
+- More → Calendar: Add → title/date → Save → appears in Upcoming; checkbox marks done; trash deletes
+  (vaccine-linked events refuse and point to Immunization).
+
+### 10.6 Alerts, report, explore
+- Bell badge on Home = number of alerts; Alerts screen lists them, tapping opens the relevant tab.
+- More → Growth report → **Share PDF report** → native share sheet with `SIMBA-Sari-<date>.pdf`
+  (on web it opens in a new tab).
+- More → Explore → filter chips, search, open an article → body paragraphs render.
+
+### 10.7 Type check
+```bash
+cd mobile && npm run typecheck
+```
+
+## 11. Database migrations (for deployment)
 
 ```bash
 cd backend
@@ -273,9 +319,10 @@ older prototype and can be dropped, e.g. `DROP TABLE immunization_events, immuni
 ## Quick regression checklist
 
 ```
-[ ] pytest → 79 passed
+[ ] pytest → 82 passed
 [ ] npm run typecheck → clean
 [ ] npm run build → built
+[ ] mobile: npm run typecheck → clean; sign in, switch child, log measurement, log meal, KPSP answer, mark dose, share PDF
 [ ] register / login / wrong password / role guard / logout
 [ ] add 2 children, switch, region shown in Settings
 [ ] measurement at WHO median → z ≈ 0; stunted height → red; future date rejected

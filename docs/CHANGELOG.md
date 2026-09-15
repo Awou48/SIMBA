@@ -3,6 +3,16 @@
 All notable changes on the `claude/project-build-improve-548c26` branch (September 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
 
+## 1.4.0 — SIMBA Mobile (native parent app)
+- New `mobile/` Expo SDK 57 / React Native app with expo-router: Home, Growth (react-native-svg WHO chart with
+  percentile bands), Nutrition (day picker, AKG progress, food search + servings), Development (KPSP), More
+  (Immunization, Calendar, Alerts, Report with PDF share, Explore articles, child management), auth with
+  SecureStore and automatic sign-out on 401, multi-child switcher persisted across launches.
+- Shared API contract: `mobile/src/lib/api.ts` mirrors the parent half of `frontend/src/lib/api.ts`.
+- Backend: `CORS_ORIGINS` default now includes the Expo web dev origin (`localhost:8081`).
+- CI: mobile type-check job. Docs: `mobile/README.md`, TESTING §10, README overview.
+- Repo-wide: code comments stripped (docstrings and tool pragmas kept).
+
 ## 1.3.1 — Portal polish & data cleanup
 - Logo: `logo_mark.png` (lion head cropped from the padded source PNG) now fills the sidebar and login boxes.
 - Login page: animated hero — drifting gradient, floating blurred orbs, masked grid, bobbing mascot, fade-up
