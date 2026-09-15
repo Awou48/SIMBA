@@ -13,9 +13,9 @@ def _measure(client, token, child_id, weight, height, day=TODAY):
 def test_children_registry_list_filters_and_masking(client, parent_token, admin_token, child):
     h = auth(parent_token)
     client.put(f"/api/v1/user/children/{child['id']}", json={"region": "Tangerang Selatan"}, headers=h)
-    _measure(client, parent_token, child["id"], 9.6, 70.0)  # stunted (-2 < z < -3 is not; z ~ -2.3)
+    _measure(client, parent_token, child["id"], 9.6, 70.0)
     ani = client.post("/api/v1/user/children/", json={"name": "Ani", "gender": "female", "birth_date": (date.today() - timedelta(days=365)).isoformat(), "region": "Kota Tangerang"}, headers=h).json()
-    _measure(client, parent_token, ani["id"], 8.9, 74.0, (date.today() - timedelta(days=45)).isoformat())  # normal but stale
+    _measure(client, parent_token, ani["id"], 8.9, 74.0, (date.today() - timedelta(days=45)).isoformat())
     client.post("/api/v1/user/children/", json={"name": "Cici", "gender": "female", "birth_date": "2025-06-01"}, headers=h)
 
     a = auth(admin_token)
@@ -70,7 +70,7 @@ def test_dashboard_overview_and_recent(client, parent_token, admin_token, child)
     assert o["status"]["stunted"] == 1 and o["status"]["severely_stunted"] == 1 and o["status"]["unmeasured"] == 1
     assert o["stunting_rate"] == 1.0
     assert o["last_30_days"]["measurements"] == 1 and o["last_30_days"]["children_measured"] == 1
-    assert o["immunization"]["children_with_overdue"] == 2  # both children have overdue doses
+    assert o["immunization"]["children_with_overdue"] == 2
     assert o["parents_total"] == 1
 
     recent = client.get("/api/v1/admin/dashboard/recent-measurements?limit=5", headers=a).json()

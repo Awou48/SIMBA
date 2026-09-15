@@ -18,7 +18,6 @@ function greeting() {
   return h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
 }
 
-/** KPI tile with a coloured accent and icon well. */
 function Kpi({ icon, label, value, hint, accent, to }: { icon: ReactNode; label: string; value: ReactNode; hint: string; accent: string; to?: string }) {
   const body = (
     <div className="hm-panel-lift relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm h-full">
@@ -92,7 +91,6 @@ export function Dashboard() {
     <div className="hm-stagger">
       <ErrorBanner message={error} />
 
-      {/* Hero */}
       <section className="hm-hero relative overflow-hidden rounded-3xl text-white p-6 md:p-8 mb-6 shadow-lg">
         <div className="absolute -right-10 -top-16 size-64 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute right-24 bottom-0 size-40 rounded-full bg-[#f47b20]/40 blur-3xl" />
@@ -118,7 +116,6 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Right column: this month's pulse + mascot */}
         {overview && (
           <div className="hidden lg:flex flex-1 items-center justify-between gap-8 pr-8">
             <div className="hidden xl:grid gap-2.5 w-80">
@@ -136,7 +133,6 @@ export function Dashboard() {
         </div>
       </section>
 
-      {/* KPIs */}
       {overview && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
           <Kpi icon={<Users size={20} />} accent="#4f46e5" label="Children registered" value={overview.children_total} hint={`${overview.children_measured} measured · ${overview.parents_total} parent account${overview.parents_total === 1 ? "" : "s"}`} to="/hm/children" />
@@ -257,7 +253,6 @@ export function Dashboard() {
         </Panel>
       </div>
 
-      {/* Quick links */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { to: "/hm/food-database", icon: <Utensils size={16} />, label: "Food Database", hint: "1,600+ Indonesian foods" },

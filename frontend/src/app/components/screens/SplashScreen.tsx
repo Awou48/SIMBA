@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import logo1 from "../../../imports/logo_1.png"; // Fixed import path
+import logo1 from "../../../imports/logo_1.png";
 import { session } from "../../../lib/api";
 
 export function SplashScreen() {
@@ -13,7 +13,6 @@ export function SplashScreen() {
       } else if (session.isLoggedInAs("Parent")) {
         navigate("/home", { replace: true });
       } else {
-        // New user, show onboarding
         navigate("/onboarding");
       }
     }, 2800);
@@ -28,7 +27,6 @@ export function SplashScreen() {
         background: "linear-gradient(160deg, #FFF8EF 0%, #FFE8C8 50%, #FFF0D6 100%)",
       }}
     >
-      {/* Decorative circles */}
       <div
         className="absolute top-[-60px] right-[-60px] rounded-full opacity-20"
         style={{ width: 200, height: 200, background: "#F47B20" }}
@@ -42,7 +40,6 @@ export function SplashScreen() {
         style={{ width: 100, height: 100, background: "#5CC8C2" }}
       />
 
-      {/* Paw prints decoration */}
       {[
         { top: "15%", left: "12%", size: 18, rotation: -15 },
         { top: "25%", right: "10%", size: 14, rotation: 20 },
@@ -61,7 +58,6 @@ export function SplashScreen() {
         </div>
       ))}
 
-      {/* Stars */}
       {[
         { top: "10%", left: "30%", size: 16 },
         { top: "18%", right: "25%", size: 12 },
@@ -75,7 +71,6 @@ export function SplashScreen() {
         </div>
       ))}
 
-      {/* Logo */}
       <div className="relative z-10 flex flex-col items-center gap-6">
         <div
           className="rounded-3xl flex items-center justify-center p-4"
@@ -119,7 +114,6 @@ export function SplashScreen() {
           </div>
         </div>
 
-        {/* Subtitle */}
         <p
           style={{
             fontSize: "13px",
@@ -133,7 +127,6 @@ export function SplashScreen() {
         </p>
       </div>
 
-      {/* Loading dots */}
       <div className="absolute bottom-16 flex gap-2">
         {[0, 1, 2].map((i) => (
           <div

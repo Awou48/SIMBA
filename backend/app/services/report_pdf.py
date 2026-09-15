@@ -67,7 +67,6 @@ def render_report_pdf(report: dict) -> bytes:
         ),
     ]
 
-    # --- Latest status ---------------------------------------------------------
     story.append(Paragraph("Latest WHO assessment", st["h2"]))
     latest, status = report["latest"], report["status"]
     if latest:
@@ -90,7 +89,6 @@ def render_report_pdf(report: dict) -> bytes:
             [f"{change['days']} days", f"{change['weight_kg']:+.2f} kg", f"{change['height_cm']:+.1f} cm", f"{change['bmi']:+.2f}"],
         ], col_widths=[40 * mm, 40 * mm, 40 * mm, 40 * mm]))
 
-    # --- Measurement history -----------------------------------------------------
     if report["measurements"]:
         story.append(Paragraph("Measurement history", st["h2"]))
         rows = [["Date", "Age (days)", "Weight (kg)", "Height (cm)", "BMI", "WFA z", "HFA z", "WFH z"]]
@@ -103,7 +101,6 @@ def render_report_pdf(report: dict) -> bytes:
         if len(report["measurements"]) > 15:
             story.append(Paragraph(f"Showing the latest 15 of {len(report['measurements'])} entries.", st["small"]))
 
-    # --- Nutrition ------------------------------------------------------------------
     nut = report["nutrition_7d"]
     story.append(Paragraph("Nutrition (last 7 days)", st["h2"]))
     if nut["days_logged"] == 0:
@@ -117,7 +114,6 @@ def render_report_pdf(report: dict) -> bytes:
         story.append(_table(rows, col_widths=[45 * mm, 45 * mm, 45 * mm, 43 * mm]))
         story.append(Paragraph(f"Averaged over {nut['days_logged']} day(s) with logged meals.", st["small"]))
 
-    # --- Development & immunization -----------------------------------------------
     ms, im = report["milestones"], report["immunization"]
     story.append(Paragraph("Development (KPSP) &amp; immunization", st["h2"]))
     kpsp = (
@@ -131,7 +127,6 @@ def render_report_pdf(report: dict) -> bytes:
         imm += f". Next: {next_dose['name']} (due {next_dose['due_date']:%d %b %Y})"
     story.append(_table([["KPSP", kpsp], ["Immunization", imm]], col_widths=[35 * mm, 143 * mm], header=False))
 
-    # --- Alerts ---------------------------------------------------------------------
     alerts = [a for a in report["alerts"] if a["severity"] != "low"]
     if alerts:
         story.append(Paragraph("Attention points", st["h2"]))

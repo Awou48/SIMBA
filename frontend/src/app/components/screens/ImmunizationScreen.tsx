@@ -81,7 +81,6 @@ export function ImmunizationScreen() {
     return () => { cancelled = true; };
   }, [child?.id, childLoading]);
 
-  // ---- calendar helpers -------------------------------------------------------
   const monthLabel = new Date(cursor.year, cursor.month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const firstWeekday = new Date(cursor.year, cursor.month, 1).getDay();
   const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate();
@@ -114,7 +113,6 @@ export function ImmunizationScreen() {
     setCursor(({ year, month }) => { const d = new Date(year, month + delta, 1); return { year: d.getFullYear(), month: d.getMonth() }; });
   };
 
-  // ---- agenda: upcoming events + pending doses merged -----------------------------
   const agenda = useMemo(() => {
     const items: { key: string; date: string; title: string; subtitle: string; type: EventType; status?: VaccineDose["status"]; event?: HealthEvent; dose?: VaccineDose }[] = [];
     for (const e of events) {
@@ -129,8 +127,6 @@ export function ImmunizationScreen() {
     return filtered.sort((a, b) => a.date.localeCompare(b.date)).slice(0, selectedDay ? 50 : 8);
   }, [events, summary, selectedDay]);
 
-  // ---- actions --------------------------------------------------------------------
-  /** Open the "record dose" sheet; the date defaults to the due date for catch-up doses. */
   const openRecord = (dose: VaccineDose) =>
     setRecording({ dose, date: dose.due_date <= today ? dose.due_date : today, notes: "" });
 
@@ -220,7 +216,6 @@ export function ImmunizationScreen() {
 
   return (
     <div className="flex flex-col relative min-h-screen" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-4">
         <button onClick={() => navigate("/home")}>
           <ChevronLeft size={24} style={{ color: "#2D3047" }} />
@@ -255,7 +250,6 @@ export function ImmunizationScreen() {
           </button>
         )}
 
-        {/* Coverage summary */}
         {summary && (
           <div className="rounded-3xl p-4" style={{ background: "linear-gradient(135deg, #F47B20 0%, #FFC72C 100%)", boxShadow: "0 8px 24px rgba(244,123,32,0.3)" }}>
             <div className="flex items-center justify-between mb-2">
@@ -287,7 +281,6 @@ export function ImmunizationScreen() {
           </div>
         )}
 
-        {/* Calendar */}
         <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => shiftMonth(-1)} className="rounded-full p-1.5" style={{ background: "#F8F9FD" }}><ChevronLeft size={18} style={{ color: "#2D3047" }} /></button>
@@ -335,7 +328,6 @@ export function ImmunizationScreen() {
           </div>
         </div>
 
-        {/* Agenda */}
         <div>
           <div className="flex items-center justify-between mb-2.5">
             <p style={{ fontSize: "15px", fontWeight: 900, color: "#2D3047", fontFamily: FONT }}>
@@ -384,7 +376,6 @@ export function ImmunizationScreen() {
           </div>
         </div>
 
-        {/* Vaccine schedule */}
         {summary && (
           <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
             <div className="flex items-center justify-between mb-3">
@@ -432,7 +423,6 @@ export function ImmunizationScreen() {
         )}
       </div>
 
-      {/* Record dose sheet */}
       {recording && (
         <FrameModal onClose={() => busyCode === null && setRecording(null)}>
           <div className="w-full rounded-t-3xl p-5 flex flex-col gap-3" style={{ background: "white" }}>
@@ -473,7 +463,6 @@ export function ImmunizationScreen() {
         </FrameModal>
       )}
 
-      {/* Add Event sheet */}
       {showAddForm && (
         <FrameModal onClose={() => !isSaving && setShowAddForm(false)}>
           <div className="w-full rounded-t-3xl p-5 flex flex-col gap-4" style={{ background: "white" }}>

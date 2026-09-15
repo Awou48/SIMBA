@@ -54,7 +54,7 @@ def list_admins(db: Session = Depends(get_db)):
 @router.post("/seed")
 def seed_reference_data(_: models.AdminUser = Depends(get_current_superadmin), db: Session = Depends(get_db)):
     """Load any reference table that is still empty (same as `python seed_db.py`, never resets)."""
-    import seed_db  # local import: seed_db lives at the backend root, not inside the package
+    import seed_db
 
     return {
         "foods": seed_db.seed_foods(db),

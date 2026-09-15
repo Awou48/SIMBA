@@ -11,8 +11,6 @@ AKG_ROWS = {
 }
 
 
-# --- guards ------------------------------------------------------------------
-
 def test_admin_routes_require_token(client):
     assert client.get("/api/v1/admin/foods").status_code == 401
     assert client.get("/api/v1/admin/datasets/akg").status_code == 401
@@ -35,8 +33,6 @@ def test_admin_login_and_me(client, superadmin_token):
     assert r.status_code == 200
     assert r.json()["is_superadmin"] is True
 
-
-# --- foods CRUD ---------------------------------------------------------------
 
 def test_food_crud_and_filters(client, admin_token):
     h = auth(admin_token)
@@ -62,8 +58,6 @@ def test_food_validation(client, admin_token):
     assert r.status_code == 422
 
 
-# --- AKG ------------------------------------------------------------------------
-
 def test_akg_replace_and_read(client, admin_token):
     h = auth(admin_token)
     r = client.post("/api/v1/admin/datasets/update-akg", json=AKG_ROWS, headers=h)
@@ -72,12 +66,9 @@ def test_akg_replace_and_read(client, admin_token):
     assert [row["ageGroup"] for row in rows] == ["0-5 bulan", "6-11 bulan"]
     assert rows[0]["vitA"] is None
 
-    # Replacing again does not accumulate rows.
     client.post("/api/v1/admin/datasets/update-akg", json=AKG_ROWS, headers=h)
     assert len(client.get("/api/v1/admin/datasets/akg", headers=h).json()) == 2
 
-
-# --- dashboard ----------------------------------------------------------------
 
 def test_stats_on_empty_database(client, admin_token):
     r = client.get("/api/v1/admin/dashboard/stunting-stats", headers=auth(admin_token))
@@ -94,7 +85,6 @@ def test_stats_count_stunted_cases(client, admin_token, parent_token, child):
     url = f"/api/v1/user/child/{child['id']}/measurements"
     birth = date.fromisoformat(child["birth_date"])
     day = lambda d: (birth + timedelta(days=d)).isoformat()
-    # WHO boy: normal at 6 mo, then severely stunted at 9 mo, then stunted (latest) at 12 mo.
     client.post(url, json={"weight_kg": 7.9, "height_cm": 67.6, "date_logged": day(182)}, headers=auth(parent_token))
     client.post(url, json={"weight_kg": 8.9, "height_cm": 62.0, "date_logged": day(274)}, headers=auth(parent_token))
     client.post(url, json={"weight_kg": 9.6, "height_cm": 70.0, "date_logged": day(365)}, headers=auth(parent_token))
@@ -103,7 +93,7 @@ def test_stats_count_stunted_cases(client, admin_token, parent_token, child):
     assert body["total_children"] == 1
     assert body["children_measured"] == 1
     assert body["total_measurements"] == 3
-    assert body["stunted_cases"] == 1          # latest z is between -3 and -2
-    assert body["severely_stunted_cases"] == 0  # the -3 SD entry is not the latest
+    assert body["stunted_cases"] == 1
+    assert body["severely_stunted_cases"] == 0
     assert body["stunting_rate"] == 1.0
     assert body["warning"] == "Stunting rate exceeds 20%"

@@ -11,7 +11,7 @@ def seeded_milestones(engine):
     db = sessionmaker(bind=engine)()
     try:
         assert seed_db.seed_milestones(db) == 20
-        assert seed_db.seed_milestones(db) == 0  # idempotent
+        assert seed_db.seed_milestones(db) == 0
     finally:
         db.close()
 
@@ -32,21 +32,17 @@ def test_interpret_kpsp():
     assert interpret_kpsp(3, 5).startswith("Penyimpangan")
 
 
-# --- parent checklist -------------------------------------------------------------
-
 def test_checklist_for_child_age_bracket(client, parent_token, child, seeded_milestones):
     r = client.get(url(child), headers=auth(parent_token))
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["age_in_months"] == 12
-    # Half-open brackets: 12 months belongs to "12 - 24 Months" only.
     assert body["age_label"] == "12 - 24 Months"
     assert body["total"] == 5
     assert body["answered"] == 0
     assert body["interpretation"] is None
     assert all(i["achieved"] is None for i in body["items"])
 
-    # Explicit bracket override.
     r = client.get(url(child, "?bracket_months=30"), headers=auth(parent_token))
     assert r.json()["age_label"] == "2 - 3 Years"
     assert r.json()["total"] == 5
@@ -56,7 +52,6 @@ def test_answer_and_interpretation(client, parent_token, child, seeded_milestone
     h = auth(parent_token)
     items = client.get(url(child, "?bracket_months=30"), headers=h).json()["items"]
 
-    # 4 of 5 yes -> Meragukan
     for i, item in enumerate(items):
         r = client.put(url(child, f"/{item['id']}"), json={"achieved": i < 4}, headers=h)
         assert r.status_code == 200, r.text
@@ -64,7 +59,6 @@ def test_answer_and_interpretation(client, parent_token, child, seeded_milestone
     assert body["answered"] == 5 and body["achieved"] == 4
     assert body["interpretation"].startswith("Meragukan")
 
-    # Changing an answer upserts (no duplicate rows) and re-scores.
     r = client.put(url(child, f"/{items[4]['id']}"), json={"achieved": True}, headers=h)
     assert r.json()["achieved"] == 5
     assert r.json()["interpretation"].startswith("Sesuai")
@@ -80,8 +74,6 @@ def test_milestones_require_ownership(client, child, other_parent_token, seeded_
 def test_answer_unknown_milestone(client, parent_token, child, seeded_milestones):
     assert client.put(url(child, "/9999"), json={"achieved": True}, headers=auth(parent_token)).status_code == 404
 
-
-# --- admin CRUD --------------------------------------------------------------------
 
 def test_admin_milestone_crud(client, admin_token, parent_token, child, seeded_milestones):
     h = auth(admin_token)
@@ -99,7 +91,6 @@ def test_admin_milestone_crud(client, admin_token, parent_token, child, seeded_m
     r = client.put(f"/api/v1/admin/milestones/{mid}", json={**payload, "active": False}, headers=h)
     assert r.status_code == 200 and r.json()["active"] is False
 
-    # Inactive milestones are hidden from parents.
     r = client.get(url(child, "?bracket_months=40"), headers=auth(parent_token))
     assert r.json()["total"] == 0
 

@@ -36,7 +36,6 @@ export function LoginScreen() {
 
   return (
     <div className="h-full flex flex-col overflow-y-auto" style={{ background: "#FFF8EF" }}>
-      {/* Role selector tabs */}
       <div className="px-4 pt-4 pb-0">
         <div
           className="flex rounded-2xl p-1"
@@ -68,7 +67,6 @@ export function LoginScreen() {
         </div>
       </div>
 
-      {/* Header gradient */}
       <div
         className="flex-shrink-0 flex flex-col items-center justify-center pt-5 pb-8"
         style={{
@@ -88,7 +86,6 @@ export function LoginScreen() {
               : "0 6px 24px rgba(244,123,32,0.2)",
           }}
         >
-          {/* Ensure the image path is correct */}
           <img src={logo2} alt="SIMBA" className="w-16 h-16 object-contain" />
         </div>
         <h1
@@ -113,7 +110,6 @@ export function LoginScreen() {
         </p>
       </div>
 
-      {/* Card */}
       <div
         className="flex-1 mx-4 rounded-3xl px-6 py-6"
         style={{
@@ -125,7 +121,6 @@ export function LoginScreen() {
       >
         <div className="flex flex-col gap-4">
           
-          {/* Error Message Display */}
           {errorMessage && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
               <AlertCircle size={16} className="text-red-500" />
@@ -133,7 +128,6 @@ export function LoginScreen() {
             </div>
           )}
 
-          {/* Email */}
           <div className="flex flex-col gap-1.5">
             <label style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>
               {isHM ? "Official Email" : "Email Address"}
@@ -154,7 +148,6 @@ export function LoginScreen() {
             </div>
           </div>
 
-          {/* Password */}
           <div className="flex flex-col gap-1.5">
             <label style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>
               Password
@@ -180,7 +173,6 @@ export function LoginScreen() {
             </div>
           </div>
 
-          {/* Forgot */}
           <button
             className="text-right"
             style={{ fontSize: "12px", color: isHM ? "#4F46E5" : "#F47B20", fontWeight: 700, fontFamily: "'Nunito', sans-serif" }}
@@ -188,7 +180,6 @@ export function LoginScreen() {
             Forgot Password?
           </button>
 
-          {/* Login button */}
           <button
             onClick={handleLogin}
             disabled={isLoading}
@@ -213,14 +204,12 @@ export function LoginScreen() {
 
           {!isHM && (
             <>
-              {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: "#F0F1F5" }} />
                 <span style={{ fontSize: "12px", color: "#9BA3B8", fontWeight: 700, fontFamily: "'Nunito', sans-serif" }}>OR</span>
                 <div className="flex-1 h-px" style={{ background: "#F0F1F5" }} />
               </div>
 
-              {/* Google */}
               <button
                 className="w-full py-3.5 rounded-full flex items-center justify-center gap-3 transition-transform active:scale-95"
                 style={{ border: "1.5px solid #E0E4EE", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
@@ -234,7 +223,6 @@ export function LoginScreen() {
                 <span style={{ fontSize: "14px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>Continue with Google</span>
               </button>
 
-              {/* Register link */}
               <p className="text-center" style={{ fontSize: "13px", color: "#717182", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
                 New here?{" "}
                 <button onClick={() => navigate("/register")} style={{ color: "#F47B20", fontWeight: 800 }}>

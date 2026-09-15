@@ -25,7 +25,6 @@ export function BottomNav() {
     >
       <div className="flex items-center justify-around px-2 pt-2 pb-1">
         {tabs.map((tab) => {
-          // Dynamic Active State Logic: Group sub-screens under their logical parent tab
           const isActive = 
             location.pathname === tab.path || 
             (tab.path === "/home" && location.pathname === "/recipes") ||

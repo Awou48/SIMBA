@@ -46,7 +46,6 @@ export function FoodDiaryScreen() {
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Add-food modal
   const [showPicker, setShowPicker] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<FoodItem[]>([]);
@@ -67,7 +66,6 @@ export function FoodDiaryScreen() {
     return selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  // Load the day's meals + AKG comparison for the active child.
   useEffect(() => {
     if (childLoading) return;
     if (!child) {
@@ -86,7 +84,6 @@ export function FoodDiaryScreen() {
     return () => { cancelled = true; };
   }, [child?.id, childLoading, dateStr, reloadKey]);
 
-  // Debounced food search inside the picker.
   useEffect(() => {
     if (!showPicker) return;
     let cancelled = false;
@@ -148,7 +145,6 @@ export function FoodDiaryScreen() {
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-4">
         <button onClick={() => navigate("/home")}>
           <ChevronLeft size={24} style={{ color: "#2D3047" }} />
@@ -161,7 +157,6 @@ export function FoodDiaryScreen() {
         </div>
       </div>
 
-      {/* Date selector */}
       <div className="flex items-center justify-center gap-4 px-4 mb-4">
         <button onClick={() => setDateOffset(dateOffset - 1)} className="rounded-full p-1.5" style={{ background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
           <ChevronLeft size={18} style={{ color: "#2D3047" }} />
@@ -187,7 +182,6 @@ export function FoodDiaryScreen() {
           </div>
         )}
 
-        {/* Daily summary card */}
         <div className="rounded-3xl p-4 flex items-center gap-4" style={{ background: "linear-gradient(135deg, #5CC8C2 0%, #3DA89F 100%)", boxShadow: "0 8px 24px rgba(92,200,194,0.3)" }}>
           <div className="flex-1">
             <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.8)", fontFamily: FONT, fontWeight: 700 }}>Daily Energy</p>
@@ -232,7 +226,6 @@ export function FoodDiaryScreen() {
           </div>
         </div>
 
-        {/* AKG fulfillment */}
         {targets && pct && (
           <div className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100 flex flex-col gap-2">
             {[
@@ -258,7 +251,6 @@ export function FoodDiaryScreen() {
           </div>
         )}
 
-        {/* Meal category tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
           {MEAL_TYPES.map((cat) => (
             <button
@@ -277,7 +269,6 @@ export function FoodDiaryScreen() {
           ))}
         </div>
 
-        {/* Food entries */}
         <div className="flex flex-col gap-3">
           {isLoading ? (
             <div className="flex justify-center py-6"><Loader2 className="animate-spin" size={22} style={{ color: "#5CC8C2" }} /></div>
@@ -334,7 +325,6 @@ export function FoodDiaryScreen() {
         </div>
       </div>
 
-      {/* Food picker modal */}
       {showPicker && (
         <FrameModal onClose={() => !isSaving && setShowPicker(false)}>
           <div

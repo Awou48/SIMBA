@@ -30,7 +30,6 @@ def test_fulfillment_percentages():
 
 
 def test_analyze_uses_child_birth_date_not_payload_age(client, parent_token, child):
-    # child is exactly 12 months old -> "1-3 tahun" bracket, whatever the payload claims.
     r = client.post(
         f"/api/v1/user/nutrition/{child['id']}/analyze",
         json={"age_in_months": 3, "total_protein": 10, "total_energy": 675},
