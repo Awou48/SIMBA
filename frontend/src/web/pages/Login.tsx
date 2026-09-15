@@ -86,7 +86,7 @@ export function HMLogin() {
             <Input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="pl-9 h-11 bg-white" />
           </div>
           <Button type="submit" disabled={isLoading} className="w-full h-11 text-base font-bold">
-            {isLoading ? <Loader2 className="animate-spin" /> : null} {isLoading ? "Signing in…" : "Sign in to portal"}
+            {isLoading ? <Loader2 className="animate-spin" /> : null} {isLoading ? "Signing in…" : "Sign In"}
           </Button>
 
           <p className="mt-8 text-xs text-muted-foreground">

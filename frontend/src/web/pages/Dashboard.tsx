@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { Users, Ruler, Syringe, Activity, ArrowRight, AlertTriangle, MapPin, Utensils, Flag, Sparkles } from "lucide-react";
+import { Users, Ruler, Syringe, Activity, ArrowRight, AlertTriangle, MapPin, Utensils, Flag, Sparkles, CalendarDays, TrendingUp, ShieldCheck } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import { api, errorMessage as toMessage, type AdminInfo, type DashboardOverview, type RecentMeasurement, type RegistryChild, type StuntingStats } from "../../lib/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../app/components/ui/table";
@@ -19,7 +19,7 @@ function greeting() {
 }
 
 /** KPI tile with a coloured accent and icon well. */
-function Kpi({ icon, label, value, hint, accent, to }: { icon: React.ReactNode; label: string; value: React.ReactNode; hint: string; accent: string; to?: string }) {
+function Kpi({ icon, label, value, hint, accent, to }: { icon: ReactNode; label: string; value: ReactNode; hint: string; accent: string; to?: string }) {
   const body = (
     <div className="hm-panel-lift relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm h-full">
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
@@ -36,6 +36,19 @@ function Kpi({ icon, label, value, hint, accent, to }: { icon: React.ReactNode; 
     </div>
   );
   return to ? <Link to={to} className="block h-full">{body}</Link> : body;
+}
+
+function HeroTile({ icon, label, value, unit, hint, accent }: { icon: ReactNode; label: string; value: number | string; unit?: string; hint: string; accent?: string }) {
+  return (
+    <div className="hm-hero-tile flex items-center gap-3">
+      <span className="size-9 rounded-xl grid place-items-center shrink-0" style={{ background: accent ? `${accent}33` : "rgba(255,255,255,0.18)", color: accent ?? "#fff" }}>{icon}</span>
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-wide font-bold text-white/70">{label}</p>
+        <p className="font-extrabold leading-tight"><span className="text-xl">{value}</span>{unit && <span className="text-xs text-white/75 ml-1">{unit}</span>}</p>
+        <p className="text-[11px] text-white/70 truncate">{hint}</p>
+      </div>
+    </div>
+  );
 }
 
 export function Dashboard() {
@@ -83,8 +96,8 @@ export function Dashboard() {
       <section className="hm-hero relative overflow-hidden rounded-3xl text-white p-6 md:p-8 mb-6 shadow-lg">
         <div className="absolute -right-10 -top-16 size-64 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute right-24 bottom-0 size-40 rounded-full bg-[#f47b20]/40 blur-3xl" />
-        <img src={logoMark} alt="" aria-hidden className="hidden md:block absolute right-8 bottom-0 w-36 opacity-90 drop-shadow-2xl translate-y-3" />
-        <div className="relative max-w-2xl">
+        <div className="relative flex flex-col lg:flex-row lg:items-center gap-8">
+        <div className="relative max-w-2xl flex-1">
           <p className="text-sm font-semibold text-white/80 flex items-center gap-2"><Sparkles size={14} /> {greeting()}, {me?.name ?? "Health Manager"} · {today}</p>
           <h1 className="text-3xl md:text-4xl font-extrabold mt-2 leading-tight">
             {overview?.children_total ?? 0} children monitored{overview && overview.regions_total > 0 ? ` across ${overview.regions_total} region${overview.regions_total === 1 ? "" : "s"}` : ""}.
@@ -103,6 +116,23 @@ export function Dashboard() {
             <Button asChild variant="ghost" className="text-white hover:bg-white/15 hover:text-white"><Link to="/hm/regions"><MapPin size={14} /> Regions</Link></Button>
             <Button asChild variant="ghost" className="text-white hover:bg-white/15 hover:text-white"><Link to="/hm/education"><Flag size={14} /> Publish an article</Link></Button>
           </div>
+        </div>
+
+        {/* Right column: this month's pulse + mascot */}
+        {overview && (
+          <div className="hidden lg:flex items-center gap-6 shrink-0">
+            <div className="grid gap-2.5 w-64">
+              <HeroTile icon={<CalendarDays size={15} />} label="Last 30 days" value={overview.last_30_days.measurements} unit="measurements" hint={`${overview.last_30_days.children_measured} children · ${overview.last_30_days.meals} meals logged`} />
+              <HeroTile icon={<TrendingUp size={15} />} label="Stunting rate" value={pct(overview.stunting_rate)} hint={`${overview.status.stunted} of ${overview.children_measured} measured`} accent={rateAccent} />
+              <HeroTile icon={<ShieldCheck size={15} />} label="Immunization" value={overview.immunization.children_with_overdue} unit="overdue" hint={overview.immunization.children_with_overdue === 0 ? "everyone is on schedule" : `${overview.immunization.overdue_doses} doses to catch up`} accent={overview.immunization.children_with_overdue > 0 ? "#f47b20" : "#10b981"} />
+            </div>
+            <div className="relative flex items-center justify-center size-44">
+              <div className="hm-hero-ring hm-hero-ring-1" />
+              <div className="hm-hero-ring hm-hero-ring-2" />
+              <img src={logoMark} alt="" aria-hidden className="hm-hero-mascot relative" />
+            </div>
+          </div>
+        )}
         </div>
       </section>
 
