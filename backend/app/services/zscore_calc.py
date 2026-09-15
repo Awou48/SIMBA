@@ -65,7 +65,12 @@ def lms_value_at_z(z: float, l: float, m: float, s: float) -> float:
     return m * (1 + l * s * z) ** (1 / l)
 
 
-def classify_stunting(z: float) -> str:
+NOT_COMPUTED = "Belum dihitung (Not computed)"
+
+
+def classify_stunting(z: float | None) -> str:
+    if z is None:
+        return NOT_COMPUTED
     if z < -3.0:
         return "Sangat Pendek (Severely Stunted)"
     if z < -2.0:
@@ -75,7 +80,9 @@ def classify_stunting(z: float) -> str:
     return "Tinggi"
 
 
-def classify_weight(z: float) -> str:
+def classify_weight(z: float | None) -> str:
+    if z is None:
+        return NOT_COMPUTED
     if z < -3.0:
         return "Berat Badan Sangat Kurang (Severely Underweight)"
     if z < -2.0:
@@ -85,8 +92,10 @@ def classify_weight(z: float) -> str:
     return "Risiko Berat Badan Lebih"
 
 
-def classify_wasting(z: float) -> str:
+def classify_wasting(z: float | None) -> str:
     """Weight-for-length/height and BMI-for-age share the Permenkes 2/2020 cut-offs."""
+    if z is None:
+        return NOT_COMPUTED
     if z < -3.0:
         return "Gizi Buruk (Severely Wasted)"
     if z < -2.0:
