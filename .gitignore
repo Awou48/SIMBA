@@ -12,3 +12,6 @@ env/
 .DS_Store
 # Tooling
 .pytest_cache/
+
+# Alembic scratch DBs
+ci_alembic.db
