@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.admin import auth as admin_auth
 from app.api.v1.admin import articles as admin_articles
+from app.api.v1.admin import children as admin_children
 from app.api.v1.admin import datasets, food
 from app.api.v1.admin import milestones as admin_milestones
 from app.api.v1.admin import region, system
@@ -46,6 +47,7 @@ app.include_router(food.router, prefix="/api/v1/admin/foods", tags=["Admin Foods
 app.include_router(admin_milestones.router, prefix="/api/v1/admin/milestones", tags=["Admin Milestones"])
 app.include_router(admin_articles.router, prefix="/api/v1/admin/articles", tags=["Admin Education"])
 app.include_router(system.router, prefix="/api/v1/admin/system", tags=["Admin System"])
+app.include_router(admin_children.router, prefix="/api/v1/admin/children", tags=["Admin Children Registry"])
 
 
 @app.get("/")

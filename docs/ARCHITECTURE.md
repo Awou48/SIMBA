@@ -5,10 +5,12 @@
 ```
 ┌──────────────────────────────┐        HTTPS/JSON         ┌──────────────────────────────────┐
 │  React 18 + Vite (frontend/) │  ───────────────────────▶ │  FastAPI (backend/)              │
-│  • parent "mobile" UI        │   bearer JWT per role     │  • /api/v1/user/*   parents      │
-│  • Health Manager portal     │ ◀───────────────────────  │  • /api/v1/admin/*  health mgrs  │
-│  src/lib/api.ts = only place │                           │  services/  = domain logic       │
-│  that knows the backend      │                           │  SQLAlchemy 2 → PostgreSQL       │
+│  • src/web  HM web portal    │   bearer JWT per role     │  • /api/v1/user/*   parents      │
+│    (desktop, sidebar shell)  │ ◀───────────────────────  │  • /api/v1/admin/*  health mgrs  │
+│  • src/app  parent mobile    │                           │  services/  = domain logic       │
+│    prototype (phone frame)   │                           │  SQLAlchemy 2 → PostgreSQL       │
+│  src/lib/api.ts = only place │                           │                                  │
+│  that knows the backend      │                           │                                  │
 └──────────────────────────────┘                           └──────────────────────────────────┘
                                                                      │
                                                        backend/data/  reference CSVs
@@ -33,7 +35,8 @@ backend/
 │   ├── core/security.py    bcrypt, JWT (HS256), get_current_user / get_current_admin / get_current_superadmin
 │   ├── api/deps.py         get_owned_child, apply_food_search
 │   ├── api/v1/user/        auth, children, growth, logs (foods + meals), milestones, immunization, insights, articles
-│   ├── api/v1/admin/       auth, food, datasets (AKG + WHO curves), region, milestones, articles, system
+│   ├── api/v1/admin/       auth, food, datasets (AKG + WHO curves), region (+ dashboard overview/recent),
+│   │                       children (registry, detail = report, PDF, meals; parent emails masked), milestones, articles, system
 │   ├── db/database.py      engine + SessionLocal + Base
 │   ├── db/models.py        all tables (below)
 │   ├── db/migrate.py       sync_schema(): create_all + add new nullable columns (dev convenience)
@@ -89,18 +92,33 @@ alembic upgrade head
 
 ## Frontend
 
+### Two front-ends, one bundle
+| | Health Manager portal (`src/web`) | Parent app (`src/app`) |
+|---|---|---|
+| Audience | Puskesmas/Posyandu staff on laptops | Parents on phones |
+| Shell | `HMShell`: 256px sidebar + top bar, drawer below 1024px | `MobileFrame` phone mock-up + bottom nav |
+| Login | `/hm/login` (split page) | `/login` inside the frame |
+| Guard | `RequireAuth role="Health Manager" loginPath="/hm/login"` | `RequireAuth role="Parent"` |
+| UI kit | shadcn/ui primitives (`app/components/ui`) + `web/components/ui.tsx` + `styles/portal.css` tokens | hand-styled Nunito components, `FrameModal` |
+| Future | This is the website | Reference for the native mobile app (React Native/Flutter) against the same API |
+
 ### Layout
 ```
 frontend/src/
 ├── lib/api.ts                  API_URL (VITE_API_URL), session helpers, apiFetch, typed endpoint map, types
+├── web/
+│   ├── HMShell.tsx             portal layout (sidebar nav groups, top bar, footer)
+│   ├── components/ui.tsx       PageHeader, Panel, StatCard, FlagBadge, ZBadge, EmptyState, formatting helpers
+│   └── pages/                  Login, Dashboard, Children, ChildDetail, Regions, GrowthStandards, AkgTargets,
+│                               Foods, Milestones, Education, System
 ├── app/routes.tsx              routes; parent tree wrapped in RequireAuth("Parent") + ChildProvider,
-│                               /hm/* in RequireAuth("Health Manager")
+│                               /hm/* in RequireAuth("Health Manager") → HMShell
 ├── app/ChildContext.tsx        loads the parent's children, persists the active child id
 ├── app/components/
 │   ├── RequireAuth.tsx         role guard + listens for the API client's 401 broadcast
 │   ├── FrameModal.tsx          portal overlay clipped to the phone mock-up (#mobile-frame)
-│   ├── MobileFrame / MainLayout / HMLayout / BottomNav / HMBottomNav
-│   └── screens/                parent screens; screens/hm/ admin screens
+│   ├── MobileFrame / MainLayout / BottomNav
+│   └── screens/                parent screens
 └── styles/                     Tailwind 4 + theme
 ```
 
@@ -112,6 +130,10 @@ frontend/src/
 - Modals use `FrameModal` so they stay inside the device frame.
 - Dates are exchanged as `YYYY-MM-DD` (`toDateString`) to avoid UTC day shifts.
 
-### Still presentational
+### Privacy in the portal
+Health Managers see children by name and region but parent emails are masked (`u***@example.com`); all portal
+reads are aggregated or per child, never per parent account.
+
+### Still presentational (parent prototype only)
 Recipes screen, Explore video/forum cards, Home recipe strip and the "restaurants nearby" button are
 editorial placeholders with no backing data.

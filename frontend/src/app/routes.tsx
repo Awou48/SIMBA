@@ -1,8 +1,7 @@
 import React from "react";
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { MobileFrame } from "./components/MobileFrame";
 import { MainLayout } from "./components/MainLayout";
-import { HMLayout } from "./components/HMLayout";
 import { RequireAuth } from "./components/RequireAuth";
 import { ChildProvider } from "./ChildContext";
 import { SplashScreen } from "./components/screens/SplashScreen";
@@ -20,15 +19,19 @@ import { ExploreScreen } from "./components/screens/ExploreScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
 import { AlertsScreen } from "./components/screens/AlertsScreen";
 import { MilestonesScreen } from "./components/screens/MilestonesScreen";
-// Health Manager screens
-import { HMDashboard } from "./components/screens/hm/HMDashboard";
-import { HMGrowthStandards } from "./components/screens/hm/HMGrowthStandards";
-import { HMAKGTargets } from "./components/screens/hm/HMAKGTargets";
-import { HMFoodDatabase } from "./components/screens/hm/HMFoodDatabase";
-import { HMMilestones } from "./components/screens/hm/HMMilestones";
-import { HMEducation } from "./components/screens/hm/HMEducation";
-import { HMRegionalTrends } from "./components/screens/hm/HMRegionalTrends";
-import { HMSystem } from "./components/screens/hm/HMSystem";
+// Health Manager web portal (desktop, no phone frame)
+import { HMShell } from "../web/HMShell";
+import { HMLogin } from "../web/pages/Login";
+import { Dashboard as HMDashboard } from "../web/pages/Dashboard";
+import { Children as HMChildren } from "../web/pages/Children";
+import { ChildDetail as HMChildDetail } from "../web/pages/ChildDetail";
+import { Regions as HMRegions } from "../web/pages/Regions";
+import { GrowthStandards as HMGrowthStandards } from "../web/pages/GrowthStandards";
+import { AkgTargets as HMAkgTargets } from "../web/pages/AkgTargets";
+import { Foods as HMFoods } from "../web/pages/Foods";
+import { Milestones as HMMilestones } from "../web/pages/Milestones";
+import { Education as HMEducation } from "../web/pages/Education";
+import { System as HMSystem } from "../web/pages/System";
 
 function FramedScreen({ children }: { children: React.ReactNode }) {
   return (
@@ -55,12 +58,10 @@ function FramedLayout() {
   );
 }
 
-function FramedHMLayout() {
+function PortalLayout() {
   return (
-    <RequireAuth role="Health Manager">
-      <MobileFrame>
-        <HMLayout />
-      </MobileFrame>
+    <RequireAuth role="Health Manager" loginPath="/hm/login">
+      <HMShell />
     </RequireAuth>
   );
 }
@@ -106,19 +107,24 @@ export const router = createBrowserRouter([
       { path: "/milestones",   element: <MilestonesScreen /> },
     ],
   },
-  // Health Manager portal with its own layout
+  // Health Manager web portal
+  { path: "/hm/login", element: <HMLogin /> },
   {
     path: "/hm",
-    element: <FramedHMLayout />,
+    element: <PortalLayout />,
     children: [
-      { path: "dashboard",        element: <HMDashboard /> },
+      { index: true, element: <Navigate to="/hm/dashboard" replace /> },
+      { path: "dashboard", element: <HMDashboard /> },
+      { path: "children", element: <HMChildren /> },
+      { path: "children/:id", element: <HMChildDetail /> },
+      { path: "regions", element: <HMRegions /> },
+      { path: "regional-trends", element: <Navigate to="/hm/regions" replace /> },
       { path: "growth-standards", element: <HMGrowthStandards /> },
-      { path: "akg-targets",      element: <HMAKGTargets /> },
-      { path: "food-database",    element: <HMFoodDatabase /> },
-      { path: "milestones",       element: <HMMilestones /> },
-      { path: "education",        element: <HMEducation /> },
-      { path: "regional-trends",  element: <HMRegionalTrends /> },
-      { path: "system",           element: <HMSystem /> },
+      { path: "akg-targets", element: <HMAkgTargets /> },
+      { path: "food-database", element: <HMFoods /> },
+      { path: "milestones", element: <HMMilestones /> },
+      { path: "education", element: <HMEducation /> },
+      { path: "system", element: <HMSystem /> },
     ],
   },
 ]);
