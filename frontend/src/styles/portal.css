@@ -71,7 +71,7 @@
   mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 75%);
   animation: hm-grid-drift 12s linear infinite;
 }
-.hm-login-mascot { position: absolute; right: -20px; top: -140px; width: 150px; opacity: 0.95; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.35)); animation: hm-bob 6s ease-in-out infinite; }
+.hm-login-mascot { position: absolute; right: -20px; top: -140px; width: 150px; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.35)); animation: hm-bob 6s ease-in-out infinite; }
 
 /* Dashboard */
 .hm-hero {
@@ -79,9 +79,18 @@
   background-size: 200% 200%;
   animation: hm-gradient 20s ease infinite;
 }
+/* Hero right column: glass tiles + mascot */
+.hm-hero-tile { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); backdrop-filter: blur(6px); border-radius: 1rem; padding: 0.75rem 0.9rem; transition: background 0.2s ease, transform 0.2s ease; }
+.hm-hero-tile:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+.hm-hero-mascot { width: 9.5rem; filter: drop-shadow(0 18px 28px rgba(0,0,0,0.35)); animation: hm-bob 6s ease-in-out infinite; }
+.hm-hero-ring { position: absolute; border-radius: 9999px; border: 1.5px solid rgba(255,255,255,0.18); pointer-events: none; }
+.hm-hero-ring-1 { width: 15rem; height: 15rem; }
+.hm-hero-ring-2 { width: 21rem; height: 21rem; border-style: dashed; opacity: 0.6; animation: hm-spin 60s linear infinite; }
+@keyframes hm-spin { to { transform: rotate(360deg); } }
+
 .hm-panel-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .hm-panel-lift:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -12px rgba(30, 42, 90, 0.25); }
 
 @media (prefers-reduced-motion: reduce) {
-  .hm-portal *, .hm-login-hero, .hm-login-orb, .hm-login-grid, .hm-login-mascot, .hm-hero { animation: none !important; transition: none !important; }
+  .hm-portal *, .hm-login-hero, .hm-login-orb, .hm-login-grid, .hm-login-mascot, .hm-hero, .hm-hero-mascot, .hm-hero-ring-2 { animation: none !important; transition: none !important; }
 }
