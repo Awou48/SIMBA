@@ -3,6 +3,19 @@
 All notable changes on the `claude/project-build-improve-548c26` branch (September 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
 
+## 1.3.0 — Health Manager web portal
+- New desktop website at `/hm/*` (`frontend/src/web`): sidebar shell with grouped navigation, top bar, drawer
+  below 1024px; dedicated `/hm/login` split page; portal theme tokens (`styles/portal.css`).
+- Pages: Dashboard (KPIs, nutritional-status donut, region chart, recent measurements), **Children registry**
+  (search, region/status filters in the URL, paging, masked parent contacts), **Child detail** (WHO chart,
+  attention points, history, nutrition, KPSP, immunization, PDF), Regions, WHO Standards, AKG Targets
+  (grid editor), Food Database (server-side search, dialogs), KPSP Milestones (grouped, dialogs), Education
+  (two-pane editor with preview), System.
+- Backend: `GET /admin/children` (+ `/{id}`, `/{id}/report.pdf`, `/{id}/meals`), `GET /admin/dashboard/overview`,
+  `GET /admin/dashboard/recent-measurements`; classifiers and schemas tolerate legacy rows without z-scores.
+- Parent login "Health Manager" tab now links to the web portal; phone-framed HM screens removed.
+- Tests: 82 passing.
+
 ## 1.2.1 — Tooling & docs
 - Alembic initialised: `alembic/env.py` reads `settings.DATABASE_URL`, baseline revision covers all 12 tables;
   `alembic check` verified against the models. Existing dev DBs: `alembic stamp head` once.

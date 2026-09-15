@@ -45,7 +45,7 @@ with tag groups *User Authentication … Admin System*.
 ```bash
 cd backend && pytest
 ```
-**Expect:** `79 passed`.
+**Expect:** `82 passed`.
 
 ### 0.4 Frontend
 ```bash
@@ -55,7 +55,8 @@ npm install
 npm run typecheck                   # expect: no output, exit 0
 npm run dev                         # http://localhost:5173
 ```
-**Expect:** the phone mock-up appears with the SIMBA splash screen, then (no session yet) the onboarding slides.
+**Expect:** `http://localhost:5173` shows the parent app (phone mock-up) with the SIMBA splash screen, then the
+onboarding slides; `http://localhost:5173/hm/login` shows the Health Manager web portal sign-in page.
 
 > If a screen ever shows **"Cannot reach the SIMBA server"**, the backend isn't running on port 8000.
 > If a page 404s right after you pulled new code, restart `uvicorn` — its file watcher on Windows sometimes misses new route files.
@@ -175,63 +176,84 @@ Use **Sari (12 months, girl)** for the numbers below.
 
 ---
 
-## 9. Health Manager portal
+## 9. Health Manager web portal
 
-Log out, choose the **Health Manager** tab on the login screen and sign in with the superadmin from `backend/.env`
-(default `admin@simba.id` / `admin1234`).
+The portal is a **desktop website** at `http://localhost:5173/hm/login` (no phone frame). Use a browser window at
+least ~1024px wide to see the sidebar; below that it collapses into a ☰ drawer.
 
-### 9.1 Dashboard
+### 9.1 Sign in & shell
 | Do | Expect |
 |----|--------|
-| Land on `/hm/dashboard`. | Total measurements and stunted cases from the database; module tiles navigate to each section. |
+| Open `/hm/login`. | Split page: SIMBA brand panel on the left, sign-in form on the right. |
+| Sign in with a **wrong** password. | Red banner *Incorrect admin email or password*. |
+| Sign in with the superadmin from `backend/.env` (`admin@simba.id` / `admin1234`). | Redirect to **Dashboard**. Sidebar groups: Monitor (Dashboard, Children, Regions), Reference (WHO Standards, AKG Targets, Food Database, KPSP Milestones), Content (Education), Admin (System). Your name and role at the bottom. Top bar: page name, **API docs**, **Log out**. |
+| Open `/hm/dashboard` in a private window (no session). | Redirected to `/hm/login`. |
+| Try `/hm/dashboard` while logged in as a **parent** (parent app session). | Redirected to `/hm/login` - parent tokens never open the portal. |
+| In the parent app login screen, tap the **Health Manager** tab. | You land on `/hm/login` (the portal is a separate site, not inside the phone frame). |
+| Shrink the window below 1024px. | Sidebar hides; the ☰ button opens it as a drawer. |
 
-### 9.2 Regional Trends
+### 9.2 Dashboard
 | Do | Expect |
 |----|--------|
-| Open **Trends**. | Tabs **All regions / Tangerang Selatan / Kota Tangerang (/ Unspecified)** generated from the children you created. Cards: stunting rate (per child, latest measurement), children measured/total, severely stunted. A bar chart coloured by WHO threshold (>20% orange, >30% red) and a card per region with a Normal/Stunted/Severe/Unmeasured breakdown. Tap a region card to select it. |
+| Land on **Dashboard**. | Four KPI cards: *Children registered*, *Stunting prevalence* (coloured by WHO threshold), *Immunization backlog*, *Activity, last 30 days*. A **Nutritional status** donut (each child counted once by latest measurement), a **Stunting rate by region** bar chart and a **Recent measurements** table with z-score chips. |
+| Click a child name in Recent measurements. | Opens that child detail page. |
 
-### 9.3 Food Database
+### 9.3 Children registry
 | Do | Expect |
 |----|--------|
-| Open **Content → Food Database**. | *100+ items* — the first 100 of 1,651 foods; a hint says to refine the search. |
-| Type `tempe`. | ~19 results after a short debounce; category chips filter server-side. |
-| **Add** → name `Tempe Bacem Test`, category Protein, energy 190, protein 14 → **Save**. | Appears at the top of the list. |
-| Edit it (✏️), change energy to 200 → Save. | Updated in place. |
-| Delete it (🗑) → confirm. | Removed. (If a parent had logged it, their meal history keeps the snapshot — see 4.9.) |
+| **Children** in the sidebar. | Table of every child: age, region, **masked parent email** (`u***@example.com`), last measured (+ count), latest weight/height, HFA/WFA/WFH z-score chips (green <=1, amber <=2, red >2), status badges (Normal / Stunted / Underweight / Wasted / Overweight / Not measured 30d+ / No measurement). |
+| Type `Sari` in the search box. | List filters after a short debounce; the URL gains `?q=Sari` (filters are shareable). |
+| Choose a region in the dropdown, then click the **Stunted** status chip. | Combined filtering; **Clear filters** appears when nothing matches. |
+| With more than 25 children, use the pager arrows. | Page indicator updates; URL gains `page=`. |
+| Click **Sari**. | Detail page (9.4). |
 
-### 9.4 AKG Targets
+### 9.4 Child detail
 | Do | Expect |
 |----|--------|
-| Open **Standards → AKG nutrition targets** (or `/hm/akg-targets`). | The 4 seeded rows (`0-5 bulan … 4-6 tahun`); micronutrient columns show `—` where the source data has none. |
-| Edit a row, change protein, **Save all to database**. | Green success message; reload the page — the change persists. Parents' AKG targets in the Food Diary now use the new value. |
+| Header shows name, sex, age, birth date, region, masked parent. | Four cards: Height-for-age, Weight-for-age, Weight-for-height (z chips + status) and Immunization (given/total, overdue/due). |
+| **Growth chart** with Weight/Height/BMI tabs. | WHO 3rd-97th band, dashed median, the child's points connected. |
+| **Attention points** panel. | The same alerts the parent sees (high/medium), colour-coded. |
+| **Measurement history**, **Nutrition last 7 days** (bars vs AKG + expandable logged items), **Development (KPSP)**. | Match what the parent app shows for the same child. |
+| **Download PDF report**. | Downloads `simba-report-<name>.pdf` - the same report the parent can generate. |
 
-### 9.5 WHO Growth Standards
+### 9.5 Regions
 | Do | Expect |
 |----|--------|
-| Open **Standards**. | Boys/Girls toggle × Weight/Height/BMI-for-Age; a chart with the 3rd–97th band and median; a percentile table (every 1/3/6 months). Boys weight-for-age at 12 mo: P50 ≈ 9.6 kg. Read-only, with a note on how to refresh from the CSVs. |
+| **Regions**. | Three summary cards, a bar chart coloured by WHO threshold and a table (children, measured, stunted, severe, rate, status). **View children** opens the registry pre-filtered to that region. Children without a region appear as *Unspecified*. |
 
-### 9.6 Milestones (KPSP bank)
+### 9.6 WHO Standards
 | Do | Expect |
 |----|--------|
-| Open **Content → Milestones**. | 20 questions grouped by bracket; domain chips filter. |
-| Expand a question → **Deactivate**. | It fades and is labelled INACTIVE. As a parent, that question no longer appears in the checklist. Re-activate it. |
-| **Add** a question for **3 - 4 Years** → Save. | Appears under a new *3 - 4 Years* group. Delete it afterwards (confirm dialog). |
+| **WHO Standards**. Toggle Boys/Girls and Weight / Length-height / BMI-for-age. | Chart with P3/P15/P50/P85/P97 curves and shaded band; percentile table with 1/3/6-month steps. Boys weight-for-age P50 at 12 mo is about 9.6 kg. Read-only. |
 
-### 9.7 Education articles
+### 9.7 AKG Targets
 | Do | Expect |
 |----|--------|
-| Open **Content → Education**. | 4 seeded Indonesian articles, all *Published*. |
-| **New** → fill title, category, author, read time, summary, body; leave as **Draft** → Save. | Listed as *📝 Draft*. As a parent, **Explore → Insights** does **not** show it. |
-| Tap **Publish** on it. | As a parent, Explore now lists it; tapping opens an in-frame reader with the body paragraphs. The Explore search box filters articles. |
-| Edit / delete it. | Works with confirmation on delete. |
+| **AKG Targets**. | Editable grid of the 4 seeded rows; **Save changes** is disabled until something changes. |
+| Change protein for `1-3 tahun` to 21 then **Save changes**. | Green *Saved at ...* line; reload - value persists; the parent Food Diary now shows 21 g as the target. **Discard** reverts unsaved edits; **Add row** / trash icon add and remove rows. |
 
-### 9.8 System
+### 9.8 Food Database
 | Do | Expect |
 |----|--------|
-| Open **System**. | Header shows `SIMBA v1.2.0 · SIMBA Admin (superadmin)`, status tiles (API, database name, last measurement, reference data Complete/Incomplete). **Data overview** counts (parents, children, measurements, meals …). **Reference data** list with green ✓ counts. |
-| Tap **Load missing reference data** → confirm. | Message *Seeded: Foods 0 · AKG rows 0 …* (everything already loaded → all zeros). |
-| Expand **Health Manager accounts**. | Real admin accounts with 👑 for superadmins and "(you)" on yours. |
-| **Add Health Manager account** → name, email `hm2@simba.id`, password 8+ chars → **Create account**. | Appears in the list. Log out and log in as `hm2@simba.id`: the System page shows *Only a superadmin can (re)load reference data* and no "Add account" button. |
+| **Food Database**. | First 50 of 1,651 foods with paging. Search `bubur ayam` returns items containing both words. Category dropdown and **Toddler-safe only** filter server-side. |
+| **Add food**, fill the dialog, **Save**. | New row appears (search for it). The pencil edits in the same dialog; the trash icon asks for confirmation. |
+
+### 9.9 KPSP Milestones
+| Do | Expect |
+|----|--------|
+| **KPSP Milestones**. | 20 questions grouped in panels per age bracket; domain chips filter. |
+| Eye icon on a question. | Toggles Active/Inactive (inactive rows fade; parents no longer see them). Pencil opens the editor dialog; **Add question** creates a new one (choose bracket + domain). |
+
+### 9.10 Education
+| Do | Expect |
+|----|--------|
+| **Education**. | Two panes: article list (left) and editor (right). Select an article, edit fields, **Save** (enabled only when changed). **Preview** renders it as parents see it. **Publish/Unpublish** toggles visibility in the parent app Explore tab. **New article** starts a draft. |
+
+### 9.11 System
+| Do | Expect |
+|----|--------|
+| **System**. | Cards: database, reference data Complete/Incomplete, last measurement, admin accounts. **Data overview** counts, **Reference data** checklist with **Load missing** (superadmin only), **Health Manager accounts** table with **Add account** (superadmin only). |
+| Add an account `hm2@simba.id`, log out, sign in as it. | Sidebar shows *Health Manager*; the System page hides **Load missing** and **Add account**. |
 
 ---
 
@@ -262,5 +284,5 @@ older prototype and can be dropped, e.g. `DROP TABLE immunization_events, immuni
 [ ] record HB0 dose with past date → 1/20; undo → 0/20; add/complete/delete event
 [ ] alerts reflect data; tap navigates; mark all read persists
 [ ] report tiles/chart from data; PDF downloads and opens
-[ ] HM: trends per region, food CRUD + search, AKG save, WHO tables, KPSP CRUD, articles draft→publish visible in Explore, system seed + add admin
+[ ] Portal: /hm/login guard, dashboard KPIs, children registry filters + detail page + PDF, regions, WHO tables, AKG save, food CRUD + search, KPSP toggle/CRUD, article draft→publish visible in Explore, system seed + add admin
 ```

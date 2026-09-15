@@ -139,12 +139,12 @@ def build_alerts(child: models.Child, db: Session) -> list[dict]:
                              f"Log {name}'s weight and height to start WHO growth monitoring.", today, "/growth"))
     else:
         logged = latest.date_logged.date()
-        if latest.lhfa_zscore < -2:
+        if latest.lhfa_zscore is not None and latest.lhfa_zscore < -2:
             sev = "high"
             alerts.append(_alert("growth-stunting", "Growth", sev, "Height-for-age below -2 SD",
                                  f"{name}'s latest height-for-age z-score is {latest.lhfa_zscore} ({classify_stunting(latest.lhfa_zscore)}). Please consult a Posyandu/Puskesmas health worker.",
                                  logged, "/growth"))
-        if latest.wfa_zscore < -2:
+        if latest.wfa_zscore is not None and latest.wfa_zscore < -2:
             alerts.append(_alert("growth-underweight", "Growth", "high", "Weight-for-age below -2 SD",
                                  f"{name}'s weight-for-age z-score is {latest.wfa_zscore} ({classify_weight(latest.wfa_zscore)}). Review daily intake and seek advice.",
                                  logged, "/food-diary"))
