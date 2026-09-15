@@ -137,3 +137,27 @@ reads are aggregated or per child, never per parent account.
 ### Still presentational (parent prototype only)
 Recipes screen, Explore video/forum cards, Home recipe strip and the "restaurants nearby" button are
 editorial placeholders with no backing data.
+
+## Mobile app (`mobile/`)
+
+Expo SDK 57 / React Native 0.86 with **expo-router** file-based routes. It is a third client of the same API and
+uses only `/api/v1/user/*`.
+
+```
+app/_layout.tsx        SafeAreaProvider → AuthProvider → ChildProvider → Stack
+app/(tabs)/            Home · Growth · Nutrition · Development · More (guarded: redirects to /login or /add-child)
+src/lib/api.ts         typed client; token cached in memory, persisted with expo-secure-store (AsyncStorage on web)
+src/state/auth.tsx     ready/isAuthenticated, signIn/register/signOut, listens for 401 → signed out
+src/state/child.tsx    children list + active child (id persisted), add/update/select
+src/components/        ui.tsx primitives, GrowthChart.tsx (react-native-svg), ChildSwitcher.tsx (bottom sheet)
+```
+
+Design decisions:
+- No chart library: the WHO chart is ~100 lines of SVG paths (bands = closed polygons from p3/p97 and p15/p85),
+  so it renders identically on Android, iOS and web and has no native-module risk.
+- PDF sharing fetches `/report.pdf` with the bearer token, writes it to the cache directory with the new
+  `expo-file-system` `File` API and hands it to `expo-sharing`; on web it opens a blob URL.
+- Dates are typed as `YYYY-MM-DD` text fields (validated) to avoid a native date-picker dependency; swap in
+  `@react-native-community/datetimepicker` later if desired.
+- `EXPO_PUBLIC_API_URL` selects the backend; the default `10.0.2.2` targets the Android emulator's host loopback.
+
