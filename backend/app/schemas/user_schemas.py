@@ -35,7 +35,6 @@ class MeasurementCreate(BaseModel):
     @field_validator("date_logged", mode="before")
     @classmethod
     def _strip_time(cls, v):
-        # The mobile UI sends "YYYY-MM-DDT00:00:00"; keep only the calendar date.
         if isinstance(v, datetime):
             return v.date()
         if isinstance(v, str) and "T" in v:
@@ -51,7 +50,7 @@ class MeasurementResponse(BaseModel):
     age_in_days: int
     weight_kg: float
     height_cm: float
-    wfa_zscore: Optional[float] = None  # None only for rows imported before z-scores existed
+    wfa_zscore: Optional[float] = None
     lhfa_zscore: Optional[float] = None
     wfh_zscore: Optional[float] = None
     bfa_zscore: Optional[float] = None
@@ -63,7 +62,6 @@ class MeasurementResponse(BaseModel):
 
 
 class NutritionIntake(BaseModel):
-    # Deprecated: age is derived from the child's birth date server-side.
     age_in_months: Optional[int] = None
     total_protein: float = Field(ge=0)
     total_energy: float = Field(ge=0)
@@ -141,7 +139,7 @@ class MilestoneItem(BaseModel):
     domain: str
     question: str
     expected: Optional[str] = None
-    achieved: Optional[bool] = None  # None = not answered yet
+    achieved: Optional[bool] = None
     answered_on: Optional[date] = None
 
 
@@ -156,7 +154,7 @@ class MilestoneChecklist(BaseModel):
     total: int
     answered: int
     achieved: int
-    interpretation: Optional[str] = None  # Sesuai / Meragukan / Penyimpangan (KPSP), None until all answered
+    interpretation: Optional[str] = None
 
 
 EventType = Literal["Vaccination", "Doctor Visit", "Checkup", "Other"]
@@ -217,7 +215,7 @@ class ImmunizationSummary(BaseModel):
 
 
 class MarkGivenIn(BaseModel):
-    given_on: Optional[date] = None  # defaults to today
+    given_on: Optional[date] = None
     notes: Optional[str] = Field(default=None, max_length=500)
 
 

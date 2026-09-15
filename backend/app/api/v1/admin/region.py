@@ -15,7 +15,7 @@ from app.services.zscore_calc import classify_stunting
 
 router = APIRouter(dependencies=[Depends(get_current_admin)])
 
-STUNTING_WARNING_THRESHOLD = 0.20  # WHO "high" public-health prevalence threshold
+STUNTING_WARNING_THRESHOLD = 0.20
 UNSPECIFIED = "Unspecified"
 
 
@@ -33,7 +33,7 @@ def _stats(db: Session, region_clause, label: str) -> dict:
     if region_clause is not None:
         children_q, logs_q, latest_q = (q.filter(region_clause) for q in (children_q, logs_q, latest_q))
 
-    latest_z = [z for (z,) in latest_q.all() if z is not None]  # legacy rows without z-scores are excluded
+    latest_z = [z for (z,) in latest_q.all() if z is not None]
     stunted = sum(1 for z in latest_z if z < -2.0)
     rate = round(stunted / len(latest_z), 4) if latest_z else 0.0
     return {
@@ -102,7 +102,6 @@ def dashboard_overview(db: Session = Depends(get_db)):
         if not flagged:
             status["normal"] += 1
 
-    # Immunization backlog: children with at least one overdue dose.
     given = {}
     for e in db.query(models.HealthEvent).filter(models.HealthEvent.vaccine_code.isnot(None), models.HealthEvent.done.is_(True)).all():
         given.setdefault(e.child_id, {})[e.vaccine_code] = e.date

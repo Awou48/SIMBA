@@ -36,14 +36,12 @@ def test_seed_reference_tables_is_idempotent(engine):
         assert all(n == 0 for n in second.values())
         assert db.query(models.FoodItem).count() == first["foods"]
 
-        # --reset re-seeds without duplicating.
         assert seed_db.seed_akg(db, reset=True) == 4
         assert db.query(models.AKGTarget).count() == 4
 
         admin = db.query(models.AdminUser).one()
         assert admin.is_superadmin == 1
 
-        # WHO 12-month boy median weight is ~9.6 kg.
         row = db.query(models.GrowthStandard).filter_by(metric="wfa", gender="male", age="12").one()
         assert abs(float(row.p50) - 9.6) < 0.1
         assert float(row.p3) < float(row.p50) < float(row.p97)

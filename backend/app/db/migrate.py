@@ -18,7 +18,7 @@ def add_missing_columns(engine: Engine) -> list[str]:
     with engine.begin() as conn:
         for table in Base.metadata.sorted_tables:
             if table.name not in existing_tables:
-                continue  # create_all handles brand-new tables
+                continue
             present = {col["name"] for col in inspector.get_columns(table.name)}
             for column in table.columns:
                 if column.name in present:

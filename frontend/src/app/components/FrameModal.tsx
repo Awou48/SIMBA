@@ -4,15 +4,9 @@ import { createPortal } from "react-dom";
 interface FrameModalProps {
   children: React.ReactNode;
   onClose?: () => void;
-  /** "bottom" slides a sheet up from the frame's bottom edge; "center" floats a card. */
   align?: "bottom" | "center";
 }
 
-/**
- * Overlay that covers the phone frame (not the browser window). Renders into
- * #mobile-frame via a portal so `position: absolute; inset: 0` is clipped to
- * the device mock-up regardless of where the caller sits in the scroll tree.
- */
 export function FrameModal({ children, onClose, align = "bottom" }: FrameModalProps) {
   const host = typeof document !== "undefined" ? document.getElementById("mobile-frame") : null;
   const overlay = (

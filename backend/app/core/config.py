@@ -18,11 +18,10 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = "change-me-in-.env"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     CORS_ORIGINS: List[str] = Field(default=["http://localhost:5173", "http://127.0.0.1:5173"])
 
-    # Used by seed_db.py to bootstrap the first superadmin.
     FIRST_ADMIN_EMAIL: str = "admin@simba.id"
     FIRST_ADMIN_PASSWORD: str = "admin1234"
     FIRST_ADMIN_NAME: str = "SIMBA Admin"

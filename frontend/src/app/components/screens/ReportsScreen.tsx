@@ -112,7 +112,6 @@ export function ReportsScreen() {
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-4">
         <button onClick={() => navigate("/home")}>
           <ChevronLeft size={24} style={{ color: "#2D3047" }} />
@@ -147,7 +146,6 @@ export function ReportsScreen() {
           </button>
         )}
 
-        {/* Stats summary */}
         <div className="grid grid-cols-4 gap-2">
           {stats.map(({ label, value, icon, color, bg }) => (
             <div key={label} className="rounded-2xl p-2.5 text-center" style={{ background: bg }}>
@@ -158,7 +156,6 @@ export function ReportsScreen() {
           ))}
         </div>
 
-        {/* WHO status */}
         {report?.status && (
           <div className="flex gap-2 flex-wrap">
             {[
@@ -175,7 +172,6 @@ export function ReportsScreen() {
           </div>
         )}
 
-        {/* Metric selector */}
         <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
           {(Object.keys(metricConfig) as Metric[]).map((m) => (
             <button
@@ -189,7 +185,6 @@ export function ReportsScreen() {
           ))}
         </div>
 
-        {/* Chart */}
         <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
           <p style={{ fontSize: "13px", fontWeight: 900, color: "#2D3047", fontFamily: FONT, marginBottom: 4 }}>{config.label} over time</p>
           <p style={{ fontSize: "10px", color: "#9BA3B8", fontFamily: FONT, fontWeight: 700, marginBottom: 8 }}>
@@ -217,7 +212,6 @@ export function ReportsScreen() {
           )}
         </div>
 
-        {/* Progress summary */}
         {progressRows.length > 0 && (
           <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
             <p style={{ fontSize: "14px", fontWeight: 900, color: "#2D3047", fontFamily: FONT, marginBottom: 10 }}>📈 Progress over {periodLabel}</p>
@@ -235,7 +229,6 @@ export function ReportsScreen() {
           </div>
         )}
 
-        {/* Other sections */}
         {report && (
           <div className="rounded-3xl p-4 flex flex-col gap-3" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
             <p style={{ fontSize: "14px", fontWeight: 900, color: "#2D3047", fontFamily: FONT }}>🧾 Summary</p>
@@ -276,7 +269,6 @@ export function ReportsScreen() {
           </div>
         )}
 
-        {/* Download button */}
         <button
           onClick={handleDownload}
           disabled={!activeChild || isDownloading || downloadComplete}

@@ -12,7 +12,6 @@ const categoryColors: Record<string, { color: string; bg: string; emoji: string 
   Immunization: { color: "#5CC8C2", bg: "#E8F9F8", emoji: "💉" },
 };
 
-// (Keeping your beautiful static data for the presentation)
 const videos = [
   { id: 1, title: "5 Finger Foods for Toddlers", duration: "4:32", thumb: "https://images.unsplash.com/photo-1610415946201-295954703dd9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2xvcmZ1bCUyMHRvZGRsZXIlMjBmb29kJTIwZnJ1aXRzJTIwdmVnZXRhYmxlc3xlbnwxfHx8fDE3NzgyNTIxODl8MA&ixlib=rb-4.1.0&q=80&w=1080" },
   { id: 2, title: "Building Healthy Habits Early", duration: "6:15", thumb: "https://images.unsplash.com/photo-1592783074241-ec3763189417?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJlbnQlMjB0b2RkbGVyJTIwY2hpbGQlMjBncm93dGglMjBoZWFsdGh5fGVufDF8fHx8MTc3ODI1MjE4OXww&ixlib=rb-4.1.0&q=80&w=1080" },
@@ -52,7 +51,6 @@ export function ExploreScreen() {
 
   return (
     <div className="flex flex-col min-h-screen pb-20" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div
         className="px-4 pt-4 pb-5"
         style={{ background: "linear-gradient(160deg, #2D3047 0%, #3D4060 100%)", borderRadius: "0 0 24px 24px" }}
@@ -63,7 +61,6 @@ export function ExploreScreen() {
         <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.8)", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
           Discover content tailored for <span className="text-[#FFC72C] font-bold">{childName}</span>
         </p>
-        {/* Search bar */}
         <div className="mt-4 flex items-center gap-2 px-3 py-2.5 rounded-2xl transition-colors focus-within:bg-white/20" style={{ background: "rgba(255,255,255,0.12)" }}>
           <span style={{ fontSize: "14px" }}>🔍</span>
           <input
@@ -77,7 +74,6 @@ export function ExploreScreen() {
       </div>
 
       <div className="px-4 pt-5 flex flex-col gap-6">
-        {/* Video section */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 style={{ fontSize: "15px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>🎬 Discover</h3>
@@ -105,7 +101,6 @@ export function ExploreScreen() {
           </div>
         </div>
 
-        {/* Articles from the Health Manager team */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 style={{ fontSize: "15px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>💡 Insights</h3>
@@ -139,7 +134,6 @@ export function ExploreScreen() {
           </div>
         </div>
 
-        {/* Restaurants button */}
         <button
           className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95"
           style={{ background: "white", border: "2px dashed #5CC8C2", boxShadow: "0 2px 8px rgba(92,200,194,0.15)" }}
@@ -150,7 +144,6 @@ export function ExploreScreen() {
           </span>
         </button>
 
-        {/* Forum section */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 style={{ fontSize: "15px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>💬 Ask Forum</h3>

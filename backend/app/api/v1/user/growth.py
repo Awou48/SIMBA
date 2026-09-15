@@ -66,7 +66,6 @@ def log_measurement(
     if "error" in wfa:
         raise HTTPException(status_code=400, detail=f"Weight error: {wfa['error']}")
 
-    # Wasting indices are optional: a height outside the WHO wfl/wfh range just leaves them empty.
     wasting = analyze_wasting(child.gender, age_in_days, measurement.weight_kg, measurement.height_cm)
     bfa = analyze_bmi(child.gender, age_in_days, measurement.weight_kg, measurement.height_cm)
 

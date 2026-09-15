@@ -1,16 +1,7 @@
-/**
- * Small building blocks for the Health Manager web portal, layered on the
- * shadcn/ui primitives in app/components/ui. Everything here is desktop-first
- * and uses the theme tokens (scoped to `.hm-portal` in styles/portal.css).
- */
 import React from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "../../app/components/ui/utils";
 import type { ChildFlag } from "../../lib/api";
-
-// ---------------------------------------------------------------------------
-// Page scaffolding
-// ---------------------------------------------------------------------------
 
 export function PageHeader({
   title,
@@ -99,10 +90,6 @@ export function EmptyState({ title, description, action }: { title: string; desc
   );
 }
 
-// ---------------------------------------------------------------------------
-// Domain badges
-// ---------------------------------------------------------------------------
-
 export const FLAG_META: Record<ChildFlag, { label: string; className: string }> = {
   normal: { label: "Normal", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   stunted: { label: "Stunted", className: "bg-red-50 text-red-700 border-red-200" },
@@ -118,7 +105,6 @@ export function FlagBadge({ flag }: { flag: ChildFlag }) {
   return <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", m.className)}>{m.label}</span>;
 }
 
-/** Colour a z-score: |z|>2 red, |z|>1 amber, else green. */
 export function ZBadge({ z, label }: { z: number | null | undefined; label?: string }) {
   if (z == null) return <span className="text-xs text-muted-foreground">—</span>;
   const cls = Math.abs(z) > 2 ? "text-red-600 bg-red-50" : Math.abs(z) > 1 ? "text-amber-600 bg-amber-50" : "text-emerald-600 bg-emerald-50";
@@ -133,10 +119,6 @@ export function ZBadge({ z, label }: { z: number | null | undefined; label?: str
 export function Pill({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span className={cn("inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground", className)}>{children}</span>;
 }
-
-// ---------------------------------------------------------------------------
-// Formatting helpers
-// ---------------------------------------------------------------------------
 
 export const fmtDate = (iso: string | null | undefined, withYear = true) =>
   iso ? new Date(iso.length === 10 ? iso + "T00:00:00" : iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(withYear ? { year: "numeric" } : {}) }) : "—";

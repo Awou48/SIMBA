@@ -12,10 +12,6 @@ interface ChildContextValue {
 
 const ChildContext = createContext<ChildContextValue | null>(null);
 
-/**
- * Loads the parent's children once and remembers which one is "active" across
- * screens (persisted in localStorage so a reload keeps the selection).
- */
 export function ChildProvider({ children: content }: { children: React.ReactNode }) {
   const [list, setList] = useState<Child[]>([]);
   const [activeId, setActiveId] = useState<number | null>(session.getActiveChildId());
@@ -32,7 +28,6 @@ export function ChildProvider({ children: content }: { children: React.ReactNode
     try {
       const data = await api.parent.listChildren();
       setList(data);
-      // Fall back to the first child if nothing (or something stale) is selected.
       setActiveId((prev) => {
         const stillExists = prev !== null && data.some((c) => c.id === prev);
         const next = stillExists ? prev : data[0]?.id ?? null;

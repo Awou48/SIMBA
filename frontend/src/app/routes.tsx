@@ -19,7 +19,6 @@ import { ExploreScreen } from "./components/screens/ExploreScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
 import { AlertsScreen } from "./components/screens/AlertsScreen";
 import { MilestonesScreen } from "./components/screens/MilestonesScreen";
-// Health Manager web portal (desktop, no phone frame)
 import { HMShell } from "../web/HMShell";
 import { HMLogin } from "../web/pages/Login";
 import { Dashboard as HMDashboard } from "../web/pages/Dashboard";
@@ -91,7 +90,6 @@ export const router = createBrowserRouter([
       </RequireAuth>
     ),
   },
-  // Parent main app with persistent bottom navigation
   {
     element: <FramedLayout />,
     children: [
@@ -107,7 +105,6 @@ export const router = createBrowserRouter([
       { path: "/milestones",   element: <MilestonesScreen /> },
     ],
   },
-  // Health Manager web portal
   { path: "/hm/login", element: <HMLogin /> },
   {
     path: "/hm",

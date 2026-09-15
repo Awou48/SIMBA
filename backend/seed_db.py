@@ -23,12 +23,9 @@ from app.services.zscore_calc import WHO_DIR, lms_value_at_z
 
 LOCAL_REF_DIR = os.path.join(settings.DATA_DIR, "local_reference")
 
-# Percentile -> z-score (standard normal quantiles) for the GrowthStandard table.
 PERCENTILE_Z = {"p3": -1.881, "p15": -1.036, "p50": 0.0, "p85": 1.036, "p97": 1.881}
 DAYS_PER_MONTH = 30.4375
 
-# Keyword -> FE category. Whole-word match; first category to match wins, so order
-# matters (e.g. "susu" -> Dairy is checked before "kacang" -> Protein).
 CATEGORY_KEYWORDS = [
     ("Dairy", ["susu", "yogurt", "yoghurt", "keju", "cheese", "milk", "es krim", "ice cream", "dairy"]),
     ("Fruit", ["buah", "pisang", "apel", "jeruk", "mangga", "pepaya", "semangka", "melon", "anggur",
@@ -334,7 +331,6 @@ def main() -> None:
     parser.add_argument("--reset", action="store_true", help="wipe reference tables before seeding")
     args = parser.parse_args()
 
-    # Hide the password when echoing the target database.
     print("Database:", re.sub(r"://([^:]+):[^@]+@", r"://\1:***@", settings.DATABASE_URL))
     counts = run(reset=args.reset)
     for table, n in counts.items():

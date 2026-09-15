@@ -2,7 +2,6 @@ import { useNavigate } from "react-router";
 import { Bell, Globe, Shield, CreditCard, HelpCircle, LogOut, ChevronRight, Edit3, Plus, Check } from "lucide-react";
 import { formatAge, session } from "../../../lib/api";
 import { useChildren } from "../../ChildContext";
-// Make sure to use lowercase for the imports if that's how your files are named!
 import logo1 from "../../../imports/logo_1.png"; 
 import logo2 from "../../../imports/logo_2.png";
 
@@ -28,7 +27,6 @@ export function SettingsScreen() {
   const navigate = useNavigate();
   const { children, activeChild, isLoading, setActiveChild } = useChildren();
 
-  // Secure Logout Function
   const handleLogout = () => {
     session.clear();
     navigate("/login", { replace: true });
@@ -36,7 +34,6 @@ export function SettingsScreen() {
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div
         className="px-4 pt-4 pb-6"
         style={{ background: "linear-gradient(160deg, #2D3047 0%, #3D4060 100%)", borderRadius: "0 0 28px 28px" }}
@@ -45,7 +42,6 @@ export function SettingsScreen() {
           ⚙️ Settings
         </h1>
 
-        {/* Parent profile card */}
         <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: "rgba(255,255,255,0.12)" }}>
           <div className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0" style={{ width: 60, height: 60, background: "rgba(255,255,255,0.9)" }}>
             <img src={logo2} alt="Avatar" className="w-10 h-10 object-contain" />
@@ -61,7 +57,6 @@ export function SettingsScreen() {
       </div>
 
       <div className="px-4 pt-5 flex flex-col gap-5 pb-6">
-        {/* Child profiles */}
         <div>
           <p style={{ fontSize: "13px", fontWeight: 900, color: "#9BA3B8", fontFamily: "'Nunito', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
             Children Profiles
@@ -101,7 +96,6 @@ export function SettingsScreen() {
               })
             )}
 
-            {/* Add child button */}
             <button
               onClick={() => navigate("/add-child")}
               className="w-full flex items-center gap-3 pt-3 transition-transform active:scale-95"
@@ -115,7 +109,6 @@ export function SettingsScreen() {
           </div>
         </div>
 
-        {/* Settings groups */}
         {settingsGroups.map(({ title, items }) => (
           <div key={title}>
             <p style={{ fontSize: "13px", fontWeight: 900, color: "#9BA3B8", fontFamily: "'Nunito', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
@@ -140,7 +133,6 @@ export function SettingsScreen() {
           </div>
         ))}
 
-        {/* Secure Logout */}
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl transition-transform active:scale-95"

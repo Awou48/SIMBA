@@ -27,17 +27,11 @@ def analyze_daily_intake(
     payload: user_schemas.NutritionIntake,
     child: models.Child = Depends(get_owned_child),
 ):
-    # Age is always derived from the child's record; the payload's age_in_months is ignored.
     months = age_in_months(child.birth_date)
     analysis = calculate_akg_fulfillment(months, payload.total_protein, payload.total_energy)
     if "error" in analysis:
         raise HTTPException(status_code=400, detail=analysis["error"])
     return {"message": "Intake analyzed successfully", "data": analysis}
-
-
-# ---------------------------------------------------------------------------
-# Food search (read-only view of the admin-managed food database)
-# ---------------------------------------------------------------------------
 
 
 @router.get("/foods", response_model=List[user_schemas.FoodSearchItem])
@@ -51,13 +45,7 @@ def search_foods(
     query = apply_food_search(db.query(models.FoodItem), q)
     if category and category.lower() != "all":
         query = query.filter(models.FoodItem.category == category)
-    # Toddler-safe items first, then alphabetical.
     return query.order_by(models.FoodItem.safe.desc(), models.FoodItem.name).limit(limit).all()
-
-
-# ---------------------------------------------------------------------------
-# Meal logs
-# ---------------------------------------------------------------------------
 
 
 def _round(x: float) -> float:
