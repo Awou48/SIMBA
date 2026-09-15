@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { Loader2, Lock, Mail, ShieldCheck, Smartphone } from "lucide-react";
-import logo2 from "../../imports/logo_2.png";
+import logoMark from "../../imports/logo_mark.png";
 import { api, errorMessage as toMessage, session } from "../../lib/api";
 import { Button } from "../../app/components/ui/button";
 import { Input } from "../../app/components/ui/input";
@@ -36,15 +36,20 @@ export function HMLogin() {
   return (
     <div className="hm-portal min-h-screen grid lg:grid-cols-2 bg-background text-foreground">
       {/* Brand panel */}
-      <div className="hidden lg:flex flex-col justify-between p-12 text-white" style={{ background: "linear-gradient(160deg, #1e2a5a 0%, #4f46e5 60%, #f47b20 140%)" }}>
-        <div className="flex items-center gap-3">
-          <div className="size-11 rounded-xl bg-white/90 flex items-center justify-center"><img src={logo2} alt="SIMBA" className="size-8 object-contain" /></div>
+      <div className="hm-login-hero hidden lg:flex flex-col justify-between p-12 text-white relative overflow-hidden">
+        <div className="hm-login-orb hm-login-orb-1" />
+        <div className="hm-login-orb hm-login-orb-2" />
+        <div className="hm-login-orb hm-login-orb-3" />
+        <div className="hm-login-grid" />
+        <div className="flex items-center gap-3 relative">
+          <div className="size-14 rounded-2xl bg-white flex items-center justify-center shadow-lg"><img src={logoMark} alt="SIMBA" className="size-12 object-contain" /></div>
           <div>
             <p className="text-xl font-extrabold leading-tight">SIMBA</p>
             <p className="text-xs opacity-80">Sistem Informasi Monitoring Balita</p>
           </div>
         </div>
-        <div className="max-w-md">
+        <div className="max-w-md relative">
+          <img src={logoMark} alt="" aria-hidden className="hm-login-mascot" />
           <h1 className="text-4xl font-extrabold leading-tight">Monitor child growth across your region.</h1>
           <p className="mt-4 text-white/85">
             Stunting prevalence per kecamatan, WHO z-scores for every child, AKG nutrition targets, KPSP screening and
@@ -55,14 +60,14 @@ export function HMLogin() {
             <li className="flex items-center gap-2"><Smartphone size={16} /> Parents use the mobile app — this portal is for Health Managers</li>
           </ul>
         </div>
-        <p className="text-xs text-white/60">WHO Child Growth Standards · Permenkes 2/2020 · AKG 2019 · Kemenkes immunization schedule</p>
+        <p className="text-xs text-white/60 relative">WHO Child Growth Standards · Permenkes 2/2020 · AKG 2019 · Kemenkes immunization schedule</p>
       </div>
 
       {/* Form */}
       <div className="flex items-center justify-center p-6 md:p-12">
-        <form onSubmit={submit} className="w-full max-w-sm">
+        <form onSubmit={submit} className="w-full max-w-sm hm-fade-up">
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="size-10 rounded-xl bg-white shadow flex items-center justify-center"><img src={logo2} alt="SIMBA" className="size-7 object-contain" /></div>
+            <div className="size-12 rounded-xl bg-white shadow flex items-center justify-center"><img src={logoMark} alt="SIMBA" className="size-10 object-contain" /></div>
             <p className="text-lg font-extrabold">SIMBA Health Manager Portal</p>
           </div>
           <h2 className="text-2xl font-extrabold">Sign in</h2>
