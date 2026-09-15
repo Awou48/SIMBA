@@ -1,18 +1,7 @@
-/**
- * Single entry point for talking to the SIMBA backend.
- *
- * - Base URL comes from VITE_API_URL (see frontend/.env.example).
- * - Attaches the stored bearer token, parses FastAPI error bodies into readable
- *   messages, and on 401 clears the session and broadcasts `simba:unauthorized`
- *   so the route guard can bounce the user to /login.
- */
 
 export const API_URL: string =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "http://127.0.0.1:8000";
 
-// ---------------------------------------------------------------------------
-// Session storage
-// ---------------------------------------------------------------------------
 
 export type Role = "Parent" | "Health Manager";
 
@@ -45,9 +34,6 @@ export const session = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// Core fetch
-// ---------------------------------------------------------------------------
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -56,7 +42,6 @@ export class ApiError extends Error {
   }
 }
 
-/** FastAPI returns `detail` as a string, or as a list of {loc, msg} for 422s. */
 function formatDetail(body: any, fallback: string): string {
   const detail = body?.detail;
   if (!detail) return fallback;
@@ -74,9 +59,7 @@ function formatDetail(body: any, fallback: string): string {
 
 interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE";
-  /** JSON body (default) or a URLSearchParams for OAuth2 form logins. */
   body?: unknown;
-  /** Attach the bearer token (default true). */
   auth?: boolean;
   query?: Record<string, string | number | boolean | undefined | null>;
 }
@@ -135,29 +118,26 @@ function safeJson(text: string): any {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Types mirrored from backend/app/schemas
-// ---------------------------------------------------------------------------
 
 export interface Child {
   id: number;
   parent_id: number;
   name: string;
   gender: "male" | "female";
-  birth_date: string; // YYYY-MM-DD
+  birth_date: string;
   region: string | null;
 }
 
 export interface Measurement {
   id: number;
-  date_logged: string; // ISO datetime
+  date_logged: string;
   age_in_days: number;
   weight_kg: number;
   height_cm: number;
   wfa_zscore: number;
   lhfa_zscore: number;
-  wfh_zscore: number | null; // weight-for-length/height (wasting)
-  bfa_zscore: number | null; // BMI-for-age
+  wfh_zscore: number | null;
+  bfa_zscore: number | null;
   bmi: number | null;
   stunting_status: string;
   weight_status: string;
@@ -193,7 +173,7 @@ export interface MealLog {
   food_id: number | null;
   food_name: string;
   meal_type: MealType;
-  date: string; // YYYY-MM-DD
+  date: string;
   servings: number;
   energy: number;
   protein: number;
@@ -221,7 +201,7 @@ export interface DailyMealSummary {
 export interface Milestone {
   id: number;
   min_months: number;
-  max_months: number; // exclusive
+  max_months: number;
   age_label: string;
   domain: string;
   question: string;
@@ -259,8 +239,8 @@ export interface HealthEvent {
   id: number;
   title: string;
   event_type: EventType;
-  date: string; // YYYY-MM-DD
-  time: string | null; // HH:MM
+  date: string;
+  time: string | null;
   notes: string | null;
   done: boolean;
   vaccine_code: string | null;
@@ -349,7 +329,6 @@ export interface Article {
   updated_at: string;
 }
 
-/** Parent-facing article (published only; no `published` flag exposed). */
 export type ArticleView = Omit<Article, "published" | "created_at">;
 
 export interface AdminInfo {
@@ -368,7 +347,6 @@ export interface SystemSummary {
   last_meal_on: string | null;
 }
 
-// ---- Health Manager portal ------------------------------------------------
 
 export type ChildFlag = "normal" | "stunted" | "underweight" | "wasted" | "overweight" | "stale" | "no_data";
 
@@ -456,7 +434,7 @@ export interface StuntingStats {
   total_measurements: number;
   stunted_cases: number;
   severely_stunted_cases: number;
-  stunting_rate: number; // 0..1
+  stunting_rate: number;
   warning: string;
 }
 
@@ -469,11 +447,7 @@ interface AdminTokenResponse extends TokenResponse {
   admin_info: { id: number; email: string; name: string; is_superadmin: boolean };
 }
 
-// ---------------------------------------------------------------------------
-// Endpoints
-// ---------------------------------------------------------------------------
 
-/** Authenticated binary download (PDF). Plain <a href> cannot carry the bearer token. */
 async function fetchPdf(path: string): Promise<Blob> {
   const res = await fetch(`${API_URL}${path}`, { headers: { Authorization: `Bearer ${session.getToken() ?? ""}` } });
   if (res.status === 401) {
@@ -485,7 +459,6 @@ async function fetchPdf(path: string): Promise<Blob> {
   return res.blob();
 }
 
-/** Trigger a browser download for a Blob. */
 export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -526,7 +499,6 @@ export const api = {
 
     alerts: (childId: number) => apiFetch<AlertItem[]>(`/api/v1/user/child/${childId}/alerts`),
     report: (childId: number) => apiFetch<GrowthReport>(`/api/v1/user/child/${childId}/report`),
-    /** Fetches the PDF as a Blob (needs the bearer token, so no plain <a href>). */
     reportPdf: (childId: number) => fetchPdf(`/api/v1/user/child/${childId}/report.pdf`),
 
     listMeasurements: (childId: number) => apiFetch<Measurement[]>(`/api/v1/user/child/${childId}/measurements`),
@@ -624,11 +596,7 @@ export const api = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// Small shared helpers
-// ---------------------------------------------------------------------------
 
-/** "1 year, 6 months old" style label from a YYYY-MM-DD birth date. */
 export function formatAge(birthDate: string, short = false): string {
   const dob = new Date(birthDate);
   const today = new Date();
@@ -649,7 +617,6 @@ export function ageInMonths(birthDate: string, on: Date = new Date()): number {
   return Math.max(months, 0);
 }
 
-/** Local calendar date as YYYY-MM-DD (avoids the UTC shift of toISOString()). */
 export function toDateString(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");

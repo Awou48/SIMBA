@@ -9,7 +9,6 @@ from app.services.zscore_calc import (
 )
 from tests.conftest import auth
 
-# WHO medians for a boy at 365 days: length 75.7 cm, weight 9.6 kg.
 TODAY = date.today().isoformat()
 MEDIAN_BOY_1Y = {"weight_kg": 9.6, "height_cm": 75.7, "date_logged": TODAY}
 
@@ -17,8 +16,6 @@ MEDIAN_BOY_1Y = {"weight_kg": 9.6, "height_cm": 75.7, "date_logged": TODAY}
 def measurements_url(child):
     return f"/api/v1/user/child/{child['id']}/measurements"
 
-
-# --- pure service functions -------------------------------------------------
 
 def test_zscore_at_median_is_zero():
     assert abs(analyze_stunting("male", 365, 75.7)["z_score"]) < 0.1
@@ -47,8 +44,6 @@ def test_classification_thresholds():
     assert classify_weight(0.5) == "Berat Badan Normal"
     assert classify_weight(1.5) == "Risiko Berat Badan Lebih"
 
-
-# --- HTTP layer --------------------------------------------------------------
 
 def test_log_measurement_requires_auth(client, child):
     assert client.post(measurements_url(child), json=MEDIAN_BOY_1Y).status_code == 401
@@ -140,8 +135,6 @@ def test_growth_standards_endpoint(client, parent_token, engine):
     assert twelve["p3"] < twelve["p15"] < twelve["p50"] < twelve["p85"] < twelve["p97"]
 
 
-# --- wasting (weight-for-length/height) and BMI-for-age -------------------------
-
 def test_wasting_and_bmi_services():
     from app.services.zscore_calc import analyze_bmi, analyze_wasting, classify_wasting
 
@@ -167,13 +160,11 @@ def test_measurement_includes_wasting_and_bmi(client, parent_token, child):
     assert body["wasting_status"] == "Gizi Baik (Normal)"
     assert body["bmi_status"] == "Gizi Baik (Normal)"
 
-    # History carries the same derived fields.
     rows = client.get(measurements_url(child), headers=auth(parent_token)).json()
     assert rows[0]["wasting_status"] == "Gizi Baik (Normal)"
 
 
 def test_measurement_with_height_outside_wfl_range_still_saves(client, parent_token, child):
-    # 44 cm at 12 months is far below the WHO wfl table (45 cm) but a valid stunting measurement.
     r = client.post(measurements_url(child), json={**MEDIAN_BOY_1Y, "height_cm": 44.0}, headers=auth(parent_token))
     assert r.status_code == 201, r.text
     assert r.json()["wfh_zscore"] is None
@@ -186,7 +177,6 @@ def test_schema_sync_adds_new_nullable_column(engine):
     from app.db.migrate import add_missing_columns
     from app.db.database import Base
 
-    # Simulate an older database: drop a column the model now expects.
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE measurement_logs DROP COLUMN bfa_zscore"))
     assert "bfa_zscore" not in {c["name"] for c in inspect(engine).get_columns("measurement_logs")}

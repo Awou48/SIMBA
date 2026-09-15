@@ -31,7 +31,6 @@ export function HMShell() {
     api.admin.me().then(setMe).catch(() => setMe(null));
   }, []);
 
-  // Close the mobile drawer on navigation.
   useEffect(() => setOpen(false), [location.pathname]);
 
   const logout = () => {
@@ -97,10 +96,8 @@ export function HMShell() {
 
   return (
     <div className="hm-portal min-h-screen bg-background text-foreground flex">
-      {/* Desktop sidebar */}
       <aside className="hidden lg:block w-64 shrink-0 sticky top-0 h-screen">{sidebar}</aside>
 
-      {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />

@@ -33,7 +33,6 @@ def _checklist(child: models.Child, db: Session, bracket_months: Optional[int]) 
         db.query(models.Milestone)
         .filter(
             models.Milestone.active.is_(True),
-            # Half-open brackets: "6 - 12 Months" covers ages 6..11, "12 - 24" starts at 12.
             models.Milestone.min_months <= target,
             models.Milestone.max_months > target,
         )
@@ -104,5 +103,4 @@ def answer_milestone(
     answer.achieved = payload.achieved
     answer.answered_on = date.today()
     db.commit()
-    # Return the checklist for the bracket this milestone belongs to so the UI can refresh in place.
     return _checklist(child, db, milestone.min_months)

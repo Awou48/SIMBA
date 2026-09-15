@@ -30,7 +30,6 @@ function verdictTone(interpretation: string | null) {
   return { color: "#E53535", bg: "#FFF0F0", emoji: "🩺" };
 }
 
-/** Bracket start month for a given age (mirrors the seeded KPSP brackets). */
 function bracketFor(ageMonths: number): number {
   const b = [...BRACKETS].reverse().find((x) => ageMonths >= x.months);
   return b ? b.months : 0;
@@ -40,7 +39,7 @@ export function MilestonesScreen() {
   const navigate = useNavigate();
   const { activeChild: child, isLoading: childLoading } = useChildren();
 
-  const [bracket, setBracket] = useState<number | null>(null); // null = child's current bracket
+  const [bracket, setBracket] = useState<number | null>(null);
   const [data, setData] = useState<MilestoneChecklist | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [savingId, setSavingId] = useState<number | null>(null);
@@ -80,7 +79,6 @@ export function MilestonesScreen() {
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-4">
         <button onClick={() => navigate("/home")}>
           <ChevronLeft size={24} style={{ color: "#2D3047" }} />
@@ -107,7 +105,6 @@ export function MilestonesScreen() {
           </button>
         )}
 
-        {/* Bracket selector */}
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
           {BRACKETS.map((b) => {
             const isCurrent = b.months === currentBracket;
@@ -131,7 +128,6 @@ export function MilestonesScreen() {
           })}
         </div>
 
-        {/* Summary card */}
         <div className="rounded-3xl p-4" style={{ background: "linear-gradient(135deg, #9B8BF4 0%, #6D5BD0 100%)", boxShadow: "0 8px 24px rgba(155,139,244,0.35)" }}>
           <div className="flex items-center justify-between mb-2">
             <div>
@@ -156,7 +152,6 @@ export function MilestonesScreen() {
           </p>
         </div>
 
-        {/* Questions */}
         <div className="flex flex-col gap-3">
           {isLoading ? (
             <div className="flex justify-center py-6"><Loader2 className="animate-spin" size={22} style={{ color: "#9B8BF4" }} /></div>

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Camera, ChevronLeft, Calendar, AlertCircle, MapPin } from "lucide-react";
-// Ensure this path matches exactly!
 import logo1 from "../../../imports/logo_1.png";
 import { api, errorMessage as toMessage, session } from "../../../lib/api";
 
@@ -12,7 +11,6 @@ export function AddChildScreen() {
   const [gender, setGender] = useState<"boy" | "girl" | null>(null);
   const [region, setRegion] = useState("");
 
-  // API connection states
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -27,7 +25,6 @@ export function AddChildScreen() {
     setIsLoading(true);
 
     try {
-      // Map UI gender to backend standard
       const created = await api.parent.createChild({
         name: name.trim(),
         gender: gender === "boy" ? "male" : "female",
@@ -35,7 +32,6 @@ export function AddChildScreen() {
         region: region.trim() || null,
       });
 
-      // Make the new child the active profile, then go home (which refetches the list).
       session.setActiveChildId(created.id);
       navigate("/home");
     } catch (err) {
@@ -47,7 +43,6 @@ export function AddChildScreen() {
 
   return (
     <div className="h-full flex flex-col overflow-y-auto min-h-screen" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div
         className="flex-shrink-0 px-4 pt-4 pb-6"
         style={{ background: "linear-gradient(160deg, #FFF8EF 0%, #FFE8C8 100%)" }}
@@ -63,10 +58,8 @@ export function AddChildScreen() {
         </p>
       </div>
 
-      {/* Content */}
       <div className="flex-1 px-4 pt-6 flex flex-col gap-5 pb-8">
         
-        {/* Error Message Display */}
         {errorMessage && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
             <AlertCircle size={16} className="text-red-500" />
@@ -74,7 +67,6 @@ export function AddChildScreen() {
           </div>
         )}
 
-        {/* Avatar upload */}
         <div className="flex justify-center">
           <div className="relative">
             <div
@@ -92,7 +84,6 @@ export function AddChildScreen() {
           </div>
         </div>
         
-        {/* Name field */}
         <div className="flex flex-col gap-1.5">
           <label style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>Child's Name</label>
           <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: "white", border: "1.5px solid #F0F1F5", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
@@ -108,7 +99,6 @@ export function AddChildScreen() {
           </div>
         </div>
 
-        {/* Date of Birth */}
         <div className="flex flex-col gap-1.5">
           <label style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>Date of Birth</label>
           <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: "white", border: "1.5px solid #F0F1F5", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
@@ -123,7 +113,6 @@ export function AddChildScreen() {
           </div>
         </div>
 
-        {/* Region (used for the Health Manager's regional dashboards) */}
         <div className="flex flex-col gap-1.5">
           <label style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>
             Area / Kecamatan <span style={{ color: "#9BA3B8", fontWeight: 600 }}>(optional)</span>
@@ -144,7 +133,6 @@ export function AddChildScreen() {
           </div>
         </div>
 
-        {/* Gender toggle */}
         <div className="flex flex-col gap-2">
           <label style={{ fontSize: "13px", fontWeight: 700, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>Gender</label>
           <div className="flex gap-3">
@@ -171,7 +159,6 @@ export function AddChildScreen() {
           </div>
         </div>
 
-        {/* CTA */}
         <button
           onClick={handleSaveChild}
           disabled={isLoading}

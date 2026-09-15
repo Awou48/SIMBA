@@ -90,19 +90,15 @@ def main() -> None:
         print("\nDry run. Re-run with --yes to apply.")
         return
 
-    # Orphan tables may hold foreign keys to children, so they go first. Release the planning
-    # transaction beforehand: DROP TABLE needs an exclusive lock that our own open read would block.
     db.rollback()
     with engine.begin() as conn:
         for t in orphans:
             conn.execute(text(f'DROP TABLE "{t}" CASCADE'))
 
-    # Impossible rows first (some belong to parents deleted below; deleting twice is harmless via IDs).
     if impossible:
         db.query(models.MeasurementLog).filter(models.MeasurementLog.id.in_([r.id for r in impossible])).delete(synchronize_session=False)
         db.commit()
 
-    # Children/measurements/meals/answers/events cascade through the ORM relationships.
     for p in parents:
         for kid in db.query(models.Child).filter(models.Child.parent_id == p.id).all():
             db.query(models.MeasurementLog).filter(models.MeasurementLog.child_id == kid.id).delete(synchronize_session=False)

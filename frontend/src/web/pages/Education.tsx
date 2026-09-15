@@ -10,7 +10,6 @@ const CATEGORIES = ["Growth", "Nutrition", "Development", "Immunization"];
 type Form = Omit<Article, "id" | "created_at" | "updated_at">;
 const empty: Form = { title: "", category: "Growth", author: "Tim SIMBA", read_time_min: 3, summary: "", body: "", published: false };
 
-/** Two-pane editor: list on the left, editor/preview on the right. */
 export function Education() {
   const [rows, setRows] = useState<Article[]>([]);
   const [selected, setSelected] = useState<number | "new" | null>(null);

@@ -27,8 +27,6 @@ def meals_url(child, suffix=""):
     return f"/api/v1/user/child/{child['id']}/meals{suffix}"
 
 
-# --- food search ---------------------------------------------------------------
-
 def test_food_search_requires_auth_and_filters(client, parent_token, foods):
     assert client.get("/api/v1/user/foods?q=nasi").status_code == 401
 
@@ -36,19 +34,15 @@ def test_food_search_requires_auth_and_filters(client, parent_token, foods):
     assert r.status_code == 200
     assert [f["name"] for f in r.json()] == ["Nasi Tim Ayam"]
 
-    # Safe foods are listed before flagged ones.
     names = [f["name"] for f in client.get("/api/v1/user/foods", headers=auth(parent_token)).json()]
     assert names[-1] == "Kerupuk Udang"
 
     assert len(client.get("/api/v1/user/foods?category=Fruit", headers=auth(parent_token)).json()) == 1
 
-    # Every word must match, in any order.
     r = client.get("/api/v1/user/foods?q=ayam%20tim", headers=auth(parent_token))
     assert [f["name"] for f in r.json()] == ["Nasi Tim Ayam"]
     assert client.get("/api/v1/user/foods?q=ayam%20pisang", headers=auth(parent_token)).json() == []
 
-
-# --- meal logging --------------------------------------------------------------
 
 def test_log_meal_snapshots_nutrients_scaled_by_servings(client, parent_token, child, foods):
     payload = {"food_id": foods[0].id, "meal_type": "Lunch", "date": TODAY, "servings": 1.5}
@@ -84,7 +78,6 @@ def test_daily_summary_totals_and_akg(client, parent_token, child, foods):
     h = auth(parent_token)
     client.post(meals_url(child), json={"food_id": foods[0].id, "meal_type": "Breakfast", "date": TODAY, "servings": 2}, headers=h)
     client.post(meals_url(child), json={"food_id": foods[1].id, "meal_type": "Snack", "date": TODAY}, headers=h)
-    # A meal on another day must not leak into today's summary.
     yesterday = (date.today() - timedelta(days=1)).isoformat()
     client.post(meals_url(child), json={"food_id": foods[2].id, "meal_type": "Dinner", "date": yesterday}, headers=h)
 
@@ -92,10 +85,9 @@ def test_daily_summary_totals_and_akg(client, parent_token, child, foods):
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["date"] == TODAY
-    assert body["age_in_months"] == 12  # child fixture is exactly 1 year old
+    assert body["age_in_months"] == 12
     assert [m["meal_type"] for m in body["meals"]] == ["Breakfast", "Snack"]
     assert body["totals"] == {"energy": 416.0, "protein": 17.0, "carbs": 75.0, "fat": 6.0}
-    # 12 months -> AKG "1-3 tahun": 1350 kcal / 20 g protein
     assert body["akg_bracket"] == "1-3 tahun"
     assert body["targets"]["energy"] == 1350
     assert body["fulfillment_percent"]["protein"] == 85.0

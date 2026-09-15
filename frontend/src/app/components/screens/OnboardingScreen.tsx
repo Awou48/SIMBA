@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import logo1 from "../../../imports/logo_1.png"; // Fixed import path
+import logo1 from "../../../imports/logo_1.png";
 
 const slides = [
   {
@@ -37,7 +37,6 @@ export function OnboardingScreen() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: "#FFF8EF" }}>
-      {/* Image */}
       <div className="relative flex-shrink-0" style={{ height: "420px" }}>
         <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
         <div
@@ -46,7 +45,6 @@ export function OnboardingScreen() {
             background: "linear-gradient(to bottom, transparent 40%, #FFF8EF 100%)",
           }}
         />
-        {/* Skip */}
         <button
           onClick={() => navigate("/login")}
           className="absolute top-4 right-4 px-4 py-2 rounded-full"
@@ -54,15 +52,12 @@ export function OnboardingScreen() {
         >
           Skip
         </button>
-        {/* Logo badge */}
         <div className="absolute top-4 left-4 rounded-2xl overflow-hidden" style={{ width: 40, height: 40, background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
           <img src={logo1} alt="SIMBA" className="w-full h-full object-contain p-1" />
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex flex-col items-center px-6 pt-2 pb-6" style={{ gap: "16px" }}>
-        {/* Dots */}
         <div className="flex gap-2">
           {slides.map((_, i) => (
             <div

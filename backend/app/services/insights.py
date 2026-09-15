@@ -35,11 +35,6 @@ def _alert(id_: str, category: str, severity: str, title: str, description: str,
     }
 
 
-# ---------------------------------------------------------------------------
-# Building blocks shared by alerts and the report
-# ---------------------------------------------------------------------------
-
-
 def latest_measurement(child: models.Child, db: Session) -> models.MeasurementLog | None:
     return (
         db.query(models.MeasurementLog)
@@ -122,17 +117,11 @@ def immunization_progress(child: models.Child, db: Session) -> dict:
     return {**counts, "total": len(statuses), "next_dose": next_dose, "overdue_names": [s["name"] for s in statuses if s["status"] == "overdue"]}
 
 
-# ---------------------------------------------------------------------------
-# Alerts
-# ---------------------------------------------------------------------------
-
-
 def build_alerts(child: models.Child, db: Session) -> list[dict]:
     today = date.today()
     name = child.name
     alerts: list[dict] = []
 
-    # --- Growth ---------------------------------------------------------------
     latest = latest_measurement(child, db)
     if latest is None:
         alerts.append(_alert("growth-none", "Growth", "medium", "No measurements yet",
@@ -165,7 +154,6 @@ def build_alerts(child: models.Child, db: Session) -> list[dict]:
                                  f"{name}'s latest measurement ({latest.weight_kg} kg, {latest.height_cm} cm) is within the WHO normal range. Keep it up!",
                                  logged, "/growth"))
 
-    # --- Nutrition --------------------------------------------------------------
     nut = nutrition_last_days(child, db)
     if nut["days_logged"] == 0:
         alerts.append(_alert("nutrition-none", "Nutrition", "low", "Start the food diary",
@@ -184,7 +172,6 @@ def build_alerts(child: models.Child, db: Session) -> list[dict]:
             alerts.append(_alert("nutrition-today", "Nutrition", "low", "No meals logged today",
                                  f"Remember to log what {name} eats today.", today, "/food-diary"))
 
-    # --- Development --------------------------------------------------------------
     ms = milestone_progress(child, db)
     if ms["total"]:
         if ms["interpretation"] in ("Meragukan", "Penyimpangan"):
@@ -196,7 +183,6 @@ def build_alerts(child: models.Child, db: Session) -> list[dict]:
             alerts.append(_alert("dev-pending", "Development", "medium", "Milestone check due",
                                  f"{ms['total'] - ms['answered']} KPSP question(s) for {ms['age_label']} are still unanswered.", today, "/milestones"))
 
-    # --- Immunization -----------------------------------------------------------
     im = immunization_progress(child, db)
     if im["overdue"]:
         names = ", ".join(im["overdue_names"][:3]) + ("…" if len(im["overdue_names"]) > 3 else "")
@@ -212,11 +198,6 @@ def build_alerts(child: models.Child, db: Session) -> list[dict]:
 
     severity_rank = {"high": 0, "medium": 1, "low": 2}
     return sorted(alerts, key=lambda a: (severity_rank[a["severity"]], a["date"]), reverse=False)
-
-
-# ---------------------------------------------------------------------------
-# Report
-# ---------------------------------------------------------------------------
 
 
 def build_report(child: models.Child, db: Session) -> dict:

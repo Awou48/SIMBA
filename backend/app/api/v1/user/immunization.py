@@ -14,11 +14,6 @@ from app.services.immunization import NATIONAL_SCHEDULE, SCHEDULE_BY_CODE, dose_
 router = APIRouter()
 
 
-# ---------------------------------------------------------------------------
-# National immunization schedule for a child
-# ---------------------------------------------------------------------------
-
-
 def _immunization_summary(child: models.Child, db: Session) -> dict:
     given_events = {
         e.vaccine_code: e
@@ -36,7 +31,6 @@ def _immunization_summary(child: models.Child, db: Session) -> dict:
 
     counts = {k: sum(1 for s in schedule if s["status"] == k) for k in ("given", "due", "overdue", "upcoming")}
     pending = [s for s in schedule if s["status"] != "given"]
-    # Next action: the most urgent pending dose (overdue first, then by due date).
     order = {"overdue": 0, "due": 1, "upcoming": 2}
     next_dose = min(pending, key=lambda s: (order[s["status"]], s["due_date"])) if pending else None
     return {"schedule": schedule, **counts, "next_dose": next_dose}
@@ -92,11 +86,6 @@ def unmark_dose_given(code: str, child: models.Child = Depends(get_owned_child),
     db.delete(event)
     db.commit()
     return _immunization_summary(child, db)
-
-
-# ---------------------------------------------------------------------------
-# Free-form health calendar events
-# ---------------------------------------------------------------------------
 
 
 @router.get("/child/{child_id}/events", response_model=List[user_schemas.HealthEventResponse])

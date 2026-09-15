@@ -35,7 +35,6 @@ export function HMLogin() {
 
   return (
     <div className="hm-portal min-h-screen grid lg:grid-cols-2 bg-background text-foreground">
-      {/* Brand panel */}
       <div className="hm-login-hero hidden lg:flex flex-col justify-between p-12 text-white relative overflow-hidden">
         <div className="hm-login-orb hm-login-orb-1" />
         <div className="hm-login-orb hm-login-orb-2" />
@@ -63,7 +62,6 @@ export function HMLogin() {
         <p className="text-xs text-white/60 relative">WHO Child Growth Standards · Permenkes 2/2020 · AKG 2019 · Kemenkes immunization schedule</p>
       </div>
 
-      {/* Form */}
       <div className="flex items-center justify-center p-6 md:p-12">
         <form onSubmit={submit} className="w-full max-w-sm hm-fade-up">
           <div className="lg:hidden flex items-center gap-3 mb-8">

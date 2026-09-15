@@ -63,7 +63,6 @@ def update_food(food_id: int, food: admin_schemas.FoodItemCreate, db: Session = 
 @router.delete("/{food_id}")
 def delete_food(food_id: int, db: Session = Depends(get_db)):
     db_food = _get_food_or_404(food_id, db)
-    # Keep parents' meal history intact: detach logs from the food before removing it.
     db.query(models.MealLog).filter(models.MealLog.food_id == food_id).update({models.MealLog.food_id: None})
     db.delete(db_food)
     db.commit()

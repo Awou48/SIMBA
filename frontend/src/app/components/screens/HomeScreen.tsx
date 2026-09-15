@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ChevronDown, ChevronRight, Check, Plus, Utensils, Syringe, Download, Scale } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
-import logo1 from "../../../imports/logo_1.png"; // Note the lowercase 'l' for safety!
+import logo1 from "../../../imports/logo_1.png";
 import { api, formatAge, toDateString, type DailyMealSummary, type Measurement, type MilestoneChecklist } from "../../../lib/api";
 import { useChildren } from "../../ChildContext";
 
@@ -34,7 +34,6 @@ export function HomeScreen() {
   const [today, setToday] = useState<DailyMealSummary | null>(null);
   const [milestones, setMilestones] = useState<MilestoneChecklist | null>(null);
 
-  // Pull the active child's measurement history for the overview card.
   useEffect(() => {
     if (!child) {
       setHistory([]);
@@ -76,7 +75,6 @@ export function HomeScreen() {
 
   return (
     <div className="flex flex-col gap-0 min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div
         className="px-4 pt-2 pb-6"
         style={{ background: "linear-gradient(160deg, #F47B20 0%, #FFC72C 100%)", borderRadius: "0 0 28px 28px" }}
@@ -97,7 +95,6 @@ export function HomeScreen() {
           </div>
         </div>
 
-        {/* Dynamic Child profile pill */}
         {isLoading ? (
            <div className="flex items-center justify-center px-4 py-3 rounded-2xl bg-white/20">
              <p className="text-white text-sm font-['Nunito'] font-bold animate-pulse">Loading profile...</p>
@@ -166,7 +163,6 @@ export function HomeScreen() {
       </div>
 
       <div className="px-4 pt-4 flex flex-col gap-5">
-        {/* Hero growth card (Static visual for now) */}
         <div
           className="rounded-3xl p-4"
           style={{ background: "linear-gradient(135deg, #2D3047 0%, #3D4060 100%)", boxShadow: "0 8px 24px rgba(45,48,71,0.3)" }}
@@ -223,7 +219,6 @@ export function HomeScreen() {
           )}
         </div>
 
-        {/* Quick actions */}
         <div>
           <h3 style={{ fontSize: "16px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif", marginBottom: 10 }}>
             Quick Actions
@@ -250,7 +245,6 @@ export function HomeScreen() {
           </div>
         </div>
 
-        {/* Development milestones (KPSP) */}
         {milestones && milestones.total > 0 && (
           <button
             onClick={() => navigate("/milestones")}
@@ -272,7 +266,6 @@ export function HomeScreen() {
           </button>
         )}
 
-        {/* Today's Nutrition */}
         <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
           <div className="flex items-center justify-between mb-3">
             <h3 style={{ fontSize: "15px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>
@@ -297,7 +290,6 @@ export function HomeScreen() {
           </div>
         </div>
 
-        {/* Recommended Recipes */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 style={{ fontSize: "15px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif" }}>
