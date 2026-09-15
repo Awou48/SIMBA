@@ -96,6 +96,24 @@ Two mechanisms, pick by environment:
   alembic check                                         # CI: models and migrations agree
   ```
 
+### Cleaning a development database
+
+`backend/scripts/cleanup_legacy.py` removes prototype-era data without touching reference tables. It always
+prints its plan first and does nothing until you pass `--yes`.
+
+```bash
+cd backend
+python scripts/cleanup_legacy.py --drop-orphans --purge-impossible --dry-run
+python scripts/cleanup_legacy.py --parents old@example.com --admins old-admin@simba.id \
+    --drop-orphans --purge-impossible --yes
+```
+
+- `--parents` / `--admins` — delete those accounts (parents cascade to children, measurements, meals,
+  KPSP answers, calendar events). Superadmins are skipped unless `--allow-superadmin`.
+- `--drop-orphans` — drop tables that exist in the database but not in `app/db/models.py`.
+- `--purge-impossible` — delete measurements with a missing z-score or `|z| > 6` (only possible before
+  validation was added).
+
 ### Auth model
 
 | Role | Login | Token | Notes |
