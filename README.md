@@ -3,6 +3,19 @@
 Child growth & nutrition monitoring: a **FastAPI + PostgreSQL** backend, and a **React (Vite)** frontend
 with a parent mobile UI and a Health Manager (admin) portal.
 
+📚 **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Step-by-step test guide](docs/TESTING.md) · [Changelog](docs/CHANGELOG.md)
+
+## Quick start (TL;DR)
+
+```bash
+# backend
+cd backend && pip install -r requirements.txt && cp .env.example .env && python seed_db.py && uvicorn main:app --reload
+# frontend (new terminal)
+cd frontend && npm install && npm run dev
+```
+Open http://localhost:5173 — register a parent, or log in as Health Manager with the superadmin from `backend/.env`
+(`admin@simba.id` / `admin1234` by default — change it).
+
 ## Features
 
 | Area | Parent app | Health Manager portal |
@@ -63,9 +76,18 @@ Tests run against an in-memory SQLite database; PostgreSQL does not need to be r
 
 ### Schema changes
 
-`main.py` and `seed_db.py` call `app/db/migrate.sync_schema`, which creates missing tables and adds new
-**nullable** columns to existing tables — enough for development. For production, initialise Alembic
-(`alembic.ini` is already present) and generate proper migrations.
+Two mechanisms, pick by environment:
+
+- **Development:** `main.py` and `seed_db.py` call `app/db/migrate.sync_schema`, which creates missing tables
+  and adds new **nullable** columns to existing tables. Zero ceremony.
+- **Shared / production:** Alembic. `alembic/env.py` reads `DATABASE_URL` from `.env`.
+  ```bash
+  cd backend
+  alembic upgrade head                                  # fresh database
+  alembic stamp head                                    # database that was created by create_all/sync_schema
+  alembic revision --autogenerate -m "add column x"     # after changing app/db/models.py
+  alembic check                                         # CI: models and migrations agree
+  ```
 
 ### Auth model
 
@@ -86,7 +108,7 @@ backend/
 ├── requirements.txt
 ├── pytest.ini
 ├── .env.example                # Copy to .env (gitignored)
-├── alembic.ini                 # Reserved for PostgreSQL migrations (not yet initialised)
+├── alembic.ini / alembic/      # Migrations (baseline = current models); see "Schema changes"
 ├── app/
 │   ├── api/
 │   │   ├── deps.py             # get_owned_child: child lookup + ownership check
