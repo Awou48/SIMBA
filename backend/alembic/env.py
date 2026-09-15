@@ -7,7 +7,6 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# Make `app` importable when alembic is run from backend/ (or anywhere else).
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.config import settings  # noqa: E402
@@ -18,7 +17,6 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# ALEMBIC_DATABASE_URL lets CI/tests point at a throwaway database.
 config.set_main_option("sqlalchemy.url", os.environ.get("ALEMBIC_DATABASE_URL", settings.DATABASE_URL))
 
 target_metadata = Base.metadata
@@ -47,7 +45,6 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            # SQLite cannot ALTER most things in place; batch mode rebuilds the table instead.
             render_as_batch=connection.dialect.name == "sqlite",
             compare_type=True,
         )

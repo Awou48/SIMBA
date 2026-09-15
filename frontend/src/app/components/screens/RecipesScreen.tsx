@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { ChevronLeft, Heart, ChevronRight, Clock, Users } from "lucide-react";
 import { useChildren } from "../../ChildContext";
 
-// (Keeping your original static recipe data for the beautiful UI)
 const recipes = [
   {
     id: 1,
@@ -100,7 +99,6 @@ export function RecipesScreen() {
   if (selectedRecipe) {
     return (
       <div className="flex flex-col h-full overflow-y-auto" style={{ background: "#FFF8EF" }}>
-        {/* Hero image */}
         <div className="relative flex-shrink-0" style={{ height: 220 }}>
           <img src={selectedRecipe.image} alt={selectedRecipe.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #FFF8EF 100%)" }} />
@@ -146,7 +144,6 @@ export function RecipesScreen() {
             </div>
           </div>
 
-          {/* Nutrition table */}
           <div className="rounded-2xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
             <p style={{ fontSize: "13px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif", marginBottom: 8 }}>📊 Nutrition Info</p>
             <div className="grid grid-cols-4 gap-2">
@@ -159,7 +156,6 @@ export function RecipesScreen() {
             </div>
           </div>
 
-          {/* Ingredients */}
           <div>
             <p style={{ fontSize: "14px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif", marginBottom: 8 }}>🥕 Ingredients</p>
             <div className="flex flex-col gap-2">
@@ -172,7 +168,6 @@ export function RecipesScreen() {
             </div>
           </div>
 
-          {/* Steps */}
           <div>
             <p style={{ fontSize: "14px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif", marginBottom: 8 }}>👨‍🍳 Instructions</p>
             <div className="flex flex-col gap-3">
@@ -200,7 +195,6 @@ export function RecipesScreen() {
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-4">
         <button onClick={() => navigate("/home")}>
           <ChevronLeft size={24} style={{ color: "#2D3047" }} />
@@ -216,7 +210,6 @@ export function RecipesScreen() {
       </div>
 
       <div className="px-4 flex flex-col gap-4 pb-6">
-        {/* Chef SIMBA header */}
         <div className="rounded-3xl p-4" style={{ background: "linear-gradient(135deg, #5CC8C2, #3AA8A2)", boxShadow: "0 6px 20px rgba(92,200,194,0.3)" }}>
           <div className="flex items-center gap-3">
             <span style={{ fontSize: "36px" }}>👨‍🍳</span>
@@ -229,7 +222,6 @@ export function RecipesScreen() {
           </div>
         </div>
 
-        {/* Recipe list */}
         {recipes.map((recipe) => (
           <button
             key={recipe.id}

@@ -9,12 +9,9 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Make `app` and `main` importable when pytest is run from backend/ or the repo root.
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BACKEND_DIR)
 
-# Keep tests independent of Postgres: env vars beat backend/.env in pydantic-settings,
-# so the module-level engine (and main.py's create_all) point at a throwaway SQLite DB.
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-that-is-at-least-32-bytes-long")
 
@@ -36,7 +33,6 @@ def engine():
         poolclass=StaticPool,
     )
 
-    # SQLite ignores foreign keys unless asked; match Postgres behaviour.
     @event.listens_for(eng, "connect")
     def _enable_fk(dbapi_conn, _record):
         dbapi_conn.execute("PRAGMA foreign_keys=ON")

@@ -52,7 +52,6 @@ def add_months(day: date, months: int) -> date:
     month_index = day.month - 1 + months
     year = day.year + month_index // 12
     month = month_index % 12 + 1
-    # Clamp to the last valid day of the target month (e.g. 31 Jan + 1 mo -> 28/29 Feb).
     for dd in (day.day, 30, 29, 28):
         try:
             return date(year, month, dd)

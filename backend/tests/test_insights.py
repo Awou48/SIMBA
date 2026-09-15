@@ -13,16 +13,12 @@ def ids(alerts):
     return {a["id"] for a in alerts}
 
 
-# --- alerts ------------------------------------------------------------------------
-
 def test_alerts_for_fresh_child(client, parent_token, child):
     r = client.get(url(child, "/alerts"), headers=auth(parent_token))
     assert r.status_code == 200, r.text
     got = ids(r.json())
     assert {"growth-none", "nutrition-none", "immun-overdue"} <= got
-    # A 12-month-old has PCV3 due today.
     assert "immun-due" in got
-    # Sorted by severity: highs first.
     sev = [a["severity"] for a in r.json()]
     assert sev == sorted(sev, key={"high": 0, "medium": 1, "low": 2}.get)
 
@@ -30,7 +26,6 @@ def test_alerts_for_fresh_child(client, parent_token, child):
 def test_alerts_flag_stunting_and_low_intake(client, parent_token, child, db):
     from app.db import models
     h = auth(parent_token)
-    # Severely short for age -> stunting alert; normal weight.
     client.post(url(child, "/measurements"), json={"weight_kg": 9.6, "height_cm": 66.0, "date_logged": TODAY}, headers=h)
     food = models.FoodItem(name="Bubur", category="Carbs", energy=100, protein=2, carbs=20, fat=1, safe=True)
     db.add(food)
@@ -42,9 +37,9 @@ def test_alerts_flag_stunting_and_low_intake(client, parent_token, child, db):
     assert "growth-stunting" in got and got["growth-stunting"]["severity"] == "high"
     assert "growth-ok" not in got
     assert "growth-none" not in got
-    assert got["nutrition-energy"]["severity"] == "high"  # 100 kcal of 1350 -> < 50%
+    assert got["nutrition-energy"]["severity"] == "high"
     assert "nutrition-protein" in got
-    assert "nutrition-today" not in got  # logged today
+    assert "nutrition-today" not in got
     assert "nutrition-none" not in got
 
 
@@ -61,8 +56,6 @@ def test_alerts_require_ownership(client, child, other_parent_token):
     assert client.get(url(child, "/alerts"), headers=auth(other_parent_token)).status_code == 404
     assert client.get(url(child, "/alerts")).status_code == 401
 
-
-# --- report --------------------------------------------------------------------------
 
 def test_report_json(client, parent_token, child):
     h = auth(parent_token)
@@ -100,8 +93,6 @@ def test_report_pdf_for_child_without_data(client, parent_token, child):
     assert r.status_code == 200 and r.content[:5] == b"%PDF-"
 
 
-# --- child region + admin regional stats ------------------------------------------------
-
 def test_update_child_region(client, parent_token, child, other_parent_token):
     r = client.put(f"/api/v1/user/children/{child['id']}", json={"region": "Tangerang Selatan"}, headers=auth(parent_token))
     assert r.status_code == 200 and r.json()["region"] == "Tangerang Selatan" and r.json()["name"] == "Budi"
@@ -114,12 +105,10 @@ def test_update_child_region(client, parent_token, child, other_parent_token):
 def test_regional_stats_use_latest_measurement_per_child(client, parent_token, admin_token, child):
     h = auth(parent_token)
     client.put(f"/api/v1/user/children/{child['id']}", json={"region": "Tangerang Selatan"}, headers=h)
-    # Budi: first stunted, then recovered -> counted as NOT stunted (latest wins).
     old = (date.today() - timedelta(days=60)).isoformat()
     client.post(url(child, "/measurements"), json={"weight_kg": 9.0, "height_cm": 66.0, "date_logged": old}, headers=h)
     client.post(url(child, "/measurements"), json={"weight_kg": 9.6, "height_cm": 75.7, "date_logged": TODAY}, headers=h)
 
-    # Ani in another region, stunted, no region on a third child with no measurements.
     ani = client.post("/api/v1/user/children/", json={"name": "Ani", "gender": "female", "birth_date": (date.today() - timedelta(days=365)).isoformat(), "region": "Kota Tangerang"}, headers=h).json()
     client.post(f"/api/v1/user/child/{ani['id']}/measurements", json={"weight_kg": 8.9, "height_cm": 64.0, "date_logged": TODAY}, headers=h)
     client.post("/api/v1/user/children/", json={"name": "Cici", "gender": "female", "birth_date": "2025-06-01"}, headers=h)

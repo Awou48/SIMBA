@@ -36,7 +36,6 @@ export function Children() {
     api.admin.regionStats().then(setRegions).catch(() => setRegions([]));
   }, []);
 
-  // Debounce the search box into the URL.
   useEffect(() => {
     const t = setTimeout(() => { if (search !== q) set({ q: search }); }, 300);
     return () => clearTimeout(t);

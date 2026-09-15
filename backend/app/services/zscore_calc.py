@@ -16,12 +16,10 @@ WHO_DIR = os.path.join(settings.DATA_DIR, "who_lms_tables")
 def _load(name: str, index: str = "Day") -> pd.DataFrame:
     df = pd.read_csv(os.path.join(WHO_DIR, f"{name}.csv"))
     if index != "Day":
-        # Length/height tables are keyed in 0.1 cm steps; store as int tenths to avoid float keys.
         df[index] = (df[index] * 10).round().astype(int)
     return df.set_index(index)[["L", "M", "S"]]
 
 
-# Age-indexed tables (0..1856 days): length/height-for-age, weight-for-age, BMI-for-age.
 TABLES = {
     ("lhfa", "male"): _load("lhfa_boys"),
     ("lhfa", "female"): _load("lhfa_girls"),
@@ -31,7 +29,6 @@ TABLES = {
     ("bfa", "female"): _load("bfa_girls"),
 }
 
-# Length/height-indexed tables (tenths of cm): weight-for-length (<24 mo), weight-for-height (>=24 mo).
 LENGTH_TABLES = {
     ("wfl", "male"): _load("wfl_boys", "Length"),
     ("wfl", "female"): _load("wfl_girls", "Length"),

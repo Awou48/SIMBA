@@ -14,7 +14,6 @@ def test_article_crud_and_publish_visibility(client, admin_token, parent_token):
     assert r.status_code == 201, r.text
     aid = r.json()["id"]
 
-    # Drafts are invisible to parents.
     assert client.get("/api/v1/user/articles", headers=auth(parent_token)).json() == []
     assert client.get(f"/api/v1/user/articles/{aid}", headers=auth(parent_token)).status_code == 404
 
@@ -53,7 +52,7 @@ def test_admin_growth_standards_endpoint(client, admin_token, engine):
     assert r.status_code == 200
     rows = r.json()
     assert len(rows) == 61 and rows[0]["age_months"] == 0
-    assert abs(rows[12]["p50"] - 74.0) < 0.5  # WHO girl length median at 12 months ~74.0 cm
+    assert abs(rows[12]["p50"] - 74.0) < 0.5
     assert client.get("/api/v1/admin/datasets/growth-standards?metric=nope", headers=auth(admin_token)).status_code == 422
 
 
@@ -72,7 +71,6 @@ def test_system_summary_admins_and_seed(client, admin_token, superadmin_token, p
     assert {a["email"] for a in admins} == {"plain@example.com", "admin@example.com"}
     assert "hashed_password" not in admins[0]
 
-    # Seeding is superadmin-only and idempotent.
     assert client.post("/api/v1/admin/system/seed", headers=h).status_code == 403
     r = client.post("/api/v1/admin/system/seed", headers=auth(superadmin_token))
     assert r.status_code == 200, r.text

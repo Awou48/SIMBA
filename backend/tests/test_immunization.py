@@ -17,7 +17,7 @@ def test_add_months_clamps_day():
 
 def test_dose_status_transitions():
     birth = date(2026, 1, 1)
-    dpt1 = SCHEDULE_BY_CODE["DPT1"]  # due at 2 months, 1-month window
+    dpt1 = SCHEDULE_BY_CODE["DPT1"]
     assert dose_status(dpt1, birth, None, today=date(2026, 2, 15))["status"] == "upcoming"
     assert dose_status(dpt1, birth, None, today=date(2026, 3, 1))["status"] == "due"
     assert dose_status(dpt1, birth, None, today=date(2026, 3, 25))["status"] == "due"
@@ -32,21 +32,18 @@ def test_schedule_codes_unique_and_sorted():
     assert [d.due_months for d in NATIONAL_SCHEDULE] == sorted(d.due_months for d in NATIONAL_SCHEDULE)
 
 
-# --- HTTP -------------------------------------------------------------------------
-
 def test_immunization_summary_for_one_year_old(client, parent_token, child):
     r = client.get(url(child, "/immunizations"), headers=auth(parent_token))
     assert r.status_code == 200, r.text
     body = r.json()
     assert len(body["schedule"]) == len(NATIONAL_SCHEDULE)
     assert body["given"] == 0
-    # Everything due at <= 9 months is overdue for a 12-month-old; PCV3 (12 mo) is due today.
     statuses = {s["code"]: s["status"] for s in body["schedule"]}
     assert statuses["HB0"] == "overdue"
     assert statuses["MR1"] == "overdue"
     assert statuses["PCV3"] == "due"
     assert statuses["MR2"] == "upcoming"
-    assert body["next_dose"]["code"] == "HB0"  # most urgent: earliest overdue
+    assert body["next_dose"]["code"] == "HB0"
 
 
 def test_mark_and_unmark_dose(client, parent_token, child, other_parent_token):
@@ -57,7 +54,6 @@ def test_mark_and_unmark_dose(client, parent_token, child, other_parent_token):
     assert hb0["status"] == "given" and hb0["given_on"] == child["birth_date"] and hb0["event_id"]
     assert r.json()["given"] == 1
 
-    # Marking again updates the same event (unique per child+dose).
     r = client.post(url(child, "/immunizations/HB0/given"), json={"notes": "Posyandu"}, headers=h)
     assert r.json()["given"] == 1
     events = client.get(url(child, "/events"), headers=h).json()

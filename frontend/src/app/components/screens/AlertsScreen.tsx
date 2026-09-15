@@ -6,7 +6,6 @@ import { useChildren } from "../../ChildContext";
 
 const READ_KEY = "simba_alerts_read";
 
-/** Read-state lives per browser (alerts are recomputed on every visit, so there is nothing to persist server-side). */
 function loadRead(childId: number): Set<string> {
   try {
     const all = JSON.parse(localStorage.getItem(READ_KEY) ?? "{}");
@@ -21,7 +20,6 @@ function saveRead(childId: number, ids: Set<string>) {
     all[childId] = [...ids];
     localStorage.setItem(READ_KEY, JSON.stringify(all));
   } catch {
-    /* ignore */
   }
 }
 
@@ -92,7 +90,6 @@ export function AlertsScreen() {
 
   return (
     <div className="flex flex-col min-h-screen pb-6" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div
         className="px-4 pt-4 pb-6"
         style={{ background: "linear-gradient(160deg, #2D3047 0%, #3D4060 100%)", borderRadius: "0 0 28px 28px" }}
@@ -130,7 +127,6 @@ export function AlertsScreen() {
         </div>
       </div>
 
-      {/* Filter tabs */}
       <div className="flex gap-2 px-4 pt-4 pb-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         {filterTabs.map(tab => (
           <button
@@ -151,7 +147,6 @@ export function AlertsScreen() {
         ))}
       </div>
 
-      {/* Alerts list */}
       <div className="px-4 flex flex-col gap-3 pt-2 pb-6">
         {error && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
@@ -225,7 +220,6 @@ export function AlertsScreen() {
         )}
       </div>
 
-      {/* Consult recommendation banner */}
       {highCount > 0 && (
       <div className="px-4 pb-4">
         <div

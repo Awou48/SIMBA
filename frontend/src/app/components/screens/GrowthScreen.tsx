@@ -16,7 +16,6 @@ const METRIC_CONFIG: Record<Metric, { label: string; tab: string; unit: string; 
 
 const DAYS_PER_MONTH = 30.4375;
 
-/** Merge WHO percentile curve + child measurements into one series keyed by age (months). */
 function buildChartData(standards: GrowthStandardPoint[], history: Measurement[], field: keyof Measurement, maxMonths: number) {
   const rows: Record<string, number | null>[] = standards
     .filter((p) => p.age_months <= maxMonths)
@@ -63,7 +62,6 @@ export function GrowthScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const [lastSaved, setLastSaved] = useState<Measurement | null>(null);
 
-  // Load history + WHO curves whenever the active child changes.
   useEffect(() => {
     if (!child) return;
     let cancelled = false;
@@ -133,7 +131,6 @@ export function GrowthScreen() {
     },
   ];
 
-  // Overall WHO verdict for the latest entry: the worst of the three indices.
   const latestFlags = latest
     ? [
         { label: "Height-for-age", z: latest.lhfa_zscore, status: latest.stunting_status },
@@ -146,7 +143,6 @@ export function GrowthScreen() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "#FFF8EF" }}>
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-4">
         <button onClick={() => navigate("/home")}>
           <ChevronLeft size={24} style={{ color: "#2D3047" }} />
@@ -179,7 +175,6 @@ export function GrowthScreen() {
           </button>
         )}
 
-        {/* Input card */}
         <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
           <p style={{ fontSize: "14px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif", marginBottom: 12 }}>
             📝 Log New Entry
@@ -259,7 +254,6 @@ export function GrowthScreen() {
           )}
         </div>
 
-        {/* Latest WHO verdict */}
         {latestFlags.length > 0 && (
           <div className="flex gap-2 flex-wrap">
             {latestFlags.map(({ label, z, status }) => {
@@ -273,7 +267,6 @@ export function GrowthScreen() {
           </div>
         )}
 
-        {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-2">
           {statCards.map(({ label, value, icon, color, bg }) => (
             <div key={label} className="rounded-2xl p-3 text-center" style={{ background: bg, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -284,7 +277,6 @@ export function GrowthScreen() {
           ))}
         </div>
 
-        {/* Chart card */}
         <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -331,7 +323,6 @@ export function GrowthScreen() {
                 />
                 <YAxis domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#9BA3B8", fontFamily: "'Nunito', sans-serif" }} />
                 <Tooltip content={<CustomTooltip unit={cfg.unit} />} />
-                {/* WHO band: stacked transparent p3 + visible (p97 - p3) */}
                 <Area type="monotone" dataKey="p3" stackId="who" stroke="none" fill="transparent" connectNulls isAnimationActive={false} legendType="none" />
                 <Area type="monotone" dataKey="band" stackId="who" stroke="none" fill={cfg.color} fillOpacity={0.12} connectNulls isAnimationActive={false} name="WHO p3–p97" />
                 <Line type="monotone" dataKey="p50" stroke="#9BA3B8" strokeWidth={1.5} strokeDasharray="4 4" dot={false} connectNulls isAnimationActive={false} name="WHO median" />
@@ -345,7 +336,6 @@ export function GrowthScreen() {
           )}
         </div>
 
-        {/* History list */}
         <div className="rounded-3xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}>
           <p style={{ fontSize: "14px", fontWeight: 900, color: "#2D3047", fontFamily: "'Nunito', sans-serif", marginBottom: 10 }}>
             🗓️ Measurement History

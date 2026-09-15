@@ -32,7 +32,7 @@ class Child(Base):
     name = Column(String)
     gender = Column(String)
     birth_date = Column(Date)
-    region = Column(String, nullable=True)  # kecamatan/kota used for aggregated admin dashboards
+    region = Column(String, nullable=True)
     
     parent = relationship("ParentUser", back_populates="children")
     measurements = relationship("MeasurementLog", back_populates="child")
@@ -50,8 +50,8 @@ class MeasurementLog(Base):
     height_cm = Column(Float)
     wfa_zscore = Column(Float, nullable=True)
     lhfa_zscore = Column(Float, nullable=True)
-    wfh_zscore = Column(Float, nullable=True)  # weight-for-length/height (wasting)
-    bfa_zscore = Column(Float, nullable=True)  # BMI-for-age
+    wfh_zscore = Column(Float, nullable=True)
+    bfa_zscore = Column(Float, nullable=True)
     
     child = relationship("Child", back_populates="measurements")
 
@@ -64,7 +64,7 @@ class MealLog(Base):
     child_id = Column(Integer, ForeignKey("children.id", ondelete="CASCADE"), nullable=False, index=True)
     food_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
     food_name = Column(String, nullable=False)
-    meal_type = Column(String, nullable=False)  # Breakfast / Lunch / Dinner / Snack
+    meal_type = Column(String, nullable=False)
     date = Column(Date, nullable=False, index=True)
     servings = Column(Float, nullable=False, default=1.0)
     energy = Column(Float, nullable=False, default=0.0)
@@ -90,7 +90,7 @@ class FoodItem(Base):
 class AKGTarget(Base):
     __tablename__ = "akg_targets"
     id = Column(Integer, primary_key=True, index=True)
-    ageGroup = Column(String)  # Matching frontend camelCase for easy JSON parsing
+    ageGroup = Column(String)
     gender = Column(String)
     energy = Column(String)
     protein = Column(String)
@@ -118,9 +118,9 @@ class Milestone(Base):
     __tablename__ = "milestones"
     id = Column(Integer, primary_key=True, index=True)
     min_months = Column(Integer, nullable=False)
-    max_months = Column(Integer, nullable=False)  # exclusive upper bound (half-open bracket)
-    age_label = Column(String, nullable=False)  # e.g. "6 - 12 Months"
-    domain = Column(String, nullable=False)  # Motorik Kasar / Motorik Halus / Bicara & Bahasa / Sosialisasi / Kemandirian
+    max_months = Column(Integer, nullable=False)
+    age_label = Column(String, nullable=False)
+    domain = Column(String, nullable=False)
     question = Column(Text, nullable=False)
     expected = Column(String, nullable=True)
     active = Column(Boolean, default=True, nullable=False)
@@ -152,9 +152,9 @@ class HealthEvent(Base):
     id = Column(Integer, primary_key=True, index=True)
     child_id = Column(Integer, ForeignKey("children.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String, nullable=False)
-    event_type = Column(String, nullable=False)  # Vaccination / Doctor Visit / Checkup / Other
+    event_type = Column(String, nullable=False)
     date = Column(Date, nullable=False, index=True)
-    time = Column(String, nullable=True)  # "HH:MM", optional
+    time = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
     done = Column(Boolean, default=False, nullable=False)
     vaccine_code = Column(String, nullable=True)
@@ -168,7 +168,7 @@ class Article(Base):
     __tablename__ = "articles"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    category = Column(String, nullable=False)  # Growth / Nutrition / Development / Immunization
+    category = Column(String, nullable=False)
     author = Column(String, nullable=False)
     read_time_min = Column(Integer, nullable=False, default=3)
     summary = Column(String, nullable=False)
