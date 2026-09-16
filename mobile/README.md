@@ -23,16 +23,21 @@ cp .env.example .env         # set EXPO_PUBLIC_API_URL (see below)
 npx expo start               # press a = Android emulator, i = iOS simulator, w = web, or scan with Expo Go
 ```
 
-`EXPO_PUBLIC_API_URL` must be reachable **from the phone**:
+The app finds the backend automatically: on a phone or emulator it uses the machine that serves the Expo
+bundle (your PC's LAN IP) on port 8000; on web it uses the browser's host. Only set `EXPO_PUBLIC_API_URL` in
+`.env` if the backend runs somewhere else (then restart `expo start` — env values are baked into the bundle).
 
-| Where the app runs | Value |
-|---|---|
-| Android emulator | `http://10.0.2.2:8000` (default) |
-| iOS simulator / web | `http://127.0.0.1:8000` |
-| Real device (Expo Go) | `http://<your PC's LAN IP>:8000` — same Wi-Fi, allow port 8000 in the firewall |
+For a real phone, start the backend on all interfaces and allow the port through Windows Firewall once:
 
-Start the backend with `uvicorn main:app --host 0.0.0.0 --port 8000` so it listens on the LAN, not only
-localhost. Web (`w`) also needs `http://localhost:8081` in the backend's `CORS_ORIGINS` (already the default).
+```bash
+cd backend && uvicorn main:app --host 0.0.0.0 --port 8000
+```
+```powershell
+netsh advfirewall firewall add rule name="SIMBA API 8000" dir=in action=allow protocol=TCP localport=8000
+```
+
+Requests time out after 15 s with a message that names the URL being tried, so a wrong address is visible
+instead of an endless spinner.
 
 Test account on the dev database: `uitest_0914@example.com` / `secret123` (children Sari and Budi).
 
