@@ -1,8 +1,21 @@
+import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { plain, secure } from "./storage";
 
-const DEFAULT_API_URL = "http://10.0.2.2:8000";
+const API_PORT = 8000;
+const REQUEST_TIMEOUT_MS = 15000;
 
-export const API_URL: string = (process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(/\/$/, "");
+function resolveApiUrl(): string {
+  const fromEnv = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  if (Platform.OS === "web" && typeof window !== "undefined") return `http://${window.location.hostname}:${API_PORT}`;
+  const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).expoGoConfig?.debuggerHost;
+  const host = hostUri?.split(":")[0];
+  if (host) return `http://${host}:${API_PORT}`;
+  return `http://10.0.2.2:${API_PORT}`;
+}
+
+export const API_URL: string = resolveApiUrl();
 
 const TOKEN_KEY = "simba_token";
 const CHILD_KEY = "simba_active_child";
@@ -102,11 +115,16 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
     if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response: Response;
   try {
-    response = await fetch(buildUrl(path, query), { method, headers, body: payload });
-  } catch {
-    throw new ApiError(0, `Cannot reach the SIMBA server at ${API_URL}. Check that the backend is running and the phone is on the same network.`);
+    response = await fetch(buildUrl(path, query), { method, headers, body: payload, signal: controller.signal });
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === "AbortError";
+    throw new ApiError(0, `${timedOut ? "Timed out reaching" : "Cannot reach"} the SIMBA server at ${API_URL}. Check that the backend is running with --host 0.0.0.0, port ${API_PORT} is open in the firewall, and the phone is on the same Wi-Fi.`);
+  } finally {
+    clearTimeout(timer);
   }
 
   if (response.status === 401 && auth) {
