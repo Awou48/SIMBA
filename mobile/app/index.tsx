@@ -16,6 +16,6 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
+  splash: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.orange },
   logo: { width: 140, height: 140 },
 });

@@ -7,8 +7,9 @@ import { api, ApiError, errorMessage, session, type GrowthReport } from "../src/
 import { useChildren } from "../src/state/child";
 import { ChildSwitcher } from "../src/components/ChildSwitcher";
 import { Button, Card, Empty, ErrorBox, Header, Loading, Pill, Row, Screen, SectionTitle } from "../src/components/ui";
-import { fmtDate, fmtZ, statusTone, zTone } from "../src/lib/format";
-import { colors, spacing, tones } from "../src/lib/theme";
+import { fmtDate, statusTone } from "../src/lib/format";
+import { growthVerdict, immunizationVerdict, kpspVerdict, zPlain } from "../src/lib/friendly";
+import { colors, font, spacing } from "../src/lib/theme";
 
 export default function Reports() {
   const { active } = useChildren();
@@ -68,120 +69,129 @@ export default function Reports() {
   };
 
   const latest = report?.latest;
-  const change = report?.change_since_first;
+  const name = active?.name ?? "Your child";
+  const growth = report ? growthVerdict(name, report.status?.stunting, report.status?.weight, report.status?.wasting) : null;
+  const kpsp = report ? kpspVerdict(report.milestones.interpretation, report.milestones.answered, report.milestones.total) : null;
+  const immun = report ? immunizationVerdict(report.immunization.overdue, report.immunization.due, report.immunization.next_dose?.name ?? null) : null;
+  const n7 = report?.nutrition_7d;
 
   return (
     <Screen refreshing={refreshing} onRefresh={() => load(true)}>
-      <Header title="Growth report" subtitle={report ? `Generated ${fmtDate(report.generated_on)}` : undefined} onBack={() => router.back()} />
+      <Header title="Growth report" emoji="📄" subtitle={report ? `Updated ${fmtDate(report.generated_on)}` : undefined} onBack={() => router.back()} />
       <ChildSwitcher />
       <ErrorBox message={error} onRetry={() => load()} />
       {loading || !report ? (
         <Loading />
       ) : (
         <>
-          <Button title="Share PDF report" icon="share-outline" onPress={sharePdf} loading={sharing} />
-          <Text style={styles.hint}>The PDF includes the growth chart, z-score table, nutrition average, KPSP and immunization status — handy for Posyandu or doctor visits.</Text>
+          <Card tone="lavender">
+            <Text style={styles.shareTitle}>Bring this to your next visit 🩺</Text>
+            <Text style={styles.shareBody}>The PDF has the growth chart, measurements, food summary, milestones and vaccines — everything a doctor or Posyandu cadre needs.</Text>
+            <Button title="Share PDF" icon="share-outline" onPress={sharePdf} loading={sharing} style={{ marginTop: spacing.md }} />
+          </Card>
 
-          <SectionTitle title="Growth" />
-          {latest && report.status ? (
+          <SectionTitle title="Growth" emoji="📏" />
+          {latest && growth ? (
             <Card>
-              <Row style={{ justifyContent: "space-between" }}>
-                <Text style={styles.cardTitle}>Latest · {fmtDate(latest.date)}</Text>
-                <Pill tone={statusTone(report.status.stunting)}>{report.status.stunting}</Pill>
+              <Row style={{ gap: spacing.md }}>
+                <Text style={{ fontSize: 34 }}>{growth.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.headline}>{growth.headline}</Text>
+                  <Text style={styles.meta}>Measured {fmtDate(latest.date)}</Text>
+                </View>
               </Row>
-              <Line label="Weight" value={`${latest.weight_kg} kg`} z={latest.wfa_zscore} status={report.status.weight} />
-              <Line label="Height" value={`${latest.height_cm} cm`} z={latest.lhfa_zscore} status={report.status.stunting} />
-              <Line label="Weight-for-height" value="" z={latest.wfh_zscore} status={report.status.wasting ?? "—"} />
-              <Line label="BMI" value={latest.bmi.toFixed(1)} z={latest.bfa_zscore} status={report.status.bmi ?? "—"} />
-              {change ? (
-                <Text style={styles.meta}>
-                  Since first measurement ({change.days} days): {change.weight_kg >= 0 ? "+" : ""}{change.weight_kg.toFixed(1)} kg, {change.height_cm >= 0 ? "+" : ""}{change.height_cm.toFixed(1)} cm · {report.measurements.length} measurements
+              <Line label="Weight" value={`${latest.weight_kg} kg`} plain={zPlain(latest.wfa_zscore)} status={report.status?.weight ?? null} />
+              <Line label="Height" value={`${latest.height_cm} cm`} plain={zPlain(latest.lhfa_zscore)} status={report.status?.stunting ?? null} />
+              {latest.wfh_zscore !== null ? <Line label="Weight for height" value="" plain={zPlain(latest.wfh_zscore)} status={report.status?.wasting ?? null} /> : null}
+              {report.change_since_first ? (
+                <Text style={[styles.meta, { marginTop: spacing.sm }]}>
+                  Since the first measurement ({report.change_since_first.days} days ago): {report.change_since_first.weight_kg >= 0 ? "+" : ""}
+                  {report.change_since_first.weight_kg.toFixed(1)} kg and {report.change_since_first.height_cm >= 0 ? "+" : ""}
+                  {report.change_since_first.height_cm.toFixed(1)} cm.
                 </Text>
               ) : null}
             </Card>
           ) : (
             <Card>
-              <Empty title="No measurements yet" body="Log weight and height to populate the report." />
+              <Empty emoji="📏" title="No measurements yet" body="Add weight and height to fill in this section." />
             </Card>
           )}
 
-          <SectionTitle title="Nutrition · last 7 days" />
+          <SectionTitle title="Food this week" emoji="🍽️" />
           <Card>
-            <Text style={styles.meta}>{report.nutrition_7d.days_logged} of 7 days logged{report.nutrition_7d.logged_today ? " · today included" : ""}</Text>
-            {report.nutrition_7d.targets ? (
-              <View style={{ marginTop: spacing.sm, gap: 6 }}>
+            <Text style={styles.meta}>
+              Logged on {n7?.days_logged ?? 0} of the last 7 days
+            </Text>
+            {n7?.targets ? (
+              <View style={{ marginTop: spacing.sm, gap: 8 }}>
                 {(["energy", "protein", "carbs", "fat"] as const).map((k) => (
                   <Row key={k} style={{ justifyContent: "space-between" }}>
-                    <Text style={styles.line}>{k === "energy" ? "Energy" : k[0].toUpperCase() + k.slice(1)}</Text>
+                    <Text style={styles.line}>{k === "energy" ? "🔥 Energy" : k === "protein" ? "🥚 Protein" : k === "carbs" ? "🍚 Carbs" : "🥑 Fat"}</Text>
                     <Text style={styles.meta}>
-                      {Math.round(report.nutrition_7d.average[k])} / {Math.round(report.nutrition_7d.targets![k])} {k === "energy" ? "kcal" : "g"} ·{" "}
-                      <Text style={{ fontWeight: "800", color: colors.text }}>{Math.round(report.nutrition_7d.fulfillment_percent?.[k] ?? 0)}%</Text>
+                      <Text style={{ fontFamily: font.black, color: colors.text }}>{Math.round(n7.fulfillment_percent?.[k] ?? 0)}%</Text> of daily need
                     </Text>
                   </Row>
                 ))}
               </View>
             ) : (
-              <Text style={[styles.meta, { marginTop: 6 }]}>No AKG bracket for this age yet.</Text>
+              <Text style={[styles.meta, { marginTop: 6 }]}>No daily targets for this age yet.</Text>
             )}
           </Card>
 
-          <SectionTitle title="Development & immunization" />
+          <SectionTitle title="Milestones & vaccines" emoji="🌈" />
           <Card>
-            <Row style={{ justifyContent: "space-between" }}>
-              <Text style={styles.line}>KPSP {report.milestones.age_label ? `· ${report.milestones.age_label}` : ""}</Text>
-              {report.milestones.interpretation ? <Pill tone={statusTone(report.milestones.interpretation)} small>{report.milestones.interpretation}</Pill> : <Text style={styles.meta}>{report.milestones.answered}/{report.milestones.total} answered</Text>}
-            </Row>
-            <Row style={{ justifyContent: "space-between", marginTop: spacing.sm }}>
-              <Text style={styles.line}>Immunization</Text>
-              <Text style={styles.meta}>
-                {report.immunization.given}/{report.immunization.total} given{report.immunization.overdue > 0 ? ` · ${report.immunization.overdue} overdue` : ""}
-              </Text>
-            </Row>
-            {report.immunization.overdue_names.length > 0 ? <Text style={[styles.meta, { marginTop: 4, color: colors.bad }]}>Overdue: {report.immunization.overdue_names.join(", ")}</Text> : null}
-          </Card>
-
-          {report.alerts.length > 0 ? (
-            <>
-              <SectionTitle title={`Alerts · ${report.alerts.length}`} action="Open" onAction={() => router.push("/alerts")} />
-              <Card style={{ gap: 6 }}>
-                {report.alerts.map((a) => (
-                  <Text key={a.id} style={styles.line}>
-                    • {a.title}
+            {kpsp ? (
+              <Row style={styles.mini}>
+                <Text style={{ fontSize: 24 }}>{kpsp.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.line}>{kpsp.headline}</Text>
+                  <Text style={styles.meta}>
+                    {report.milestones.achieved} of {report.milestones.total} skills{report.milestones.age_label ? ` · ${report.milestones.age_label}` : ""}
                   </Text>
-                ))}
-              </Card>
-            </>
-          ) : null}
+                </View>
+              </Row>
+            ) : null}
+            {immun ? (
+              <Row style={[styles.mini, { borderTopWidth: 1, borderTopColor: colors.line }]}>
+                <Text style={{ fontSize: 24 }}>{immun.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.line}>{immun.headline}</Text>
+                  <Text style={styles.meta}>
+                    {report.immunization.given} of {report.immunization.total} doses done
+                  </Text>
+                </View>
+              </Row>
+            ) : null}
+          </Card>
         </>
       )}
     </Screen>
   );
 }
 
-function Line({ label, value, z, status }: { label: string; value: string; z: number | null; status: string }) {
+function Line({ label, value, plain, status }: { label: string; value: string; plain: string; status: string | null }) {
   return (
     <Row style={styles.row}>
-      <Text style={[styles.line, { flex: 1 }]}>{label}</Text>
-      {z === null ? (
-        <Text style={styles.na}>Not computed</Text>
-      ) : (
-        <>
-          {value ? <Text style={styles.value}>{value}</Text> : null}
-          <Text style={[styles.z, { color: tones[zTone(z)].fg }]}>{fmtZ(z)}</Text>
-          <Pill tone={statusTone(status)} small>{status}</Pill>
-        </>
-      )}
+      <View style={{ flex: 1 }}>
+        <Text style={styles.line}>
+          {label}
+          {value ? ` · ${value}` : ""}
+        </Text>
+        <Text style={styles.meta}>{plain}</Text>
+      </View>
+      <Pill tone={statusTone(status)} small>
+        {status ?? "—"}
+      </Pill>
     </Row>
   );
 }
 
 const styles = StyleSheet.create({
-  hint: { fontSize: 12, color: colors.muted, lineHeight: 17, marginTop: spacing.sm, marginBottom: spacing.xs },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: colors.text },
-  meta: { fontSize: 12, color: colors.muted, marginTop: spacing.sm },
-  row: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 8 },
-  line: { fontSize: 13, fontWeight: "700", color: colors.text },
-  value: { fontSize: 13, fontWeight: "700", color: colors.text },
-  z: { fontSize: 12, fontWeight: "800", width: 48, textAlign: "right" },
-  na: { fontSize: 12, color: colors.muted },
+  shareTitle: { fontFamily: font.black, fontSize: 17, color: colors.text },
+  shareBody: { fontFamily: font.regular, fontSize: 13, color: colors.text, opacity: 0.8, marginTop: 4, lineHeight: 19 },
+  headline: { fontFamily: font.extra, fontSize: 15, color: colors.text, lineHeight: 20 },
+  meta: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
+  row: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line, marginTop: 4 },
+  line: { fontFamily: font.extra, fontSize: 14, color: colors.text },
+  mini: { paddingVertical: 8, gap: spacing.md },
 });
