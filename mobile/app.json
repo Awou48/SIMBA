@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#4f46e5"
+      "backgroundColor": "#F47B20"
     },
     "ios": {
       "supportsTablet": false,
@@ -31,7 +31,13 @@
       "output": "single",
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-sharing"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-font",
+      "expo-splash-screen"
+    ],
     "experiments": {
       "typedRoutes": true
     }

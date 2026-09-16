@@ -3,6 +3,14 @@
 All notable changes on the `claude/project-build-improve-548c26` branch (September 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
 
+## 1.4.1 — Mobile redesign for parents
+- Warm palette and Nunito type from the original prototype (cream, orange→yellow gradient, teal/pink/lavender
+  accents, emoji), replacing the admin-portal navy/indigo.
+- Plain-language verdict cards for growth, food, milestones and vaccines; z-scores hidden behind a toggle.
+- Steppers + sliders for measurements, date chips, one-question milestone quiz, food suggestions, servings
+  stepper, celebration screens, bounce-on-press and animated rings/bars, haptics on device.
+- Tabs renamed Home · Growth · Meals · Milestones · More.
+
 ## 1.4.0 — SIMBA Mobile (native parent app)
 - New `mobile/` Expo SDK 57 / React Native app with expo-router: Home, Growth (react-native-svg WHO chart with
   percentile bands), Nutrition (day picker, AKG progress, food search + servings), Development (KPSP), More

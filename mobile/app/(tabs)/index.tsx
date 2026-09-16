@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, errorMessage, type AlertItem, type GrowthReport } from "../../src/lib/api";
 import { useChildren } from "../../src/state/child";
 import { ChildSwitcher } from "../../src/components/ChildSwitcher";
-import { Button, Card, ErrorBox, Loading, Pill, Progress, Row, Screen, SectionTitle } from "../../src/components/ui";
-import { fmtDate, fmtZ, statusTone, zTone } from "../../src/lib/format";
-import { colors, radius, spacing, tones, type Tone } from "../../src/lib/theme";
-
-const SEVERITY: Record<AlertItem["severity"], Tone> = { high: "bad", medium: "warn", low: "primary" };
-const CATEGORY_ICON: Record<AlertItem["category"], keyof typeof Ionicons.glyphMap> = { Growth: "trending-up", Nutrition: "restaurant", Development: "sparkles", Immunization: "shield-checkmark" };
+import { Bounce, Card, ErrorBox, GradientHeader, Loading, Ring, Row, Screen, SectionTitle, VerdictCard } from "../../src/components/ui";
+import { fmtDate } from "../../src/lib/format";
+import { CATEGORY_EMOJI, growthVerdict, immunizationVerdict, kpspVerdict, nutritionVerdict } from "../../src/lib/friendly";
+import { colors, font, radius, spacing, tones, type Tone } from "../../src/lib/theme";
 
 function greeting() {
   const h = new Date().getHours();
-  return h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
+  if (h < 11) return { text: "Selamat pagi", emoji: "🌤️" };
+  if (h < 15) return { text: "Selamat siang", emoji: "☀️" };
+  if (h < 18) return { text: "Selamat sore", emoji: "🌇" };
+  return { text: "Selamat malam", emoji: "🌙" };
 }
+
+const ALERT_ROUTE: Record<AlertItem["category"], Href> = { Growth: "/(tabs)/growth", Nutrition: "/(tabs)/nutrition", Development: "/(tabs)/development", Immunization: "/immunization" };
+const SEVERITY: Record<AlertItem["severity"], Tone> = { high: "bad", medium: "warn", low: "teal" };
 
 export default function Home() {
   const { active } = useChildren();
@@ -46,202 +50,140 @@ export default function Home() {
     load();
   }, [load]);
 
+  const g = greeting();
+  const name = active?.name ?? "your child";
   const latest = report?.latest;
-  const status = report?.status;
+  const growth = growthVerdict(name, report?.status?.stunting, report?.status?.weight, report?.status?.wasting);
+  const nutrition = report ? nutritionVerdict(report.nutrition_7d.fulfillment_percent?.energy, report.nutrition_7d.logged_today || report.nutrition_7d.days_logged > 0) : null;
+  const kpsp = report ? kpspVerdict(report.milestones.interpretation, report.milestones.answered, report.milestones.total) : null;
+  const immun = report ? immunizationVerdict(report.immunization.overdue, report.immunization.due, report.immunization.next_dose?.name ?? null) : null;
   const alerts = report?.alerts ?? [];
-  const nutrition = report?.nutrition_7d;
-  const energyPct = nutrition?.fulfillment_percent?.energy ?? null;
+  const energyPct = report?.nutrition_7d.fulfillment_percent?.energy ?? 0;
+  const proteinPct = report?.nutrition_7d.fulfillment_percent?.protein ?? 0;
 
   return (
-    <Screen refreshing={refreshing} onRefresh={() => load(true)}>
-      <View style={styles.top}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.greet}>{greeting()} 👋</Text>
-          <Text style={styles.title}>How is {active?.name ?? "your child"} doing?</Text>
-        </View>
-        <Pressable onPress={() => router.push("/alerts")} style={styles.bell} accessibilityLabel="Alerts">
-          <Ionicons name="notifications-outline" size={22} color={colors.text} />
-          {alerts.length > 0 ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{alerts.length}</Text>
-            </View>
-          ) : null}
-        </Pressable>
-      </View>
-
-      <ChildSwitcher />
-      <ErrorBox message={error} onRetry={() => load()} />
-      {loading ? (
-        <Loading />
-      ) : (
-        <>
-          <Card style={styles.hero}>
-            {latest && status ? (
-              <>
-                <Row style={{ justifyContent: "space-between" }}>
-                  <Text style={styles.heroLabel}>Latest measurement · {fmtDate(latest.date)}</Text>
-                  <Pill tone={statusTone(status.stunting)}>{status.stunting}</Pill>
-                </Row>
-                <Row style={{ marginTop: spacing.md, gap: spacing.lg }}>
-                  <Metric label="Weight" value={`${latest.weight_kg} kg`} z={latest.wfa_zscore} zLabel="WFA" />
-                  <Metric label="Height" value={`${latest.height_cm} cm`} z={latest.lhfa_zscore} zLabel="HFA" />
-                  <Metric label="BMI" value={latest.bmi.toFixed(1)} z={latest.bfa_zscore} zLabel="BFA" />
-                </Row>
-                <Row style={{ marginTop: spacing.md, flexWrap: "wrap" }}>
-                  <Pill tone={statusTone(status.weight)} small>Weight: {status.weight}</Pill>
-                  {status.wasting ? <Pill tone={statusTone(status.wasting)} small>Wasting: {status.wasting}</Pill> : null}
-                </Row>
-              </>
-            ) : (
-              <>
-                <Text style={styles.heroLabel}>No measurements yet</Text>
-                <Text style={styles.heroBody}>Log the first weight and height to see WHO z-scores and the growth curve.</Text>
-              </>
-            )}
-            <Button title={latest ? "Log new measurement" : "Log first measurement"} icon="add" onPress={() => router.push("/measurement")} style={{ marginTop: spacing.lg }} />
-          </Card>
-
-          <View style={styles.quick}>
-            <Quick icon="restaurant" label="Log a meal" tone="orange" onPress={() => router.push("/meal")} />
-            <Quick icon="shield-checkmark" label="Immunization" tone="teal" onPress={() => router.push("/immunization")} />
-            <Quick icon="document-text" label="Report" tone="primary" onPress={() => router.push("/reports")} />
-            <Quick icon="book" label="Explore" tone="good" onPress={() => router.push("/explore")} />
+    <Screen padded={false} refreshing={refreshing} onRefresh={() => load(true)}>
+      <GradientHeader>
+        <Row style={{ justifyContent: "space-between", marginBottom: spacing.md }}>
+          <View>
+            <Text style={styles.greet}>
+              {g.text} {g.emoji}
+            </Text>
+            <Text style={styles.title}>How is {name} today?</Text>
           </View>
+          <Bounce onPress={() => router.push("/alerts")} style={styles.bell} accessibilityLabel="Alerts">
+            <Ionicons name="notifications" size={22} color={colors.orange} />
+            {alerts.length > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{alerts.length}</Text>
+              </View>
+            ) : null}
+          </Bounce>
+        </Row>
+        <ChildSwitcher light />
+        <Row style={{ gap: spacing.md, marginTop: -4 }}>
+          <Stat emoji="⚖️" label="Weight" value={latest ? `${latest.weight_kg} kg` : "—"} />
+          <Stat emoji="📏" label="Height" value={latest ? `${latest.height_cm} cm` : "—"} />
+          <Stat emoji="📅" label="Measured" value={latest ? fmtDate(latest.date, { day: "numeric", month: "short" }) : "never"} />
+        </Row>
+      </GradientHeader>
 
-          {alerts.length > 0 ? (
-            <>
-              <SectionTitle title="Needs attention" action="All alerts" onAction={() => router.push("/alerts")} />
-              {alerts.slice(0, 3).map((a) => (
-                <Pressable key={a.id} onPress={() => router.push(alertRoute(a))}>
-                  <Card style={styles.alert}>
+      <View style={styles.body}>
+        <ErrorBox message={error} onRetry={() => load()} />
+        {loading ? (
+          <Loading />
+        ) : (
+          <>
+            <VerdictCard {...growth} onPress={() => router.push(latest ? "/(tabs)/growth" : "/measurement")} action={latest ? "See the growth curve" : "Measure now"} />
+
+            <View style={styles.quick}>
+              <Quick emoji="⚖️" label="Measure" tone="orange" onPress={() => router.push("/measurement")} />
+              <Quick emoji="🍲" label="Log meal" tone="teal" onPress={() => router.push("/meal")} />
+              <Quick emoji="💉" label="Vaccines" tone="yellow" onPress={() => router.push("/immunization")} />
+              <Quick emoji="📄" label="Report" tone="lavender" onPress={() => router.push("/reports")} />
+            </View>
+
+            <SectionTitle title="Today's plate" emoji="🍽️" action="Meals" onAction={() => router.push("/(tabs)/nutrition")} />
+            <Card onPress={() => router.push("/(tabs)/nutrition")}>
+              <Row style={{ gap: spacing.lg, justifyContent: "center" }}>
+                <Ring value={energyPct} color={colors.orange} label={`${Math.round(energyPct)}%`} sub="energy" size={96} />
+                <Ring value={proteinPct} color={colors.teal} label={`${Math.round(proteinPct)}%`} sub="protein" size={96} />
+              </Row>
+              <Text style={styles.plateHeadline}>
+                {nutrition?.emoji} {nutrition?.headline}
+              </Text>
+              <Text style={styles.plateDetail}>{nutrition?.detail}</Text>
+            </Card>
+
+            <SectionTitle title="Keeping up" emoji="🌈" />
+            {immun ? <VerdictCard {...immun} onPress={() => router.push("/immunization")} action="Open schedule" /> : null}
+            {kpsp ? <VerdictCard {...kpsp} onPress={() => router.push("/(tabs)/development")} action="Open milestones" /> : null}
+
+            {alerts.length > 0 ? (
+              <>
+                <SectionTitle title="Gentle reminders" emoji="🔔" action="All" onAction={() => router.push("/alerts")} />
+                {alerts.slice(0, 3).map((a) => (
+                  <Card key={a.id} onPress={() => router.push(ALERT_ROUTE[a.category])} style={styles.alert}>
                     <View style={[styles.alertIcon, { backgroundColor: tones[SEVERITY[a.severity]].bg }]}>
-                      <Ionicons name={CATEGORY_ICON[a.category]} size={18} color={tones[SEVERITY[a.severity]].fg} />
+                      <Text style={{ fontSize: 20 }}>{CATEGORY_EMOJI[a.category]}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.alertTitle}>{a.title}</Text>
-                      <Text style={styles.alertBody} numberOfLines={2}>{a.description}</Text>
+                      <Text style={styles.alertBody} numberOfLines={2}>
+                        {a.description}
+                      </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={colors.muted} />
                   </Card>
-                </Pressable>
-              ))}
-            </>
-          ) : null}
-
-          <SectionTitle title="This week" />
-          <Card>
-            <Row style={{ justifyContent: "space-between" }}>
-              <Text style={styles.cardTitle}>Nutrition · last 7 days</Text>
-              <Text style={styles.cardMeta}>{nutrition?.days_logged ?? 0}/7 days logged</Text>
-            </Row>
-            {energyPct !== null && nutrition?.targets ? (
-              <>
-                <Row style={{ justifyContent: "space-between", marginTop: spacing.sm }}>
-                  <Text style={styles.cardMeta}>Energy {Math.round(nutrition.average.energy)} / {Math.round(nutrition.targets.energy)} kcal</Text>
-                  <Text style={[styles.cardMeta, { fontWeight: "800", color: colors.text }]}>{Math.round(energyPct)}%</Text>
-                </Row>
-                <View style={{ marginTop: 6 }}>
-                  <Progress value={energyPct} tone={energyPct < 70 ? "warn" : energyPct > 130 ? "bad" : "good"} />
-                </View>
-                <Row style={{ justifyContent: "space-between", marginTop: spacing.sm }}>
-                  <Text style={styles.cardMeta}>Protein {Math.round(nutrition.average.protein)} / {Math.round(nutrition.targets.protein)} g</Text>
-                  <Text style={[styles.cardMeta, { fontWeight: "800", color: colors.text }]}>{Math.round(nutrition.fulfillment_percent?.protein ?? 0)}%</Text>
-                </Row>
-                <View style={{ marginTop: 6 }}>
-                  <Progress value={nutrition.fulfillment_percent?.protein ?? 0} tone="orange" />
-                </View>
+                ))}
               </>
-            ) : (
-              <Text style={[styles.cardMeta, { marginTop: spacing.sm }]}>Log today's meals to compare intake with the AKG 2019 target.</Text>
-            )}
-          </Card>
-
-          <Card>
-            <Row style={{ justifyContent: "space-between" }}>
-              <Text style={styles.cardTitle}>Immunization</Text>
-              <Pill tone={report && report.immunization.overdue > 0 ? "bad" : "good"} small>
-                {report ? (report.immunization.overdue > 0 ? `${report.immunization.overdue} overdue` : "On schedule") : "—"}
-              </Pill>
-            </Row>
-            <Text style={[styles.cardMeta, { marginTop: 6 }]}>
-              {report ? `${report.immunization.given} of ${report.immunization.total} doses given` : ""}
-              {report?.immunization.next_dose ? ` · next: ${report.immunization.next_dose.name} (${fmtDate(report.immunization.next_dose.due_date)})` : ""}
-            </Text>
-          </Card>
-
-          <Card>
-            <Row style={{ justifyContent: "space-between" }}>
-              <Text style={styles.cardTitle}>Development (KPSP)</Text>
-              {report?.milestones.interpretation ? <Pill tone={statusTone(report.milestones.interpretation)} small>{report.milestones.interpretation}</Pill> : null}
-            </Row>
-            <Text style={[styles.cardMeta, { marginTop: 6 }]}>
-              {report ? `${report.milestones.answered}/${report.milestones.total} answered · ${report.milestones.achieved} achieved${report.milestones.age_label ? ` · ${report.milestones.age_label}` : ""}` : ""}
-            </Text>
-          </Card>
-        </>
-      )}
+            ) : null}
+          </>
+        )}
+      </View>
     </Screen>
   );
 }
 
-function alertRoute(a: AlertItem): Href {
-  switch (a.category) {
-    case "Growth":
-      return "/(tabs)/growth";
-    case "Nutrition":
-      return "/(tabs)/nutrition";
-    case "Development":
-      return "/(tabs)/development";
-    default:
-      return "/immunization";
-  }
-}
-
-function Metric({ label, value, z, zLabel }: { label: string; value: string; z: number | null; zLabel: string }) {
-  const tone = zTone(z);
+function Stat({ emoji, label, value }: { emoji: string; label: string; value: string }) {
   return (
-    <View style={{ flex: 1 }}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={[styles.metricZ, { color: tones[tone].fg }]}>
-        {zLabel} {fmtZ(z)}
-      </Text>
+    <View style={styles.stat}>
+      <Text style={{ fontSize: 18 }}>{emoji}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
-function Quick({ icon, label, tone, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; tone: Tone; onPress: () => void }) {
+function Quick({ emoji, label, tone, onPress }: { emoji: string; label: string; tone: Tone; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.quickItem, pressed && { opacity: 0.8 }]}>
+    <Bounce onPress={onPress} style={styles.quickItem} scale={0.92}>
       <View style={[styles.quickIcon, { backgroundColor: tones[tone].bg }]}>
-        <Ionicons name={icon} size={20} color={tones[tone].fg} />
+        <Text style={{ fontSize: 26 }}>{emoji}</Text>
       </View>
       <Text style={styles.quickLabel}>{label}</Text>
-    </Pressable>
+    </Bounce>
   );
 }
 
 const styles = StyleSheet.create({
-  top: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.md, gap: spacing.sm },
-  greet: { fontSize: 13, color: colors.muted, fontWeight: "600" },
-  title: { fontSize: 21, fontWeight: "800", color: colors.text, marginTop: 2 },
-  bell: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  badge: { position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.bad, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
-  badgeText: { color: colors.white, fontSize: 10, fontWeight: "800" },
-  hero: { backgroundColor: colors.navy, borderColor: "transparent" },
-  heroLabel: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "700" },
-  heroBody: { color: "rgba(255,255,255,0.9)", fontSize: 14, marginTop: 6, lineHeight: 20 },
-  metricLabel: { color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "700" },
-  metricValue: { color: colors.white, fontSize: 20, fontWeight: "800", marginTop: 2 },
-  metricZ: { fontSize: 11, fontWeight: "800", marginTop: 2, backgroundColor: "rgba(255,255,255,0.92)", alignSelf: "flex-start", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 },
-  quick: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm },
+  greet: { fontFamily: font.bold, fontSize: 13, color: "rgba(255,255,255,0.9)" },
+  title: { fontFamily: font.black, fontSize: 22, color: colors.white, marginTop: 2 },
+  bell: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" },
+  badge: { position: "absolute", top: -3, right: -3, minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.red, alignItems: "center", justifyContent: "center", paddingHorizontal: 5, borderWidth: 2, borderColor: colors.white },
+  badgeText: { color: colors.white, fontSize: 10, fontFamily: font.black },
+  stat: { flex: 1, backgroundColor: "rgba(255,255,255,0.92)", borderRadius: radius.md, paddingVertical: 10, alignItems: "center", gap: 2 },
+  statValue: { fontFamily: font.black, fontSize: 16, color: colors.text },
+  statLabel: { fontFamily: font.bold, fontSize: 11, color: colors.muted },
+  body: { paddingHorizontal: spacing.lg, marginTop: -spacing.lg },
+  quick: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.xs },
   quickItem: { flex: 1, alignItems: "center", gap: 6 },
-  quickIcon: { width: 52, height: 52, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  quickLabel: { fontSize: 11, fontWeight: "700", color: colors.text, textAlign: "center" },
+  quickIcon: { width: 60, height: 60, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  quickLabel: { fontFamily: font.extra, fontSize: 12, color: colors.text },
+  plateHeadline: { fontFamily: font.extra, fontSize: 15, color: colors.text, lineHeight: 20, marginTop: spacing.md, textAlign: "center" },
+  plateDetail: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 17, textAlign: "center" },
   alert: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
-  alertIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  alertTitle: { fontSize: 14, fontWeight: "800", color: colors.text },
-  alertBody: { fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: colors.text },
-  cardMeta: { fontSize: 12, color: colors.muted },
+  alertIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  alertTitle: { fontFamily: font.extra, fontSize: 14, color: colors.text },
+  alertBody: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 },
 });

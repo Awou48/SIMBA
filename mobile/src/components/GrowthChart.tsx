@@ -2,7 +2,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import type { GrowthStandardPoint } from "../lib/api";
-import { colors } from "../lib/theme";
+import { colors, font } from "../lib/theme";
 
 export interface ChartPoint {
   ageMonths: number;
@@ -51,18 +51,18 @@ export function GrowthChart({ standards, points, unit, height = 240 }: Props) {
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ width: "100%" }}>
       {width > 0 && (
         <Svg width={width} height={height}>
-          <Path d={band("p3", "p97")} fill={colors.tealSoft} />
-          <Path d={band("p15", "p85")} fill="#cdeeec" />
+          <Path d={band("p3", "p97")} fill="#EAF7EF" />
+          <Path d={band("p15", "p85")} fill="#CFEEDC" />
           {yTicks.map((v) => (
-            <Line key={`y${v}`} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke="#e4e7f2" strokeWidth={1} />
+            <Line key={`y${v}`} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke="#F1EDE6" strokeWidth={1} />
           ))}
           {(["p3", "p97"] as const).map((k) => (
-            <Path key={k} d={path(k)} stroke="#9ad7d3" strokeWidth={1} fill="none" strokeDasharray="4 4" />
+            <Path key={k} d={path(k)} stroke="#A9DEBE" strokeWidth={1} fill="none" strokeDasharray="4 4" />
           ))}
-          <Path d={path("p50")} stroke={colors.teal} strokeWidth={2} fill="none" />
-          {childPath ? <Path d={childPath} stroke={colors.primary} strokeWidth={2.5} fill="none" strokeLinejoin="round" /> : null}
+          <Path d={path("p50")} stroke={colors.green} strokeWidth={2} fill="none" />
+          {childPath ? <Path d={childPath} stroke={colors.orange} strokeWidth={3} fill="none" strokeLinejoin="round" /> : null}
           {points.map((p, i) => (
-            <Circle key={i} cx={x(p.ageMonths)} cy={y(p.value)} r={i === points.length - 1 ? 6 : 4} fill={i === points.length - 1 ? colors.orange : colors.primary} stroke={colors.white} strokeWidth={2} />
+            <Circle key={i} cx={x(p.ageMonths)} cy={y(p.value)} r={i === points.length - 1 ? 6 : 4} fill={i === points.length - 1 ? colors.pink : colors.orange} stroke={colors.white} strokeWidth={2.5} />
           ))}
           {xTicks.map((t) => (
             <SvgText key={`xt${t}`} x={x(t)} y={height - 8} fontSize={10} fill={colors.muted} textAnchor="middle">
@@ -77,10 +77,10 @@ export function GrowthChart({ standards, points, unit, height = 240 }: Props) {
         </Svg>
       )}
       <View style={styles.legend}>
-        <LegendItem color={colors.teal} label="WHO median" />
-        <LegendItem color="#cdeeec" label="15th–85th" block />
-        <LegendItem color={colors.tealSoft} label="3rd–97th" block />
-        <LegendItem color={colors.primary} label="Your child" />
+        <LegendItem color={colors.green} label="Typical child" />
+        <LegendItem color="#CFEEDC" label="Most children" block />
+        <LegendItem color="#EAF7EF" label="Healthy range" block />
+        <LegendItem color={colors.orange} label="Your child" />
         <Text style={styles.legendText}>· {unit} by age in months</Text>
       </View>
     </View>
@@ -100,5 +100,5 @@ const styles = StyleSheet.create({
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   swatch: { width: 14, height: 3, borderRadius: 2 },
-  legendText: { fontSize: 11, color: colors.muted },
+  legendText: { fontSize: 11, color: colors.muted, fontFamily: font.bold },
 });

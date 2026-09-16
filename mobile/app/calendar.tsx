@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, errorMessage, EVENT_TYPES, type EventType, type HealthEvent } from "../src/lib/api";
 import { useChildren } from "../src/state/child";
 import { ChildSwitcher } from "../src/components/ChildSwitcher";
-import { Button, Card, Empty, ErrorBox, Field, Header, Loading, Pill, Row, Screen, SectionTitle, Segmented } from "../src/components/ui";
+import { Bounce, Button, Card, Chips, Empty, ErrorBox, Field, Header, Loading, Pill, Row, Screen, SectionTitle } from "../src/components/ui";
 import { fmtDate, isValidDate, toDateString } from "../src/lib/format";
-import { colors, radius, spacing, type Tone } from "../src/lib/theme";
+import { colors, font, radius, spacing, type Tone } from "../src/lib/theme";
 
-const TYPE_TONE: Record<EventType, Tone> = { Vaccination: "teal", "Doctor Visit": "primary", Checkup: "orange", Other: "muted" };
+const TYPE_TONE: Record<EventType, Tone> = { Vaccination: "teal", "Doctor Visit": "lavender", Checkup: "orange", Other: "muted" };
+const TYPE_EMOJI: Record<EventType, string> = { Vaccination: "💉", "Doctor Visit": "🩺", Checkup: "📋", Other: "📌" };
 
 export default function Calendar() {
   const { active } = useChildren();
@@ -98,9 +99,9 @@ export default function Calendar() {
 
   const EventRow = ({ e }: { e: HealthEvent }) => (
     <Card style={styles.event}>
-      <Pressable onPress={() => toggleDone(e)} style={[styles.check, e.done && { backgroundColor: colors.good, borderColor: colors.good }]} accessibilityLabel="Toggle done">
-        {e.done ? <Ionicons name="checkmark" size={16} color={colors.white} /> : null}
-      </Pressable>
+      <Bounce onPress={() => toggleDone(e)} style={[styles.check, e.done && { backgroundColor: colors.green, borderColor: colors.green }]} accessibilityLabel="Toggle done">
+        {e.done ? <Ionicons name="checkmark" size={18} color={colors.white} /> : <Text style={{ fontSize: 14 }}>{TYPE_EMOJI[e.event_type]}</Text>}
+      </Bounce>
       <View style={{ flex: 1 }}>
         <Text style={[styles.title, e.done && { textDecorationLine: "line-through", color: colors.muted }]}>{e.title}</Text>
         <Text style={styles.meta}>
@@ -110,32 +111,32 @@ export default function Calendar() {
         </Text>
       </View>
       <Pill tone={TYPE_TONE[e.event_type]} small>{e.event_type}</Pill>
-      <Pressable onPress={() => remove(e)} hitSlop={8}>
-        <Ionicons name="trash-outline" size={18} color={colors.muted} />
-      </Pressable>
+      <Bounce onPress={() => remove(e)} hitSlop={8} haptic={false}>
+        <Ionicons name="close" size={18} color={colors.muted} />
+      </Bounce>
     </Card>
   );
 
   return (
     <Screen refreshing={refreshing} onRefresh={() => load(true)}>
-      <Header title="Calendar" subtitle="Visits, checkups and vaccinations" onBack={() => router.back()} right={<Button title="Add" icon="add" onPress={() => setAdding(true)} style={{ paddingVertical: 8, paddingHorizontal: 12 }} />} />
+      <Header title="Calendar" emoji="🗓️" subtitle="Visits, Posyandu days and vaccinations" onBack={() => router.back()} right={<Button title="Add" emoji="➕" variant="white" onPress={() => setAdding(true)} />} />
       <ChildSwitcher />
       <ErrorBox message={error} onRetry={() => load()} />
       {loading ? (
         <Loading />
       ) : (
         <>
-          <SectionTitle title={`Upcoming · ${upcoming.length}`} />
+          <SectionTitle title="Coming up" emoji="⏭️" />
           {upcoming.length === 0 ? (
             <Card>
-              <Empty title="Nothing scheduled" body="Add a doctor visit or checkup, or mark vaccine doses in Immunization." />
+              <Empty emoji="🗓️" title="Nothing coming up" body="Add a doctor visit or Posyandu day so you get a nudge before it happens." />
             </Card>
           ) : (
             upcoming.map((e) => <EventRow key={e.id} e={e} />)
           )}
           {past.length > 0 ? (
             <>
-              <SectionTitle title={`Past & done · ${past.length}`} />
+              <SectionTitle title="Done & past" emoji="✅" />
               {past.slice(0, 20).map((e) => <EventRow key={e.id} e={e} />)}
             </>
           ) : null}
@@ -144,11 +145,11 @@ export default function Calendar() {
 
       <Modal visible={adding} animationType="slide" onRequestClose={() => setAdding(false)}>
         <Screen edges={["top", "bottom"]}>
-          <Header title="New event" onBack={() => setAdding(false)} />
+          <Header title="New event" emoji="📌" onBack={() => setAdding(false)} />
           <ErrorBox message={error} />
           <Field label="Title" value={form.title} onChangeText={(v) => setForm({ ...form, title: v })} placeholder="e.g. Posyandu checkup" />
-          <Text style={styles.label}>Type</Text>
-          <Segmented options={EVENT_TYPES.map((t) => ({ value: t, label: t === "Doctor Visit" ? "Doctor" : t }))} value={form.event_type} onChange={(v) => setForm({ ...form, event_type: v })} />
+          <Text style={styles.label}>What kind?</Text>
+          <Chips options={EVENT_TYPES.map((t) => ({ value: t, label: t === "Doctor Visit" ? "Doctor" : t, emoji: TYPE_EMOJI[t] }))} value={form.event_type} onChange={(v) => setForm({ ...form, event_type: v })} />
           <Row style={{ gap: spacing.md, alignItems: "flex-start" }}>
             <View style={{ flex: 1 }}>
               <Field label="Date" value={form.date} onChangeText={(v) => setForm({ ...form, date: v })} placeholder="YYYY-MM-DD" />
@@ -158,7 +159,7 @@ export default function Calendar() {
             </View>
           </Row>
           <Field label="Notes (optional)" value={form.notes} onChangeText={(v) => setForm({ ...form, notes: v })} placeholder="Bring KIA book" />
-          <Button title="Save event" onPress={save} loading={busy} />
+          <Button title="Save event" emoji="✅" onPress={save} loading={busy} />
         </Screen>
       </Modal>
     </Screen>
@@ -167,8 +168,8 @@ export default function Calendar() {
 
 const styles = StyleSheet.create({
   event: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
-  check: { width: 26, height: 26, borderRadius: radius.sm, borderWidth: 2, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 14, fontWeight: "700", color: colors.text },
-  meta: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  label: { fontSize: 12, fontWeight: "700", color: colors.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 },
+  check: { width: 34, height: 34, borderRadius: radius.sm, borderWidth: 2, borderColor: colors.line, alignItems: "center", justifyContent: "center", backgroundColor: colors.cream },
+  title: { fontFamily: font.extra, fontSize: 14, color: colors.text },
+  meta: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
+  label: { fontFamily: font.extra, fontSize: 14, color: colors.text, marginBottom: 8 },
 });

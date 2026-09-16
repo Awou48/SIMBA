@@ -1,17 +1,41 @@
+import { useEffect } from "react";
+import { Text, TextInput } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useFonts, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from "@expo-google-fonts/nunito";
+import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider } from "../src/state/auth";
 import { ChildProvider } from "../src/state/child";
-import { colors } from "../src/lib/theme";
+import { colors, font } from "../src/lib/theme";
+
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+const applyDefaultFont = () => {
+  const T = Text as unknown as { defaultProps?: { style?: unknown } };
+  const I = TextInput as unknown as { defaultProps?: { style?: unknown } };
+  T.defaultProps = { ...(T.defaultProps ?? {}), style: [{ fontFamily: font.regular }, T.defaultProps?.style] };
+  I.defaultProps = { ...(I.defaultProps ?? {}), style: [{ fontFamily: font.regular }, I.defaultProps?.style] };
+};
 
 export default function RootLayout() {
+  const [loaded] = useFonts({ Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black });
+
+  useEffect(() => {
+    if (loaded) {
+      applyDefaultFont();
+      SplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, [loaded]);
+
+  if (!loaded) return null;
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
         <ChildProvider>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream }, animation: "slide_from_right" }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />

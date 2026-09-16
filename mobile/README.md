@@ -3,14 +3,28 @@
 Native app for parents, built with **Expo SDK 57 / React Native 0.86 / expo-router**. It talks to the same
 FastAPI backend as the Health Manager web portal and only uses the `/api/v1/user/*` endpoints.
 
+## Design
+
+The app follows the original SIMBA parent prototype: warm cream background, orange→yellow gradient header,
+Nunito type, emoji instead of icon sets, soft rounded cards. Everything is written for parents first:
+
+- **Plain-language verdicts** (`src/lib/friendly.ts`) turn z-scores, AKG percentages, KPSP results and the
+  vaccine schedule into sentences like "Sari is growing well 🌟" with one concrete next step. Numbers stay one
+  tap away under "Show the numbers".
+- **Interactive input**: steppers + sliders for weight/height, date chips (Today / Yesterday / Another day),
+  servings stepper, one-question-at-a-time milestone quiz with big Yes / Not yet buttons.
+- **Feedback**: every tappable element bounces (`Bounce`), progress bars and rings animate, saves show a
+  celebration screen, and taps give light haptics on device.
+- **Five tabs**: Home · Growth · Meals · Milestones · More.
+
 ## What it does
 
 | Tab / screen | Features |
 |---|---|
 | **Home** | Greeting, child switcher, latest measurement with WFA/HFA/BFA z-scores and Permenkes status, quick actions, top alerts, 7-day nutrition vs AKG, immunization and KPSP summary |
-| **Growth** | WHO growth chart (weight / height / BMI-for-age with 3rd–97th and 15th–85th bands, your child's curve), latest z-score grid, full history; **Log measurement** modal returns the classification immediately |
+| **Growth** | Plain-language verdict, WHO growth chart (weight / height / BMI-for-age with 3rd–97th and 15th–85th bands, your child's curve), latest z-score grid, full history; **Log measurement** modal returns the classification immediately |
 | **Nutrition** | Day picker, daily totals vs AKG 2019 with progress bars, meals grouped by type, swipe-free delete; **Add meal** searches the 1,600-item toddler-safe food database with a servings stepper |
-| **Growth+ (Development)** | KPSP checklist for the child's age bracket, Yes / Not yet answers saved instantly, interpretation (Sesuai / Meragukan / Penyimpangan) with guidance |
+| **Milestones** | KPSP checklist for the child's age bracket, Yes / Not yet answers saved instantly, interpretation (Sesuai / Meragukan / Penyimpangan) with guidance |
 | **More** | Immunization (Kemenkes schedule, tap to mark a dose given / undo), Calendar (visits, checkups, done-toggle), Alerts, Growth report with **Share PDF**, Explore articles, edit / add children, sign out |
 | **Auth** | Sign in, create account (then add first child), secure token storage (`expo-secure-store`), automatic sign-out on 401 |
 
