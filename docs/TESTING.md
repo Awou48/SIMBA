@@ -261,9 +261,9 @@ least ~1024px wide to see the sidebar; below that it collapses into a ☰ drawer
 
 ### 10.1 Start
 1. `cd mobile && npm install && cp .env.example .env`.
-2. Backend must be reachable from the device: run `uvicorn main:app --host 0.0.0.0 --port 8000` and set
-   `EXPO_PUBLIC_API_URL` (Android emulator `http://10.0.2.2:8000`, iOS simulator/web `http://127.0.0.1:8000`,
-   real phone `http://<PC LAN IP>:8000`).
+2. Start the backend on all interfaces: `uvicorn main:app --host 0.0.0.0 --port 8000` (allow TCP 8000 in
+   Windows Firewall for a real phone). The app auto-detects the backend host from the Expo connection; set
+   `EXPO_PUBLIC_API_URL` only to override.
 3. `npx expo start` → `a` (Android), `i` (iOS), `w` (web at http://localhost:8081) or scan the QR in Expo Go.
    Expect the splash lion, then the Sign In screen.
 
