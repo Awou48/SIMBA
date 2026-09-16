@@ -4,9 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useChildren } from "../state/child";
 import { formatAge } from "../lib/format";
-import { colors, radius, spacing } from "../lib/theme";
+import { childEmoji } from "../lib/friendly";
+import { colors, font, radius, spacing } from "../lib/theme";
+import { Bounce } from "./ui";
 
-export function ChildSwitcher() {
+export function ChildSwitcher({ light }: { light?: boolean }) {
   const { children, active, select } = useChildren();
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -15,21 +17,25 @@ export function ChildSwitcher() {
 
   return (
     <>
-      <Pressable onPress={() => setOpen(true)} style={styles.trigger} accessibilityLabel="Switch child">
-        <Avatar name={active.name} gender={active.gender} />
+      <Bounce onPress={() => setOpen(true)} style={[styles.trigger, light && styles.triggerLight]} accessibilityLabel="Switch child">
+        <Avatar gender={active.gender} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{active.name}</Text>
-          <Text style={styles.meta}>{formatAge(active.birth_date)}</Text>
+          <Text style={[styles.name, light && { color: colors.white }]}>{active.name}</Text>
+          <Text style={[styles.meta, light && { color: "rgba(255,255,255,0.85)" }]}>
+            {formatAge(active.birth_date)}
+            {children.length > 1 ? ` · ${children.length} children` : ""}
+          </Text>
         </View>
-        <Ionicons name="chevron-down" size={18} color={colors.muted} />
-      </Pressable>
+        <Ionicons name="chevron-down" size={18} color={light ? colors.white : colors.muted} />
+      </Bounce>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Your children</Text>
+            <View style={styles.handle} />
+            <Text style={styles.sheetTitle}>Who are we looking at?</Text>
             {children.map((c) => (
-              <Pressable
+              <Bounce
                 key={c.id}
                 onPress={() => {
                   select(c.id);
@@ -37,24 +43,29 @@ export function ChildSwitcher() {
                 }}
                 style={[styles.option, c.id === active.id && styles.optionOn]}
               >
-                <Avatar name={c.name} gender={c.gender} />
+                <Avatar gender={c.gender} size={46} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{c.name}</Text>
-                  <Text style={styles.meta}>{formatAge(c.birth_date)}{c.region ? ` · ${c.region}` : ""}</Text>
+                  <Text style={styles.meta}>
+                    {formatAge(c.birth_date)}
+                    {c.region ? ` · ${c.region}` : ""}
+                  </Text>
                 </View>
-                {c.id === active.id ? <Ionicons name="checkmark-circle" size={20} color={colors.primary} /> : null}
-              </Pressable>
+                {c.id === active.id ? <Ionicons name="checkmark-circle" size={22} color={colors.orange} /> : null}
+              </Bounce>
             ))}
-            <Pressable
+            <Bounce
               onPress={() => {
                 setOpen(false);
                 router.push("/add-child");
               }}
               style={styles.addRow}
             >
-              <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+              <View style={styles.addIcon}>
+                <Ionicons name="add" size={22} color={colors.orange} />
+              </View>
               <Text style={styles.addText}>Add another child</Text>
-            </Pressable>
+            </Bounce>
           </View>
         </Pressable>
       </Modal>
@@ -62,25 +73,26 @@ export function ChildSwitcher() {
   );
 }
 
-export function Avatar({ name, gender, size = 40 }: { name: string; gender: "male" | "female"; size?: number }) {
-  const bg = gender === "female" ? "#fde2e4" : "#dbeafe";
-  const fg = gender === "female" ? "#be123c" : "#1d4ed8";
+export function Avatar({ gender, size = 42 }: { gender: "male" | "female"; size?: number }) {
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ color: fg, fontWeight: "800", fontSize: size * 0.42 }}>{name.trim().charAt(0).toUpperCase()}</Text>
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontSize: size * 0.55 }}>{childEmoji(gender)}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  trigger: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md },
-  name: { fontSize: 15, fontWeight: "800", color: colors.text },
-  meta: { fontSize: 12, color: colors.muted, marginTop: 1 },
-  backdrop: { flex: 1, backgroundColor: "rgba(15,20,45,0.45)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: colors.white, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xxl },
-  sheetTitle: { fontSize: 16, fontWeight: "800", color: colors.text, marginBottom: spacing.sm },
-  option: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.md },
-  optionOn: { backgroundColor: colors.primarySoft },
-  addRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, marginTop: spacing.xs },
-  addText: { color: colors.primary, fontWeight: "700", fontSize: 14 },
+  trigger: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.white, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
+  triggerLight: { backgroundColor: "rgba(255,255,255,0.25)" },
+  name: { fontFamily: font.extra, fontSize: 16, color: colors.text },
+  meta: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 1 },
+  backdrop: { flex: 1, backgroundColor: "rgba(45,48,71,0.45)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: colors.cream, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xxl },
+  handle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: "#E4DED4", marginBottom: spacing.md },
+  sheetTitle: { fontFamily: font.black, fontSize: 18, color: colors.text, marginBottom: spacing.sm },
+  option: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.white, marginBottom: 8 },
+  optionOn: { backgroundColor: colors.orangeSoft },
+  addRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.sm, marginTop: spacing.xs },
+  addIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.orangeSoft, alignItems: "center", justifyContent: "center" },
+  addText: { color: colors.orange, fontFamily: font.extra, fontSize: 15 },
 });

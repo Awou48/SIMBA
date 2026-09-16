@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api, errorMessage, type MilestoneChecklist, type MilestoneItem } from "../../src/lib/api";
 import { useChildren } from "../../src/state/child";
 import { ChildSwitcher } from "../../src/components/ChildSwitcher";
-import { Card, Empty, ErrorBox, Header, Loading, Pill, Progress, Row, Screen, SectionTitle } from "../../src/components/ui";
-import { statusTone } from "../../src/lib/format";
-import { colors, radius, spacing, tones } from "../../src/lib/theme";
+import { Bounce, Card, Empty, ErrorBox, Header, Loading, Progress, Row, Screen, SectionTitle, VerdictCard } from "../../src/components/ui";
+import { DOMAIN_EMOJI, kpspVerdict } from "../../src/lib/friendly";
+import { colors, font, radius, spacing } from "../../src/lib/theme";
 
 export default function Development() {
   const { active } = useChildren();
@@ -15,6 +15,7 @@ export default function Development() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [reviewAll, setReviewAll] = useState(false);
 
   const load = useCallback(
     async (soft = false) => {
@@ -49,81 +50,114 @@ export default function Development() {
     }
   };
 
+  const next = useMemo(() => data?.items.find((i) => i.achieved === null) ?? null, [data]);
+  const verdict = data ? kpspVerdict(data.interpretation, data.answered, data.total) : null;
   const domains = data ? Array.from(new Set(data.items.map((i) => i.domain))) : [];
 
   return (
     <Screen refreshing={refreshing} onRefresh={() => load(true)}>
-      <Header title="Development" subtitle="KPSP screening · Kemenkes" />
+      <Header title="Milestones" emoji="🧩" subtitle="Little skills that show development is on track" />
       <ChildSwitcher />
       <ErrorBox message={error} onRetry={() => load()} />
       {loading ? (
         <Loading />
       ) : !data || data.items.length === 0 ? (
         <Card>
-          <Empty title="No checklist for this age" body="KPSP questions cover 3–72 months. Come back at the next bracket." />
+          <Empty emoji="🧸" title="Nothing to check right now" body="Milestone questions start at 3 months and change with age. Come back a little later." />
         </Card>
       ) : (
         <>
-          <Card style={{ backgroundColor: colors.navy, borderColor: "transparent" }}>
-            <Text style={styles.heroLabel}>{data.age_label ?? `${data.age_in_months} months`} · {data.answered}/{data.total} answered</Text>
-            <Text style={styles.heroValue}>{data.achieved} of {data.total} achieved</Text>
-            {data.interpretation ? (
-              <View style={{ marginTop: spacing.sm }}>
-                <Pill tone={statusTone(data.interpretation)}>{data.interpretation}</Pill>
-              </View>
-            ) : null}
-            <View style={{ marginTop: spacing.sm }}>
-              <Progress value={data.total ? (data.achieved / data.total) * 100 : 0} tone="teal" />
+          <Card>
+            <Row style={{ justifyContent: "space-between" }}>
+              <Text style={styles.progressLabel}>
+                {data.age_label ?? `${data.age_in_months} months`} · {data.answered} of {data.total} answered
+              </Text>
+              <Text style={styles.progressPct}>{Math.round((data.answered / data.total) * 100)}%</Text>
+            </Row>
+            <View style={{ marginTop: 8 }}>
+              <Progress value={(data.answered / data.total) * 100} color={colors.lavender} />
             </View>
-            <Text style={styles.heroHint}>
-              {data.answered < data.total
-                ? `Answer all ${data.total} questions to get the interpretation.`
-                : data.interpretation?.startsWith("Sesuai")
-                  ? "Development is appropriate for age. Re-screen at the next bracket."
-                  : data.interpretation?.startsWith("Meragukan")
-                    ? "Doubtful (7–8 yes). Stimulate the missed skills and re-screen in 2 weeks."
-                    : "Possible deviation (≤6 yes). Please consult a health worker."}
-            </Text>
           </Card>
 
-          {domains.map((domain) => (
-            <View key={domain}>
-              <SectionTitle title={domain} />
-              {data.items
-                .filter((i) => i.domain === domain)
-                .map((item) => (
-                  <Card key={item.id} style={{ padding: spacing.md }}>
-                    <Text style={styles.question}>{item.question}</Text>
-                    {item.expected ? <Text style={styles.expected}>{item.expected}</Text> : null}
-                    <Row style={{ marginTop: spacing.sm, gap: spacing.sm }}>
-                      <Choice label="Yes" on={item.achieved === true} tone="good" icon="checkmark" busy={savingId === item.id} onPress={() => answer(item, true)} />
-                      <Choice label="Not yet" on={item.achieved === false} tone="warn" icon="close" busy={savingId === item.id} onPress={() => answer(item, false)} />
-                    </Row>
-                  </Card>
-                ))}
-            </View>
-          ))}
+          {verdict && data.answered === data.total ? <VerdictCard {...verdict} /> : null}
+
+          {next && !reviewAll ? (
+            <Card style={styles.question}>
+              <Text style={styles.qDomain}>
+                {DOMAIN_EMOJI[next.domain] ?? "🧩"} {next.domain}
+              </Text>
+              <Text style={styles.qText}>Can {active?.name} {lowerFirst(next.question)}</Text>
+              {next.expected ? <Text style={styles.qHint}>{next.expected}</Text> : null}
+              <Row style={{ gap: spacing.md, marginTop: spacing.lg }}>
+                <Choice emoji="✅" label="Yes!" bg={colors.greenSoft} fg="#2E9F6A" busy={savingId === next.id} onPress={() => answer(next, true)} />
+                <Choice emoji="🕒" label="Not yet" bg={colors.yellowSoft} fg="#C98F00" busy={savingId === next.id} onPress={() => answer(next, false)} />
+              </Row>
+            </Card>
+          ) : null}
+
+          <Bounce onPress={() => setReviewAll((s) => !s)} style={styles.toggle} haptic={false}>
+            <Text style={styles.toggleText}>{reviewAll ? "Back to one at a time" : "See all questions"}</Text>
+            <Ionicons name={reviewAll ? "chevron-up" : "chevron-down"} size={18} color={colors.orange} />
+          </Bounce>
+
+          {reviewAll || !next
+            ? domains.map((domain) => (
+                <View key={domain}>
+                  <SectionTitle title={domain} emoji={DOMAIN_EMOJI[domain] ?? "🧩"} />
+                  {data.items
+                    .filter((i) => i.domain === domain)
+                    .map((item) => (
+                      <Card key={item.id} style={{ padding: spacing.md }}>
+                        <Text style={styles.listQ}>{item.question}</Text>
+                        <Row style={{ marginTop: spacing.sm, gap: spacing.sm }}>
+                          <Small label="Yes" on={item.achieved === true} bg={colors.greenSoft} fg="#2E9F6A" busy={savingId === item.id} onPress={() => answer(item, true)} />
+                          <Small label="Not yet" on={item.achieved === false} bg={colors.yellowSoft} fg="#C98F00" busy={savingId === item.id} onPress={() => answer(item, false)} />
+                        </Row>
+                      </Card>
+                    ))}
+                </View>
+              ))
+            : null}
         </>
       )}
     </Screen>
   );
 }
 
-function Choice({ label, on, tone, icon, busy, onPress }: { label: string; on: boolean; tone: "good" | "warn"; icon: keyof typeof Ionicons.glyphMap; busy: boolean; onPress: () => void }) {
+function lowerFirst(s: string) {
+  const t = s.trim().replace(/\?$/, "");
+  return `${t.charAt(0).toLowerCase()}${t.slice(1)}?`;
+}
+
+function Choice({ emoji, label, bg, fg, busy, onPress }: { emoji: string; label: string; bg: string; fg: string; busy: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} disabled={busy} style={[styles.choice, on && { backgroundColor: tones[tone].fg, borderColor: tones[tone].fg }, busy && { opacity: 0.6 }]}>
-      <Ionicons name={icon} size={16} color={on ? colors.white : tones[tone].fg} />
-      <Text style={[styles.choiceText, { color: on ? colors.white : colors.text }]}>{label}</Text>
-    </Pressable>
+    <Bounce onPress={onPress} disabled={busy} style={[styles.choice, { backgroundColor: bg, opacity: busy ? 0.6 : 1 }]} scale={0.93}>
+      <Text style={{ fontSize: 30 }}>{emoji}</Text>
+      <Text style={[styles.choiceText, { color: fg }]}>{label}</Text>
+    </Bounce>
+  );
+}
+
+function Small({ label, on, bg, fg, busy, onPress }: { label: string; on: boolean; bg: string; fg: string; busy: boolean; onPress: () => void }) {
+  return (
+    <Bounce onPress={onPress} disabled={busy} style={[styles.small, on ? { backgroundColor: fg } : { backgroundColor: bg }, busy && { opacity: 0.6 }]}>
+      <Text style={[styles.smallText, { color: on ? colors.white : fg }]}>{label}</Text>
+    </Bounce>
   );
 }
 
 const styles = StyleSheet.create({
-  heroLabel: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "700" },
-  heroValue: { color: colors.white, fontSize: 22, fontWeight: "800", marginTop: 6 },
-  heroHint: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginTop: spacing.sm, lineHeight: 17 },
-  question: { fontSize: 14, fontWeight: "700", color: colors.text, lineHeight: 20 },
-  expected: { fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 17 },
-  choice: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
-  choiceText: { fontSize: 13, fontWeight: "700" },
+  progressLabel: { fontFamily: font.extra, fontSize: 13, color: colors.text },
+  progressPct: { fontFamily: font.black, fontSize: 13, color: colors.lavender },
+  question: { backgroundColor: colors.lavenderSoft },
+  qDomain: { fontFamily: font.extra, fontSize: 12, color: "#6F5CE0", textTransform: "uppercase", letterSpacing: 0.5 },
+  qText: { fontFamily: font.black, fontSize: 20, color: colors.text, marginTop: 8, lineHeight: 27 },
+  qHint: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 6, lineHeight: 18 },
+  choice: { flex: 1, alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 18, borderRadius: radius.lg },
+  choiceText: { fontFamily: font.black, fontSize: 16 },
+  toggle: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: spacing.sm },
+  toggleText: { fontFamily: font.extra, fontSize: 13, color: colors.orange },
+  listQ: { fontFamily: font.extra, fontSize: 14, color: colors.text, lineHeight: 20 },
+  small: { flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: radius.pill },
+  smallText: { fontFamily: font.extra, fontSize: 13 },
 });

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../src/state/auth";
 import { errorMessage } from "../src/lib/api";
-import { Button, ErrorBox, Field, Screen } from "../src/components/ui";
-import { colors, radius, spacing } from "../src/lib/theme";
+import { Bounce, Button, ErrorBox, Field, Screen } from "../src/components/ui";
+import { colors, font, gradient, radius, spacing } from "../src/lib/theme";
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -16,7 +17,7 @@ export default function Login() {
 
   const submit = async () => {
     if (!email.trim() || !password) {
-      setError("Enter your email and password.");
+      setError("Please enter your email and password.");
       return;
     }
     setBusy(true);
@@ -32,30 +33,27 @@ export default function Login() {
   };
 
   return (
-    <Screen scroll={false} padded={false} edges={["top", "bottom"]}>
+    <Screen scroll={false} padded={false} edges={["bottom"]} background={colors.orange}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <View style={styles.hero}>
+        <LinearGradient colors={[gradient.sunrise[0], gradient.sunrise[1]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
           <View style={styles.logoBox}>
             <Image source={require("../assets/logo_mark.png")} style={styles.logo} resizeMode="contain" />
           </View>
           <Text style={styles.brand}>SIMBA</Text>
-          <Text style={styles.tagline}>Sistem Informasi Monitoring Balita</Text>
-        </View>
+          <Text style={styles.tagline}>Watch your little one grow, happy and healthy 🌱</Text>
+        </LinearGradient>
         <View style={styles.sheet}>
-          <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to follow your child's growth, nutrition and development.</Text>
+          <Text style={styles.title}>Welcome back 👋</Text>
+          <Text style={styles.subtitle}>Sign in to see how your child is doing.</Text>
           <ErrorBox message={error} />
-          <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@example.com" />
-          <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" placeholder="••••••••" onSubmitEditing={submit} returnKeyType="go" />
+          <Field label="Email" emoji="✉️" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@example.com" />
+          <Field label="Password" emoji="🔒" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" placeholder="••••••••" onSubmitEditing={submit} returnKeyType="go" />
           <Button title="Sign In" onPress={submit} loading={busy} style={{ marginTop: spacing.xs }} />
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>New to SIMBA? </Text>
-            <Link href="/register" asChild>
-              <Pressable hitSlop={6}>
-                <Text style={styles.footerLink}>Create an account</Text>
-              </Pressable>
-            </Link>
-          </View>
+          <Bounce onPress={() => router.push("/register")} style={styles.footer} haptic={false}>
+            <Text style={styles.footerText}>
+              New here? <Text style={styles.footerLink}>Create an account</Text>
+            </Text>
+          </Bounce>
         </View>
       </KeyboardAvoidingView>
     </Screen>
@@ -63,15 +61,15 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: "center", paddingTop: spacing.xxl, paddingBottom: spacing.xxl + radius.xl, backgroundColor: colors.primary, flex: 1, justifyContent: "center" },
-  logoBox: { width: 96, height: 96, borderRadius: 28, backgroundColor: colors.white, alignItems: "center", justifyContent: "center", marginBottom: spacing.md },
-  logo: { width: 82, height: 82 },
-  brand: { color: colors.white, fontSize: 30, fontWeight: "800", letterSpacing: 1 },
-  tagline: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 2 },
-  sheet: { backgroundColor: colors.bg, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, marginTop: -radius.xl },
-  title: { fontSize: 22, fontWeight: "800", color: colors.text },
-  subtitle: { fontSize: 13, color: colors.muted, marginTop: 4, marginBottom: spacing.lg, lineHeight: 19 },
-  footer: { flexDirection: "row", justifyContent: "center", marginTop: spacing.lg },
-  footerText: { color: colors.muted, fontSize: 13 },
-  footerLink: { color: colors.primary, fontSize: 13, fontWeight: "700" },
+  hero: { alignItems: "center", justifyContent: "center", paddingTop: spacing.xxl + 24, paddingBottom: spacing.xxl + radius.xl, paddingHorizontal: spacing.xl },
+  logoBox: { width: 108, height: 108, borderRadius: 32, backgroundColor: colors.white, alignItems: "center", justifyContent: "center", marginBottom: spacing.md, shadowColor: "#8A4A10", shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
+  logo: { width: 92, height: 92 },
+  brand: { color: colors.white, fontSize: 34, fontFamily: font.black, letterSpacing: 1 },
+  tagline: { color: "rgba(255,255,255,0.92)", fontSize: 14, fontFamily: font.bold, marginTop: 4, textAlign: "center" },
+  sheet: { flex: 1, backgroundColor: colors.cream, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, paddingBottom: spacing.xxl, marginTop: -radius.xl },
+  title: { fontSize: 24, fontFamily: font.black, color: colors.text },
+  subtitle: { fontSize: 14, fontFamily: font.regular, color: colors.muted, marginTop: 4, marginBottom: spacing.lg },
+  footer: { alignItems: "center", marginTop: spacing.lg },
+  footerText: { color: colors.muted, fontSize: 14, fontFamily: font.bold },
+  footerLink: { color: colors.orange, fontFamily: font.extra },
 });
