@@ -272,7 +272,7 @@ export function DateField({ label, value, onChange, hint, maxToday = true }: { l
 export function Pill({ children, tone = "muted", style }: { children: ReactNode; tone?: Tone; style?: StyleProp<ViewStyle> }) {
   return (
     <View style={[styles.pill, { backgroundColor: tones[tone].bg }, style]}>
-      <Text style={[styles.pillText, { color: tones[tone].fg }]}>{children}</Text>
+      <Text style={[styles.pillText, { color: tones[tone].fg }]} numberOfLines={2}>{children}</Text>
     </View>
   );
 }
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   hint: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 6, lineHeight: 18 },
   fieldError: { fontFamily: font.bold, fontSize: 13, color: tones.bad.fg, marginTop: 6 },
   pill: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, borderWidth: INK_BORDER, borderColor: colors.ink },
-  pillText: { fontFamily: font.extra, fontSize: 12 },
+  pillText: { fontFamily: font.extra, fontSize: 12, textAlign: "center" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.md },
   chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 11, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: INK_BORDER, borderColor: colors.ink },
   chipOn: { backgroundColor: colors.ink },

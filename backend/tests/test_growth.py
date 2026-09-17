@@ -107,7 +107,7 @@ def test_stunted_child_is_flagged(client, parent_token, child):
     r = client.post(measurements_url(child), json={**MEDIAN_BOY_1Y, "height_cm": 70.0}, headers=auth(parent_token))
     assert r.status_code == 201
     assert -3.0 <= r.json()["lhfa_zscore"] < -2.0
-    assert r.json()["stunting_status"] == "Pendek (Stunted)"
+    assert r.json()["stunting_status"] == "Pendek"
 
     r = client.post(measurements_url(child), json={**MEDIAN_BOY_1Y, "height_cm": 66.0}, headers=auth(parent_token))
     assert r.json()["lhfa_zscore"] < -3.0
@@ -157,11 +157,11 @@ def test_measurement_includes_wasting_and_bmi(client, parent_token, child):
     assert abs(body["wfh_zscore"]) < 0.1
     assert abs(body["bfa_zscore"]) < 0.1
     assert body["bmi"] == 16.75
-    assert body["wasting_status"] == "Gizi Baik (Normal)"
-    assert body["bmi_status"] == "Gizi Baik (Normal)"
+    assert body["wasting_status"] == "Gizi Baik"
+    assert body["bmi_status"] == "Gizi Baik"
 
     rows = client.get(measurements_url(child), headers=auth(parent_token)).json()
-    assert rows[0]["wasting_status"] == "Gizi Baik (Normal)"
+    assert rows[0]["wasting_status"] == "Gizi Baik"
 
 
 def test_measurement_with_height_outside_wfl_range_still_saves(client, parent_token, child):
