@@ -3,6 +3,14 @@
 All notable changes on the `SIMBA-Ver-02` branch (September 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
 
+## 1.6.0 — Parent website
+- The phone-framed prototype at `/` is replaced by a real responsive parent website (`frontend/src/parent`):
+  Indonesian copy, Storybook design, bottom tabs on phones and side navigation on desktop, Recharts WHO chart,
+  browser date fields, PDF download. Routes are Indonesian (`/masuk`, `/beranda`, `/tumbuh`, …); old paths redirect.
+- Shared Indonesian helpers in `frontend/src/lib/id.ts`.
+- Fixed: the Tailwind `@source` glob had been damaged by the comment stripper (`/**/` treated as a comment), which
+  left both the portal and the new site unstyled; restored.
+
 ## 1.5.0 — Indonesian "Sunny Yellow Storybook" mobile app
 - Entire mobile app in Bahasa Indonesia, plain language for parents; Indonesian number/date formatting.
 - New look: yellow header band, ink outlines + hard offset shadows, Fredoka/Nunito, coral primary, topic tints;

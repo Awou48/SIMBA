@@ -6,8 +6,8 @@ Child growth & nutrition monitoring: one **FastAPI + PostgreSQL** backend, three
   children registry, regional prevalence, reference-data management, content and system administration.
 - **SIMBA Mobile** (`mobile/`) — the native parent app (Expo / React Native, Android + iOS): growth chart with
   WHO bands, meal logging, KPSP, immunization, calendar, alerts, shareable PDF report. See [mobile/README.md](mobile/README.md).
-- **Parent web prototype** (`frontend/`, routes `/`, `/home`, …) — the original phone-framed UI, kept as the
-  design reference; the mobile app supersedes it.
+- **Parent website** (`frontend/`, routes `/masuk`, `/beranda`, …) — the same Indonesian parent experience as the
+  mobile app, as a responsive website (bottom tabs on phones, side navigation on desktop). Same design, same API.
 
 📚 **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Step-by-step test guide](docs/TESTING.md) · [Changelog](docs/CHANGELOG.md)
 
@@ -23,7 +23,7 @@ cd mobile && npm install && cp .env.example .env && npx expo start
 ```
 - **Web portal:** http://localhost:5173/hm/login — sign in with the superadmin from `backend/.env`
   (`admin@simba.id` / `admin1234` by default — change it).
-- **Parent app (mobile prototype):** http://localhost:5173 — register a parent account.
+- **Parent website:** http://localhost:5173 — *Daftar di sini* to create a parent account (Indonesian UI).
 - **Mobile app:** press `a`/`i`/`w` in the Expo terminal or scan the QR with Expo Go; point
   `EXPO_PUBLIC_API_URL` at the backend as seen from the phone (details in `mobile/README.md`).
 
