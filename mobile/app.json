@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F47B20"
+      "backgroundColor": "#FFC72C"
     },
     "ios": {
       "supportsTablet": false,
@@ -21,7 +21,7 @@
       "package": "id.simba.parent",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFC72C"
       },
       "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true
@@ -36,10 +36,13 @@
       "expo-secure-store",
       "expo-sharing",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "locales": {},
+    "primaryColor": "#FF5E5B"
   }
 }

@@ -3,6 +3,16 @@
 All notable changes on the `claude/project-build-improve-548c26` branch (September 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
 
+## 1.5.0 — Indonesian "Sunny Yellow Storybook" mobile app
+- Entire mobile app in Bahasa Indonesia, plain language for parents; Indonesian number/date formatting.
+- New look: yellow header band, ink outlines + hard offset shadows, Fredoka/Nunito, coral primary, topic tints;
+  real SIMBA lion logo on splash, sign-in and More.
+- Inputs: steppers with tap-to-type exact values, sliders, native date picker with a type-it-yourself option,
+  date chips, food suggestions, one-question milestone quiz, celebration screens.
+- Backend: alerts, vaccine names/notes and KPSP age labels now Indonesian ("dosis 1", "12 - 24 bulan").
+  Existing dev DB relabelled. Tests updated (82 passing).
+- Design canvases: five directions, six Storybook variants, and all 15 screens in Indonesian.
+
 ## 1.4.1 — Mobile redesign for parents
 - Warm palette and Nunito type from the original prototype (cream, orange→yellow gradient, teal/pink/lavender
   accents, emoji), replacing the admin-portal navy/indigo.

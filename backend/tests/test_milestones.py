@@ -37,14 +37,14 @@ def test_checklist_for_child_age_bracket(client, parent_token, child, seeded_mil
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["age_in_months"] == 12
-    assert body["age_label"] == "12 - 24 Months"
+    assert body["age_label"] == "12 - 24 bulan"
     assert body["total"] == 5
     assert body["answered"] == 0
     assert body["interpretation"] is None
     assert all(i["achieved"] is None for i in body["items"])
 
     r = client.get(url(child, "?bracket_months=30"), headers=auth(parent_token))
-    assert r.json()["age_label"] == "2 - 3 Years"
+    assert r.json()["age_label"] == "24 - 36 bulan"
     assert r.json()["total"] == 5
 
 
