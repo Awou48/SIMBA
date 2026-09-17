@@ -1,0 +1,89 @@
+.hm-portal {
+  --background: #f5f6fb;
+  --foreground: #1b1d33;
+  --card: #ffffff;
+  --card-foreground: #1b1d33;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #eef2ff;
+  --secondary-foreground: #1e3a8a;
+  --muted: #eef0f6;
+  --muted-foreground: #6b7089;
+  --accent: #eef2ff;
+  --accent-foreground: #1e3a8a;
+  --border: #e4e7f0;
+  --input-background: #ffffff;
+  --ring: #4f46e5;
+  --sidebar: #1e2a5a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --chart-1: #4f46e5;
+  --chart-2: #f47b20;
+  --chart-3: #5cc8c2;
+  --chart-4: #e53535;
+  --chart-5: #9b8bf4;
+  font-family: "Nunito", "Poppins", system-ui, sans-serif;
+}
+
+.hm-portal h1, .hm-portal h2, .hm-portal h3 { letter-spacing: -0.01em; }
+.hm-portal table { font-size: 13px; }
+.hm-portal th { font-weight: 700; color: var(--muted-foreground); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.hm-portal table th:first-child, .hm-portal table td:first-child { padding-left: 1.25rem; }
+.hm-portal table th:last-child, .hm-portal table td:last-child { padding-right: 1.25rem; }
+.hm-portal table th, .hm-portal table td { padding-top: 0.7rem; padding-bottom: 0.7rem; }
+
+@keyframes hm-fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes hm-float { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 33% { transform: translate3d(30px, -40px, 0) scale(1.08); } 66% { transform: translate3d(-25px, 20px, 0) scale(0.96); } }
+@keyframes hm-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes hm-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+@keyframes hm-grid-drift { from { background-position: 0 0; } to { background-position: 48px 48px; } }
+
+.hm-fade-up { animation: hm-fade-up 0.5s ease-out both; }
+.hm-stagger > * { animation: hm-fade-up 0.5s ease-out both; }
+.hm-stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.hm-stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.hm-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.hm-stagger > *:nth-child(5) { animation-delay: 0.24s; }
+
+.hm-login-hero {
+  background: linear-gradient(135deg, #1e2a5a, #4f46e5, #7c3aed, #f47b20);
+  background-size: 300% 300%;
+  animation: hm-gradient 18s ease infinite;
+}
+.hm-login-orb { position: absolute; border-radius: 9999px; filter: blur(40px); opacity: 0.55; animation: hm-float 14s ease-in-out infinite; pointer-events: none; }
+.hm-login-orb-1 { width: 360px; height: 360px; background: #f47b20; top: -80px; right: -60px; }
+.hm-login-orb-2 { width: 300px; height: 300px; background: #5cc8c2; bottom: 10%; left: -80px; animation-delay: -5s; animation-duration: 17s; }
+.hm-login-orb-3 { width: 220px; height: 220px; background: #ffc72c; bottom: -60px; right: 25%; animation-delay: -9s; animation-duration: 12s; opacity: 0.4; }
+.hm-login-grid {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.18;
+  background-image: linear-gradient(rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.35) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 75%);
+  animation: hm-grid-drift 12s linear infinite;
+}
+.hm-login-mascot { position: absolute; right: -20px; top: -140px; width: 150px; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.35)); animation: hm-bob 6s ease-in-out infinite; }
+
+.hm-hero {
+  background: linear-gradient(120deg, #1e2a5a 0%, #4f46e5 55%, #7c3aed 100%);
+  background-size: 200% 200%;
+  animation: hm-gradient 20s ease infinite;
+}
+.hm-hero-tile { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); backdrop-filter: blur(6px); border-radius: 1rem; padding: 0.75rem 0.9rem; transition: background 0.2s ease, transform 0.2s ease; }
+.hm-hero-tile:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+.hm-hero-mascot { width: 9.5rem; filter: drop-shadow(0 18px 28px rgba(0,0,0,0.35)); animation: hm-bob 6s ease-in-out infinite; }
+.hm-hero-ring { position: absolute; border-radius: 9999px; border: 1.5px solid rgba(255,255,255,0.18); pointer-events: none; }
+.hm-hero-ring-1 { width: 15rem; height: 15rem; }
+.hm-hero-ring-2 { width: 21rem; height: 21rem; border-style: dashed; opacity: 0.6; animation: hm-spin 60s linear infinite; }
+@keyframes hm-spin { to { transform: rotate(360deg); } }
+
+.hm-panel-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.hm-panel-lift:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -12px rgba(30, 42, 90, 0.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-portal *, .hm-login-hero, .hm-login-orb, .hm-login-grid, .hm-login-mascot, .hm-hero, .hm-hero-mascot, .hm-hero-ring-2 { animation: none !important; transition: none !important; }
+}

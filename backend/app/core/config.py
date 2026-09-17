@@ -1,12 +1,34 @@
 import os
+from typing import List
 
-class Settings:
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+class Settings(BaseSettings):
+    """Runtime configuration, loaded from environment variables / backend/.env."""
+
+    model_config = SettingsConfigDict(env_file=os.path.join(BASE_DIR, ".env"), extra="ignore")
+
     PROJECT_NAME: str = "SIMBA API"
-    SECRET_KEY: str = "simba-super-secret-key-that-is-very-long-and-secure"
+
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/simba_db"
+
+    SECRET_KEY: str = "change-me-in-.env"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 
-    
-    BASE_DIR: str = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    DATA_DIR: str = os.path.join(BASE_DIR, 'data')
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
+
+    CORS_ORIGINS: List[str] = Field(default=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8081", "http://127.0.0.1:8081"])
+    CORS_ORIGIN_REGEX: str | None = Field(default=r"^http://(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}):(5173|8081)$")
+
+    FIRST_ADMIN_EMAIL: str = "admin@simba.id"
+    FIRST_ADMIN_PASSWORD: str = "admin1234"
+    FIRST_ADMIN_NAME: str = "SIMBA Admin"
+
+    BASE_DIR: str = BASE_DIR
+    DATA_DIR: str = os.path.join(BASE_DIR, "data")
+
 
 settings = Settings()

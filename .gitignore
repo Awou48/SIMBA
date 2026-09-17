@@ -10,3 +10,11 @@ env/
 
 # OS
 .DS_Store
+# Tooling
+.pytest_cache/
+
+# Alembic scratch DBs
+ci_alembic.db
+
+# Local editor/tooling
+.claude/
