@@ -7,8 +7,8 @@
 │  React 18 + Vite (frontend/) │  ───────────────────────▶ │  FastAPI (backend/)              │
 │  • src/web  HM web portal    │   bearer JWT per role     │  • /api/v1/user/*   parents      │
 │    (desktop, sidebar shell)  │ ◀───────────────────────  │  • /api/v1/admin/*  health mgrs  │
-│  • src/app  parent mobile    │                           │  services/  = domain logic       │
-│    prototype (phone frame)   │                           │  SQLAlchemy 2 → PostgreSQL       │
+│  • src/parent parent website │                           │  services/  = domain logic       │
+│    (Indonesian, responsive) │                           │  SQLAlchemy 2 → PostgreSQL       │
 │  src/lib/api.ts = only place │                           │                                  │
 │  that knows the backend      │                           │                                  │
 └──────────────────────────────┘                           └──────────────────────────────────┘
@@ -160,4 +160,13 @@ Design decisions:
 - Dates are typed as `YYYY-MM-DD` text fields (validated) to avoid a native date-picker dependency; swap in
   `@react-native-community/datetimepicker` later if desired.
 - `EXPO_PUBLIC_API_URL` selects the backend; the default `10.0.2.2` targets the Android emulator's host loopback.
+
+## Parent website (`frontend/src/parent`)
+
+Same routes and screens as the mobile app, rendered with React + Tailwind inside the portal's Vite project:
+`ParentShell` (side nav ≥ 768 px, bottom tabs below), `components/ui.tsx` (Storybook kit: `sb-hard` outline +
+offset shadow, Stepper with typed input, Chips, Ring, Progress), `components/GrowthChart.tsx` (Recharts range
+areas for the WHO bands), pages under `pages/`. Copy helpers live in `src/lib/id.ts` and mirror
+`mobile/src/lib/friendly.ts`. Sessions use the same `session` store as the portal but with role `Parent`, so a
+parent token never opens `/hm/*`.
 

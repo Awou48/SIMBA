@@ -11,7 +11,7 @@ SIMBA has three parts, tested in this order:
 | **Backend** | FastAPI + PostgreSQL API, seeding, WHO/AKG/KPSP/immunization logic | everything else | 0–1 |
 | **Mobile app** (`mobile/`) | Expo / React Native app for parents, **Bahasa Indonesia** | parents | 2–9 |
 | **Health Manager portal** (`frontend/`, `/hm/*`) | Desktop website for health workers | Posyandu / Puskesmas staff | 10 |
-| *Parent web prototype* (`frontend/`, `/`) | Original phone-framed prototype, kept as design reference | — | Appendix |
+| **Parent website** (`frontend/`, `/`) | Same parent experience as the app, in the browser | parents on a laptop / shared PC | Appendix |
 
 Full pass: about 45 minutes.
 
@@ -330,6 +330,7 @@ Mobile (Bahasa Indonesia)
 [ ] kalender: tambah (tanggal + jam 08.00) → tandai selesai → hapus
 [ ] pengingat: Indonesian alerts, tap navigates; laporan → Bagikan PDF (share sheet)
 [ ] tips & artikel: only published; keluar → Masuk; server-down error names the URL
+[ ] website (localhost:5173): masuk → beranda → ukur → makan/tambah → kembang → laporan Unduh PDF; side nav at ≥768 px
 
 Portal
 [ ] /hm/login guard · dashboard hero/KPIs/attention · registry filters · child detail + PDF · regions
@@ -338,9 +339,18 @@ Portal
 
 ---
 
-## Appendix — Parent web prototype (optional, legacy)
+## Appendix — Parent website (`http://localhost:5173`)
 
-`http://localhost:5173` still serves the original phone-framed React prototype (English UI). It talks to the same
-API, so it is a convenient second client for cross-checking data (e.g. log a meal in the mobile app, see it in the
-prototype's Food Diary). It is **not** the product parents will receive — the Expo app above is — and no new features
-are added to it.
+The parent website is the mobile app's twin for browsers: same Indonesian copy, same Storybook design, same API.
+Run through sections 2–9 above on `http://localhost:5173` instead of the phone; the differences are:
+
+| Mobile | Website |
+|---|---|
+| Bottom tabs | Bottom tabs under 768 px; yellow side navigation on wider screens |
+| Native date picker + ✏️ | Browser date field (`<input type="date">`) |
+| Share sheet for the PDF | **Unduh PDF** downloads `SIMBA-<nama>-<tanggal>.pdf` |
+| Haptics | Press animation only |
+| Routes | `/masuk` `/daftar` `/tambah-anak` `/beranda` `/tumbuh` `/ukur` `/makan` `/makan/tambah` `/kembang` `/lainnya` `/imunisasi` `/kalender` `/pengingat` `/laporan` `/artikel` `/anak/:id` |
+
+Data is shared: log a meal on the phone and it appears on the website after a refresh, and vice versa.
+Signing in as a parent on `/masuk` never opens `/hm/*`; the sign-in page links health workers to `/hm/login`.
