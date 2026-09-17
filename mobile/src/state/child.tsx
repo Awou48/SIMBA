@@ -32,7 +32,7 @@ export function ChildProvider({ children: kids }: { children: ReactNode }) {
       setActiveId(chosen);
       await session.setActiveChildId(chosen);
     } catch (err) {
-      setError(errorMessage(err, "Could not load your children."));
+      setError(errorMessage(err, "Data anak belum bisa dimuat."));
     } finally {
       setLoading(false);
     }

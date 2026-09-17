@@ -3,7 +3,8 @@ import { Text, TextInput } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useFonts, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from "@expo-google-fonts/nunito";
+import { useFonts, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from "@expo-google-fonts/nunito";
+import { Fredoka_600SemiBold, Fredoka_700Bold } from "@expo-google-fonts/fredoka";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider } from "../src/state/auth";
 import { ChildProvider } from "../src/state/child";
@@ -14,12 +15,12 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 const applyDefaultFont = () => {
   const T = Text as unknown as { defaultProps?: { style?: unknown } };
   const I = TextInput as unknown as { defaultProps?: { style?: unknown } };
-  T.defaultProps = { ...(T.defaultProps ?? {}), style: [{ fontFamily: font.regular }, T.defaultProps?.style] };
+  T.defaultProps = { ...(T.defaultProps ?? {}), style: [{ fontFamily: font.regular, color: colors.ink }, T.defaultProps?.style] };
   I.defaultProps = { ...(I.defaultProps ?? {}), style: [{ fontFamily: font.regular }, I.defaultProps?.style] };
 };
 
 export default function RootLayout() {
-  const [loaded] = useFonts({ Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black });
+  const [loaded] = useFonts({ Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Fredoka_600SemiBold, Fredoka_700Bold });
 
   useEffect(() => {
     if (loaded) {

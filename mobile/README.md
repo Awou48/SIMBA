@@ -3,19 +3,24 @@
 Native app for parents, built with **Expo SDK 57 / React Native 0.86 / expo-router**. It talks to the same
 FastAPI backend as the Health Manager web portal and only uses the `/api/v1/user/*` endpoints.
 
-## Design
+## Design & language
 
-The app follows the original SIMBA parent prototype: warm cream background, orange→yellow gradient header,
-Nunito type, emoji instead of icon sets, soft rounded cards. Everything is written for parents first:
+**Bahasa Indonesia only.** Every label, button, hint, verdict and error in the app is Indonesian, written in plain
+everyday words for parents (no medical jargon; z-scores are hidden behind "Lihat angka rinci" and explained as
+"sesuai rata-rata" etc.). Numbers follow Indonesian formatting (10,2 kg · 1.350 kkal · 08.00). The backend's
+parent-facing text (alerts, vaccine names, KPSP age labels) is Indonesian too.
 
-- **Plain-language verdicts** (`src/lib/friendly.ts`) turn z-scores, AKG percentages, KPSP results and the
-  vaccine schedule into sentences like "Sari is growing well 🌟" with one concrete next step. Numbers stay one
-  tap away under "Show the numbers".
-- **Interactive input**: steppers + sliders for weight/height, date chips (Today / Yesterday / Another day),
-  servings stepper, one-question-at-a-time milestone quiz with big Yes / Not yet buttons.
-- **Feedback**: every tappable element bounces (`Bounce`), progress bars and rings animate, saves show a
-  celebration screen, and taps give light haptics on device.
-- **Five tabs**: Home · Growth · Meals · Milestones · More.
+**Look: "Sunny Yellow Storybook"** — yellow header band with a 2 px ink rule, cream background, Fredoka headings +
+Nunito body, cards and buttons with an ink outline and a hard 4 px offset shadow (`Hard` in `src/components/ui.tsx`),
+coral primary button, teal / yellow / violet / mint tints by topic. The real SIMBA lion (`assets/logo_mark.png`) is on
+the splash, sign-in and More screens.
+
+**Easy to use** — one obvious action per screen, tap targets ≥ 44 px, text ≥ 13 px:
+- `Stepper` (+ / −) with **tap-to-type**: tap the big number to type an exact value; sliders for quick changes.
+- `DateField`: native date picker on device, plus a pencil button to type the date; web falls back to typing.
+- Date chips (Hari ini / Kemarin / Tanggal lain), food suggestion chips, one-question-at-a-time milestone quiz,
+  celebration screen after saving, bounce-on-press and haptics on device.
+- Tabs: Beranda · Tumbuh · Makan · Kembang · Lainnya.
 
 ## What it does
 

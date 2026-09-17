@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -13,16 +13,17 @@ import {
   type PressableProps,
   type StyleProp,
   type TextInputProps,
-  type TextStyle,
   type ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import Svg, { Circle } from "react-native-svg";
-import { colors, font, gradient, radius, shadow, spacing, tones, type Tone } from "../lib/theme";
+import { colors, font, INK_BORDER, radius, SHADOW_OFFSET, spacing, tones, type Tone } from "../lib/theme";
+import { fmtDate, isValidDate, parseDate, toDateString } from "../lib/format";
 
+export type IconName = keyof typeof Ionicons.glyphMap;
 const canVibrate = Platform.OS !== "web";
 
 export function tap(style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) {
@@ -31,6 +32,10 @@ export function tap(style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackS
 
 export function success() {
   if (canVibrate) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+}
+
+export function Icon({ name, size = 22, color = colors.ink }: { name: string; size?: number; color?: string }) {
+  return <Ionicons name={name as IconName} size={size} color={color} />;
 }
 
 export function Screen({
@@ -60,7 +65,7 @@ export function Screen({
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.orange} colors={[colors.orange]} /> : undefined}
+          refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.coral} colors={[colors.coral]} /> : undefined}
         >
           {inner}
         </ScrollView>
@@ -95,61 +100,70 @@ export function Bounce({ children, onPress, style, disabled, scale = 0.97, hapti
   );
 }
 
-export function GradientHeader({ children, colors: c = gradient.sunrise, style }: { children: ReactNode; colors?: readonly [string, string]; style?: StyleProp<ViewStyle> }) {
+export function Hard({ children, style, r = radius.lg, bg = colors.white, offset = SHADOW_OFFSET }: { children: ReactNode; style?: StyleProp<ViewStyle>; r?: number; bg?: string; offset?: number }) {
   return (
-    <LinearGradient colors={[c[0], c[1]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.gradientHeader, style]}>
-      {children}
-    </LinearGradient>
-  );
-}
-
-export function Header({ title, subtitle, emoji, right, onBack, light }: { title: string; subtitle?: string; emoji?: string; right?: ReactNode; onBack?: () => void; light?: boolean }) {
-  const color = light ? colors.white : colors.text;
-  return (
-    <View style={styles.header}>
-      {onBack && (
-        <Bounce onPress={onBack} style={[styles.backBtn, light && { backgroundColor: "rgba(255,255,255,0.3)" }]} accessibilityLabel="Back">
-          <Ionicons name="chevron-back" size={22} color={color} />
-        </Bounce>
-      )}
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.headerTitle, { color }]}>
-          {emoji ? `${emoji} ` : ""}
-          {title}
-        </Text>
-        {subtitle ? <Text style={[styles.headerSubtitle, light && { color: "rgba(255,255,255,0.85)" }]}>{subtitle}</Text> : null}
-      </View>
-      {right}
+    <View style={[{ marginRight: offset, marginBottom: offset }, style]}>
+      <View style={{ position: "absolute", top: offset, left: offset, right: -offset, bottom: -offset, backgroundColor: colors.ink, borderRadius: r }} />
+      <View style={{ backgroundColor: bg, borderRadius: r, borderWidth: INK_BORDER, borderColor: colors.ink, overflow: "hidden" }}>{children}</View>
     </View>
   );
 }
 
-export function Card({ children, style, tone, onPress }: { children: ReactNode; style?: StyleProp<ViewStyle>; tone?: Tone; onPress?: () => void }) {
-  const body = <View style={[styles.card, tone && { backgroundColor: tones[tone].bg }, style]}>{children}</View>;
+export function Card({ children, style, tone, onPress, pad = spacing.lg }: { children: ReactNode; style?: StyleProp<ViewStyle>; tone?: Tone; onPress?: () => void; pad?: number }) {
+  const body = (
+    <Hard bg={tone ? tones[tone].bg : colors.white} style={[{ marginBottom: spacing.md }, style]}>
+      <View style={{ padding: pad, gap: spacing.sm }}>{children}</View>
+    </Hard>
+  );
   if (!onPress) return body;
   return <Bounce onPress={onPress}>{body}</Bounce>;
 }
 
-export function VerdictCard({ emoji, headline, detail, tone, onPress, action }: { emoji: string; headline: string; detail: string; tone: Tone; onPress?: () => void; action?: string }) {
+export function YellowBar({ title, subtitle, onBack, right, children }: { title: string; subtitle?: string; onBack?: () => void; right?: ReactNode; children?: ReactNode }) {
   return (
-    <Card tone={tone} onPress={onPress} style={styles.verdict}>
-      <Text style={styles.verdictEmoji}>{emoji}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.verdictHeadline, { color: tones[tone].fg }]}>{headline}</Text>
-        <Text style={styles.verdictDetail}>{detail}</Text>
-        {action ? <Text style={[styles.verdictAction, { color: tones[tone].fg }]}>{action} ›</Text> : null}
+    <View style={styles.bar}>
+      <View style={styles.barRow}>
+        {onBack ? (
+          <Bounce onPress={onBack} accessibilityLabel="Kembali">
+            <Hard r={23} offset={3}>
+              <View style={styles.backBtn}>
+                <Icon name="chevron-back" size={24} />
+              </View>
+            </Hard>
+          </Bounce>
+        ) : null}
+        <View style={{ flex: 1 }}>
+          <Text style={styles.barTitle}>{title}</Text>
+          {subtitle ? <Text style={styles.barSub}>{subtitle}</Text> : null}
+        </View>
+        {right}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+export function VerdictCard({ icon, headline, detail, tone, onPress, action }: { icon: string; headline: string; detail: string; tone: Tone; onPress?: () => void; action?: string }) {
+  return (
+    <Card tone={tone} onPress={onPress}>
+      <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <View style={styles.verdictIcon}>
+          <Icon name={icon} size={26} color={tones[tone].fg} />
+        </View>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={[styles.verdictHeadline, { color: tones[tone].fg }]}>{headline}</Text>
+          <Text style={styles.verdictDetail}>{detail}</Text>
+          {action ? <Text style={[styles.verdictAction, { color: tones[tone].fg }]}>{action} ›</Text> : null}
+        </View>
       </View>
     </Card>
   );
 }
 
-export function SectionTitle({ title, emoji, action, onAction }: { title: string; emoji?: string; action?: string; onAction?: () => void }) {
+export function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
     <View style={styles.sectionRow}>
-      <Text style={styles.sectionTitle}>
-        {emoji ? `${emoji} ` : ""}
-        {title}
-      </Text>
+      <Text style={styles.sectionTitle}>{title}</Text>
       {action && onAction ? (
         <Pressable onPress={onAction} hitSlop={8}>
           <Text style={styles.sectionAction}>{action} ›</Text>
@@ -159,76 +173,119 @@ export function SectionTitle({ title, emoji, action, onAction }: { title: string
   );
 }
 
-export function Button({
-  title,
-  onPress,
-  variant = "primary",
-  loading,
-  disabled,
-  icon,
-  emoji,
-  style,
-  ...rest
-}: PressableProps & { title: string; variant?: "primary" | "secondary" | "ghost" | "danger" | "white"; loading?: boolean; icon?: keyof typeof Ionicons.glyphMap; emoji?: string; style?: StyleProp<ViewStyle> }) {
+export function Button({ title, onPress, variant = "primary", loading, disabled, icon, style, small }: { title: string; onPress?: () => void; variant?: "primary" | "white" | "ink" | "ghost"; loading?: boolean; disabled?: boolean; icon?: string; style?: StyleProp<ViewStyle>; small?: boolean }) {
   const isDisabled = disabled || loading;
-  const fg = variant === "primary" || variant === "danger" ? colors.white : variant === "white" ? colors.orange : colors.orange;
-  const inner = (
-    <>
-      {loading ? <ActivityIndicator color={fg} /> : emoji ? <Text style={{ fontSize: 16 }}>{emoji}</Text> : icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
-      <Text style={[styles.btnText, { color: fg }]}>{title}</Text>
-    </>
-  );
+  const bg = variant === "primary" ? colors.coral : variant === "ink" ? colors.ink : colors.white;
+  const fg = variant === "primary" ? colors.white : variant === "ink" ? colors.yellow : colors.ink;
+  if (variant === "ghost") {
+    return (
+      <Bounce onPress={onPress} disabled={isDisabled} style={[styles.ghost, style]} haptic={false}>
+        <Text style={[styles.btnText, { color: colors.coral, fontSize: 15 }]}>{title}</Text>
+      </Bounce>
+    );
+  }
   return (
-    <Bounce onPress={onPress} disabled={isDisabled} style={[{ opacity: isDisabled ? 0.6 : 1 }, style]} scale={0.96} {...rest}>
-      {variant === "primary" ? (
-        <LinearGradient colors={[gradient.sunrise[0], gradient.sunrise[1]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.btn, styles.btnShadow]}>
-          {inner}
-        </LinearGradient>
-      ) : (
-        <View style={[styles.btn, variant === "danger" && { backgroundColor: colors.red }, variant === "secondary" && { backgroundColor: colors.orangeSoft }, variant === "white" && { backgroundColor: colors.white, ...shadow }, variant === "ghost" && { backgroundColor: "transparent", paddingVertical: 10 }]}>
-          {inner}
+    <Bounce onPress={onPress} disabled={isDisabled} style={[{ opacity: isDisabled ? 0.6 : 1 }, style]} scale={0.96}>
+      <Hard r={radius.pill} bg={bg}>
+        <View style={[styles.btn, small && { paddingVertical: 10, paddingHorizontal: 16 }]}>
+          {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} size={small ? 18 : 20} color={fg} /> : null}
+          <Text style={[styles.btnText, { color: fg }, small && { fontSize: 15 }]}>{title}</Text>
         </View>
-      )}
+      </Hard>
     </Bounce>
   );
 }
 
-export function Field({ label, hint, error, emoji, ...input }: TextInputProps & { label: string; hint?: string; error?: string; emoji?: string }) {
+export function Field({ label, hint, error, icon, ...input }: TextInputProps & { label: string; hint?: string; error?: string; icon?: string }) {
   return (
     <View style={{ marginBottom: spacing.md }}>
-      <Text style={styles.label}>
-        {emoji ? `${emoji} ` : ""}
-        {label}
-      </Text>
-      <TextInput placeholderTextColor="#C4C9D6" {...input} style={[styles.input, error ? { borderColor: colors.red } : null, input.style]} />
+      <Text style={styles.label}>{label}</Text>
+      <View style={[styles.inputWrap, error ? { borderColor: colors.coral } : null]}>
+        {icon ? <Icon name={icon} size={20} color={colors.muted} /> : null}
+        <TextInput placeholderTextColor="#B9AE9E" {...input} style={[styles.input, input.style]} />
+      </View>
       {error ? <Text style={styles.fieldError}>{error}</Text> : hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
 }
 
-export function Pill({ children, tone = "muted", small, style }: { children: ReactNode; tone?: Tone; small?: boolean; style?: StyleProp<ViewStyle> }) {
+export function DateField({ label, value, onChange, hint, maxToday = true }: { label: string; value: string; onChange: (iso: string) => void; hint?: string; maxToday?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const valid = isValidDate(value);
+  if (Platform.OS === "web" || typing) {
+    return (
+      <Field
+        label={label}
+        icon="calendar-outline"
+        value={draft}
+        onChangeText={(v) => {
+          setDraft(v);
+          if (isValidDate(v)) onChange(v);
+        }}
+        onBlur={() => setTyping(false)}
+        placeholder="TTTT-BB-HH"
+        keyboardType="numbers-and-punctuation"
+        autoFocus={typing}
+        hint={hint ?? "Contoh: 2025-03-14"}
+      />
+    );
+  }
   return (
-    <View style={[styles.pill, { backgroundColor: tones[tone].bg }, small && { paddingVertical: 3, paddingHorizontal: 9 }, style]}>
-      <Text style={[styles.pillText, { color: tones[tone].fg }, small && { fontSize: 11 }]}>{children}</Text>
+    <View style={{ marginBottom: spacing.md }}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={{ flexDirection: "row", gap: spacing.sm }}>
+        <Bounce onPress={() => setOpen(true)} style={[styles.inputWrap, { flex: 1 }]} haptic={false}>
+          <Icon name="calendar-outline" size={20} color={colors.muted} />
+          <Text style={[styles.input, !valid && { color: "#B9AE9E" }]}>{valid ? fmtDate(value, "long") : "Pilih tanggal"}</Text>
+        </Bounce>
+        <Bounce
+          onPress={() => {
+            setDraft(value);
+            setTyping(true);
+          }}
+          style={styles.typeBtn}
+          accessibilityLabel="Ketik tanggal"
+        >
+          <Icon name="create-outline" size={20} />
+        </Bounce>
+      </View>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      {open ? (
+        <DateTimePicker
+          value={valid ? parseDate(value) : new Date()}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          maximumDate={maxToday ? new Date() : undefined}
+          onChange={(_, d) => {
+            setOpen(Platform.OS === "ios");
+            if (d) onChange(toDateString(d));
+          }}
+        />
+      ) : null}
+      {open && Platform.OS === "ios" ? <Button title="Selesai" variant="white" small onPress={() => setOpen(false)} style={{ alignSelf: "flex-end", marginTop: spacing.sm }} /> : null}
     </View>
   );
 }
 
-export function Chips<T extends string>({ options, value, onChange }: { options: { value: T; label: string; emoji?: string }[]; value: T; onChange: (v: T) => void }) {
+export function Pill({ children, tone = "muted", style }: { children: ReactNode; tone?: Tone; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[styles.pill, { backgroundColor: tones[tone].bg }, style]}>
+      <Text style={[styles.pillText, { color: tones[tone].fg }]}>{children}</Text>
+    </View>
+  );
+}
+
+export function Chips<T extends string>({ options, value, onChange }: { options: { value: T; label: string; icon?: string }[]; value: T; onChange: (v: T) => void }) {
   return (
     <View style={styles.chips}>
       {options.map((o) => {
         const on = o.value === value;
         return (
-          <Bounce
-            key={o.value}
-            onPress={() => onChange(o.value)}
-            style={[styles.chip, on && styles.chipOn]}
-          >
-            <Text style={[styles.chipText, on && { color: colors.white }]}>
-              {o.emoji ? `${o.emoji} ` : ""}
-              {o.label}
-            </Text>
+          <Bounce key={o.value} onPress={() => onChange(o.value)} style={[styles.chip, on && styles.chipOn]}>
+            {o.icon ? <Icon name={o.icon} size={16} color={on ? colors.yellow : colors.ink} /> : null}
+            <Text style={[styles.chipText, on && { color: colors.yellow }]}>{o.label}</Text>
           </Bounce>
         );
       })}
@@ -236,26 +293,53 @@ export function Chips<T extends string>({ options, value, onChange }: { options:
   );
 }
 
-export function Stepper({ value, onChange, step = 0.1, min = 0, max = 100, unit, big }: { value: number; onChange: (v: number) => void; step?: number; min?: number; max?: number; unit: string; big?: boolean }) {
+export function Stepper({ value, onChange, step = 0.1, min = 0, max = 100, unit, color = colors.coral }: { value: number; onChange: (v: number) => void; step?: number; min?: number; max?: number; unit: string; color?: string }) {
   const decimals = step < 1 ? String(step).split(".")[1]?.length ?? 1 : 0;
   const clamp = (v: number) => Math.min(max, Math.max(min, +v.toFixed(decimals)));
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const shown = value.toFixed(decimals).replace(".", ",");
+  const commit = () => {
+    const n = parseFloat(draft.replace(",", "."));
+    if (!Number.isNaN(n)) onChange(clamp(n));
+    setEditing(false);
+  };
   return (
     <View style={styles.stepper}>
-      <Bounce onPress={() => onChange(clamp(value - step))} style={styles.stepBtn} scale={0.9}>
-        <Ionicons name="remove" size={22} color={colors.orange} />
+      <Bounce onPress={() => onChange(clamp(value - step))} scale={0.9} accessibilityLabel="Kurangi">
+        <Hard r={26} offset={3}>
+          <View style={styles.stepBtn}>
+            <Icon name="remove" size={26} />
+          </View>
+        </Hard>
       </Bounce>
-      <View style={{ alignItems: "center", minWidth: 110 }}>
-        <Text style={[styles.stepValue, big && { fontSize: 40 }]}>{value.toFixed(decimals)}</Text>
-        <Text style={styles.stepUnit}>{unit}</Text>
-      </View>
-      <Bounce onPress={() => onChange(clamp(value + step))} style={styles.stepBtn} scale={0.9}>
-        <Ionicons name="add" size={22} color={colors.orange} />
+      <Pressable
+        onPress={() => {
+          setDraft(shown);
+          setEditing(true);
+        }}
+        style={{ alignItems: "center", minWidth: 130 }}
+        accessibilityLabel="Ketik angka"
+      >
+        {editing ? (
+          <TextInput value={draft} onChangeText={setDraft} onBlur={commit} onSubmitEditing={commit} keyboardType="decimal-pad" autoFocus selectTextOnFocus style={[styles.stepValue, styles.stepInput]} />
+        ) : (
+          <Text style={styles.stepValue}>{shown}</Text>
+        )}
+        <Text style={styles.stepUnit}>{unit} · ketuk untuk ketik</Text>
+      </Pressable>
+      <Bounce onPress={() => onChange(clamp(value + step))} scale={0.9} accessibilityLabel="Tambah">
+        <Hard r={26} offset={3} bg={color}>
+          <View style={styles.stepBtn}>
+            <Icon name="add" size={26} color={colors.white} />
+          </View>
+        </Hard>
       </Bounce>
     </View>
   );
 }
 
-export function Progress({ value, tone = "orange", height = 10, color }: { value: number; tone?: Tone; height?: number; color?: string }) {
+export function Progress({ value, color = colors.coral, height = 12 }: { value: number; color?: string; height?: number }) {
   const anim = useRef(new Animated.Value(0)).current;
   const v = Math.max(0, Math.min(100, value || 0));
   useEffect(() => {
@@ -263,23 +347,23 @@ export function Progress({ value, tone = "orange", height = 10, color }: { value
   }, [v, anim]);
   return (
     <View style={[styles.progress, { height, borderRadius: height / 2 }]}>
-      <Animated.View style={[styles.progressFill, { borderRadius: height / 2, backgroundColor: color ?? tones[tone].fg, width: anim.interpolate({ inputRange: [0, 100], outputRange: ["0%", "100%"] }) }]} />
+      <Animated.View style={{ height: "100%", backgroundColor: color, width: anim.interpolate({ inputRange: [0, 100], outputRange: ["0%", "100%"] }), borderRightWidth: v > 0 && v < 100 ? INK_BORDER : 0, borderColor: colors.ink }} />
     </View>
   );
 }
 
-export function Ring({ value, size = 84, stroke = 10, color = colors.orange, track = "#F4F1EC", label, sub, emoji }: { value: number; size?: number; stroke?: number; color?: string; track?: string; label?: string; sub?: string; emoji?: string }) {
-  const r = (size - stroke) / 2;
+export function Ring({ value, size = 96, stroke = 12, color = colors.coral, label, sub }: { value: number; size?: number; stroke?: number; color?: string; label?: string; sub?: string }) {
+  const r = (size - stroke) / 2 - 2;
   const c = 2 * Math.PI * r;
   const v = Math.max(0, Math.min(100, value || 0));
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={colors.ink} strokeWidth={stroke + 4} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={colors.track} strokeWidth={stroke} fill="none" />
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={stroke} fill="none" strokeDasharray={`${c} ${c}`} strokeDashoffset={c * (1 - v / 100)} strokeLinecap="round" />
       </Svg>
-      {emoji ? <Text style={{ fontSize: size * 0.28 }}>{emoji}</Text> : null}
-      {label ? <Text style={[styles.ringLabel, { fontSize: size * 0.2 }]}>{label}</Text> : null}
+      {label ? <Text style={[styles.ringLabel, { fontSize: size * 0.21 }]}>{label}</Text> : null}
       {sub ? <Text style={styles.ringSub}>{sub}</Text> : null}
     </View>
   );
@@ -289,26 +373,26 @@ export function Row({ children, style, gap = spacing.sm }: { children: ReactNode
   return <View style={[{ flexDirection: "row", alignItems: "center", gap }, style]}>{children}</View>;
 }
 
-export function ListItem({ title, subtitle, right, onPress, emoji, icon, tone = "orange", last }: { title: string; subtitle?: string; right?: ReactNode; onPress?: () => void; emoji?: string; icon?: keyof typeof Ionicons.glyphMap; tone?: Tone; last?: boolean }) {
+export function ListItem({ title, subtitle, right, onPress, icon, tone = "coral", last }: { title: string; subtitle?: string; right?: ReactNode; onPress?: () => void; icon: string; tone?: Tone; last?: boolean }) {
   const body = (
     <View style={[styles.listItem, !last && styles.listDivider]}>
-      {emoji || icon ? (
-        <View style={[styles.listIcon, { backgroundColor: tones[tone].bg }]}>{emoji ? <Text style={{ fontSize: 20 }}>{emoji}</Text> : <Ionicons name={icon!} size={20} color={tones[tone].fg} />}</View>
-      ) : null}
+      <View style={[styles.listIcon, { backgroundColor: tones[tone].bg }]}>
+        <Icon name={icon} size={22} color={tones[tone].fg} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.listTitle}>{title}</Text>
         {subtitle ? <Text style={styles.listSubtitle}>{subtitle}</Text> : null}
       </View>
-      {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={colors.muted} /> : null)}
+      {right ?? (onPress ? <Icon name="chevron-forward" size={20} color={colors.muted} /> : null)}
     </View>
   );
   return onPress ? <Bounce onPress={onPress}>{body}</Bounce> : body;
 }
 
-export function Empty({ emoji = "🌤️", title, body, action }: { emoji?: string; title: string; body?: string; action?: ReactNode }) {
+export function Empty({ icon = "sunny-outline", title, body, action }: { icon?: string; title: string; body?: string; action?: ReactNode }) {
   return (
     <View style={styles.empty}>
-      <Text style={{ fontSize: 44 }}>{emoji}</Text>
+      <Icon name={icon} size={44} color={colors.muted} />
       <Text style={styles.emptyTitle}>{title}</Text>
       {body ? <Text style={styles.emptyBody}>{body}</Text> : null}
       {action ? <View style={{ marginTop: spacing.md, alignSelf: "stretch" }}>{action}</View> : null}
@@ -319,7 +403,7 @@ export function Empty({ emoji = "🌤️", title, body, action }: { emoji?: stri
 export function Loading({ label }: { label?: string }) {
   return (
     <View style={styles.loading}>
-      <ActivityIndicator size="large" color={colors.orange} />
+      <ActivityIndicator size="large" color={colors.coral} />
       {label ? <Text style={styles.hint}>{label}</Text> : null}
     </View>
   );
@@ -329,95 +413,88 @@ export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () =
   if (!message) return null;
   return (
     <View style={styles.errorBox}>
-      <Text style={{ fontSize: 18 }}>😕</Text>
+      <Icon name="alert-circle-outline" size={22} color={tones.bad.fg} />
       <Text style={styles.errorText}>{message}</Text>
       {onRetry ? (
         <Pressable onPress={onRetry} hitSlop={8}>
-          <Text style={[styles.sectionAction, { color: tones.bad.fg }]}>Retry</Text>
+          <Text style={[styles.sectionAction, { color: tones.bad.fg }]}>Coba lagi</Text>
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-export function Celebrate({ emoji = "🎉", title, body }: { emoji?: string; title: string; body?: string }) {
+export function Celebrate({ icon = "star", title, body }: { icon?: string; title: string; body?: string }) {
   const scale = useRef(new Animated.Value(0.3)).current;
   const fade = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     success();
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, bounciness: 14 }),
-      Animated.timing(fade, { toValue: 1, duration: 400, useNativeDriver: true }),
-    ]).start();
+    Animated.parallel([Animated.spring(scale, { toValue: 1, useNativeDriver: true, bounciness: 14 }), Animated.timing(fade, { toValue: 1, duration: 400, useNativeDriver: true })]).start();
   }, [scale, fade]);
   return (
     <Animated.View style={[styles.celebrate, { opacity: fade, transform: [{ scale }] }]}>
-      <Text style={{ fontSize: 64 }}>{emoji}</Text>
+      <Hard r={75} bg={colors.yellow}>
+        <View style={{ width: 146, height: 146, alignItems: "center", justifyContent: "center" }}>
+          <Icon name={icon} size={84} />
+        </View>
+      </Hard>
       <Text style={styles.celebrateTitle}>{title}</Text>
       {body ? <Text style={styles.celebrateBody}>{body}</Text> : null}
     </Animated.View>
   );
 }
 
-export const text: Record<string, TextStyle> = {
-  title: { fontFamily: font.black, fontSize: 24, color: colors.text },
-  h2: { fontFamily: font.extra, fontSize: 17, color: colors.text },
-  body: { fontFamily: font.regular, fontSize: 14, color: colors.text, lineHeight: 20 },
-  muted: { fontFamily: font.regular, fontSize: 12, color: colors.muted },
-  big: { fontFamily: font.black, fontSize: 30, color: colors.text },
-};
-
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  scrollContent: { paddingBottom: spacing.xxl + 48 },
-  padded: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  gradientHeader: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl + 8, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  header: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.md },
-  backBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: colors.white, ...shadow, shadowOpacity: 0.06 },
-  headerTitle: { fontFamily: font.black, fontSize: 24 },
-  headerSubtitle: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 2 },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md, ...shadow },
-  verdict: { flexDirection: "row", gap: spacing.md, alignItems: "flex-start" },
-  verdictEmoji: { fontSize: 36, marginTop: -2 },
-  verdictHeadline: { fontFamily: font.extra, fontSize: 17, lineHeight: 22 },
-  verdictDetail: { fontFamily: font.regular, fontSize: 13, color: colors.text, opacity: 0.8, marginTop: 4, lineHeight: 19 },
-  verdictAction: { fontFamily: font.extra, fontSize: 13, marginTop: 8 },
-  sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md, marginBottom: spacing.sm },
-  sectionTitle: { fontFamily: font.extra, fontSize: 17, color: colors.text },
-  sectionAction: { fontFamily: font.extra, fontSize: 13, color: colors.orange },
-  btn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15, paddingHorizontal: 20, borderRadius: radius.pill },
-  btnShadow: { shadowColor: colors.orange, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
-  btnText: { fontFamily: font.extra, fontSize: 16 },
-  label: { fontFamily: font.extra, fontSize: 13, color: colors.text, marginBottom: 8 },
-  input: { backgroundColor: colors.white, borderWidth: 2, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: colors.text, fontFamily: font.bold },
-  hint: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 6 },
-  fieldError: { fontFamily: font.bold, fontSize: 12, color: colors.red, marginTop: 6 },
-  pill: { alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.pill },
+  scrollContent: { paddingBottom: spacing.xxl + 56 },
+  padded: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  bar: { backgroundColor: colors.yellow, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg, borderBottomWidth: INK_BORDER, borderColor: colors.ink, gap: spacing.md },
+  barRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  backBtn: { width: 46, height: 46, alignItems: "center", justifyContent: "center" },
+  barTitle: { fontFamily: font.display, fontSize: 26, color: colors.ink, lineHeight: 31 },
+  barSub: { fontFamily: font.bold, fontSize: 14, color: colors.headerSub, marginTop: 2 },
+  verdictIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.white, borderWidth: INK_BORDER, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  verdictHeadline: { fontFamily: font.display, fontSize: 19, lineHeight: 24 },
+  verdictDetail: { fontFamily: font.regular, fontSize: 14, color: colors.ink, opacity: 0.85, lineHeight: 20 },
+  verdictAction: { fontFamily: font.extra, fontSize: 14, marginTop: 4 },
+  sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm, marginBottom: spacing.sm },
+  sectionTitle: { fontFamily: font.display, fontSize: 19, color: colors.ink },
+  sectionAction: { fontFamily: font.extra, fontSize: 14, color: colors.coral },
+  btn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15, paddingHorizontal: 20 },
+  btnText: { fontFamily: font.display, fontSize: 18 },
+  ghost: { alignItems: "center", paddingVertical: 12 },
+  label: { fontFamily: font.extra, fontSize: 14, color: colors.ink, marginBottom: 6 },
+  inputWrap: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.white, borderWidth: INK_BORDER, borderColor: colors.ink, borderRadius: radius.md, paddingHorizontal: 14, minHeight: 54 },
+  input: { flex: 1, fontSize: 16, color: colors.ink, fontFamily: font.bold, paddingVertical: 12 },
+  typeBtn: { width: 54, height: 54, borderRadius: radius.md, backgroundColor: colors.yellowSoft, borderWidth: INK_BORDER, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  hint: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 6, lineHeight: 18 },
+  fieldError: { fontFamily: font.bold, fontSize: 13, color: tones.bad.fg, marginTop: 6 },
+  pill: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, borderWidth: INK_BORDER, borderColor: colors.ink },
   pillText: { fontFamily: font.extra, fontSize: 12 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.md },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 2, borderColor: colors.line },
-  chipOn: { backgroundColor: colors.orange, borderColor: colors.orange },
-  chipText: { fontFamily: font.extra, fontSize: 13, color: colors.text },
+  chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 11, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: INK_BORDER, borderColor: colors.ink },
+  chipOn: { backgroundColor: colors.ink },
+  chipText: { fontFamily: font.extra, fontSize: 14, color: colors.ink },
   stepper: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.lg },
-  stepBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.orangeSoft, alignItems: "center", justifyContent: "center" },
-  stepValue: { fontFamily: font.black, fontSize: 32, color: colors.text },
+  stepBtn: { width: 52, height: 52, alignItems: "center", justifyContent: "center" },
+  stepValue: { fontFamily: font.display, fontSize: 44, color: colors.ink, textAlign: "center" },
+  stepInput: { minWidth: 130, padding: 0, borderBottomWidth: 2, borderColor: colors.coral },
   stepUnit: { fontFamily: font.bold, fontSize: 13, color: colors.muted, marginTop: -2 },
-  progress: { backgroundColor: "#F4F1EC", overflow: "hidden", width: "100%" },
-  progressFill: { height: "100%" },
-  ringLabel: { fontFamily: font.black, color: colors.text },
-  ringSub: { fontFamily: font.bold, fontSize: 10, color: colors.muted },
-  listItem: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: 13 },
-  listDivider: { borderBottomWidth: 1, borderBottomColor: colors.line },
-  listIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  listTitle: { fontFamily: font.extra, fontSize: 15, color: colors.text },
-  listSubtitle: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
-  empty: { alignItems: "center", paddingVertical: spacing.xl, paddingHorizontal: spacing.md, gap: 6 },
-  emptyTitle: { fontFamily: font.extra, fontSize: 17, color: colors.text, textAlign: "center" },
-  emptyBody: { fontFamily: font.regular, fontSize: 13, color: colors.muted, textAlign: "center", lineHeight: 19 },
+  progress: { backgroundColor: colors.track, overflow: "hidden", width: "100%", borderWidth: INK_BORDER, borderColor: colors.ink },
+  ringLabel: { fontFamily: font.display, color: colors.ink },
+  ringSub: { fontFamily: font.extra, fontSize: 12, color: colors.muted },
+  listItem: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: 12 },
+  listDivider: { borderBottomWidth: 2, borderStyle: "dashed", borderColor: colors.track },
+  listIcon: { width: 46, height: 46, borderRadius: 14, borderWidth: INK_BORDER, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  listTitle: { fontFamily: font.extra, fontSize: 16, color: colors.ink },
+  listSubtitle: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 2 },
+  empty: { alignItems: "center", paddingVertical: spacing.xl, paddingHorizontal: spacing.md, gap: 8 },
+  emptyTitle: { fontFamily: font.display, fontSize: 18, color: colors.ink, textAlign: "center" },
+  emptyBody: { fontFamily: font.regular, fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 20 },
   loading: { padding: spacing.xxl, alignItems: "center", gap: spacing.sm },
-  errorBox: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.redSoft, borderRadius: radius.md, padding: 14, marginBottom: spacing.md },
-  errorText: { flex: 1, color: tones.bad.fg, fontFamily: font.bold, fontSize: 13, lineHeight: 18 },
-  celebrate: { alignItems: "center", paddingVertical: spacing.xl, gap: 8 },
-  celebrateTitle: { fontFamily: font.black, fontSize: 24, color: colors.text, textAlign: "center" },
-  celebrateBody: { fontFamily: font.regular, fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 20, paddingHorizontal: spacing.lg },
+  errorBox: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.coralSoft, borderRadius: radius.md, borderWidth: INK_BORDER, borderColor: colors.ink, padding: 14, marginBottom: spacing.md },
+  errorText: { flex: 1, color: tones.bad.fg, fontFamily: font.bold, fontSize: 14, lineHeight: 19 },
+  celebrate: { alignItems: "center", paddingVertical: spacing.xl, gap: 12 },
+  celebrateTitle: { fontFamily: font.display, fontSize: 34, color: colors.ink, textAlign: "center" },
+  celebrateBody: { fontFamily: font.bold, fontSize: 15, color: colors.muted, textAlign: "center", lineHeight: 21, paddingHorizontal: spacing.lg },
 });

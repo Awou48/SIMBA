@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { Bounce, Card, Field } from "./ui";
-import { colors, font, radius, spacing } from "../lib/theme";
+import { Bounce, Card, DateField, Field, Hard, Icon } from "./ui";
+import { colors, font, spacing } from "../lib/theme";
 
 export interface ChildFormValue {
   name: string;
@@ -13,33 +13,36 @@ export function ChildForm({ value, onChange }: { value: ChildFormValue; onChange
   return (
     <>
       <Card>
-        <Field label="Name" emoji="🧒" value={value.name} onChangeText={(name) => onChange({ ...value, name })} placeholder="e.g. Sari" />
-        <Text style={styles.label}>Who are they?</Text>
+        <Field label="Nama anak" icon="happy-outline" value={value.name} onChangeText={(name) => onChange({ ...value, name })} placeholder="Contoh: Sari" />
+        <Text style={styles.label}>Jenis kelamin</Text>
         <View style={styles.genderRow}>
           {(["male", "female"] as const).map((g) => {
             const on = value.gender === g;
+            const solid = g === "male" ? colors.teal : colors.coral;
             return (
-              <Bounce key={g} onPress={() => onChange({ ...value, gender: g })} style={[styles.genderCard, on && (g === "male" ? styles.boyOn : styles.girlOn)]} scale={0.94}>
-                <Text style={{ fontSize: 40 }}>{g === "male" ? "👦" : "👧"}</Text>
-                <Text style={[styles.genderText, on && { color: colors.white }]}>{g === "male" ? "Boy" : "Girl"}</Text>
+              <Bounce key={g} onPress={() => onChange({ ...value, gender: g })} style={{ flex: 1 }} scale={0.94}>
+                <Hard r={20} bg={on ? solid : colors.white} offset={on ? 4 : 0}>
+                  <View style={styles.genderCard}>
+                    <Icon name={g === "male" ? "male" : "female"} size={40} color={on ? colors.white : colors.ink} />
+                    <Text style={[styles.genderText, on && { color: colors.white }]}>{g === "male" ? "Laki-laki" : "Perempuan"}</Text>
+                  </View>
+                </Hard>
               </Bounce>
             );
           })}
         </View>
       </Card>
       <Card>
-        <Field label="Birth date" emoji="🎂" value={value.birth_date} onChangeText={(birth_date) => onChange({ ...value, birth_date })} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" hint="For example 2025-03-14. Growth charts depend on the exact date." />
-        <Field label="Where do you live? (optional)" emoji="📍" value={value.region} onChangeText={(region) => onChange({ ...value, region })} placeholder="e.g. Kecamatan Depok" hint="Only used for anonymous regional statistics." />
+        <DateField label="Tanggal lahir" value={value.birth_date} onChange={(birth_date) => onChange({ ...value, birth_date })} hint="Grafik pertumbuhan dihitung dari tanggal lahir yang tepat." />
+        <Field label="Kecamatan (boleh dikosongkan)" icon="location-outline" value={value.region} onChangeText={(region) => onChange({ ...value, region })} placeholder="Contoh: Depok" hint="Hanya dipakai untuk statistik wilayah tanpa nama." />
       </Card>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  label: { fontFamily: font.extra, fontSize: 13, color: colors.text, marginBottom: 8 },
-  genderRow: { flexDirection: "row", gap: spacing.md },
-  genderCard: { flex: 1, alignItems: "center", paddingVertical: spacing.md, borderRadius: radius.lg, backgroundColor: colors.cream, gap: 4 },
-  boyOn: { backgroundColor: colors.teal },
-  girlOn: { backgroundColor: colors.pink },
-  genderText: { fontFamily: font.extra, fontSize: 14, color: colors.text },
+  label: { fontFamily: font.extra, fontSize: 14, color: colors.ink, marginBottom: 6 },
+  genderRow: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.xs },
+  genderCard: { alignItems: "center", paddingVertical: spacing.lg, gap: 6 },
+  genderText: { fontFamily: font.extra, fontSize: 15, color: colors.ink },
 });

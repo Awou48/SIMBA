@@ -1,21 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { api, errorMessage, type AlertItem, type GrowthReport } from "../../src/lib/api";
 import { useChildren } from "../../src/state/child";
 import { ChildSwitcher } from "../../src/components/ChildSwitcher";
-import { Bounce, Card, ErrorBox, GradientHeader, Loading, Ring, Row, Screen, SectionTitle, VerdictCard } from "../../src/components/ui";
-import { fmtDate } from "../../src/lib/format";
-import { CATEGORY_EMOJI, growthVerdict, immunizationVerdict, kpspVerdict, nutritionVerdict } from "../../src/lib/friendly";
-import { colors, font, radius, spacing, tones, type Tone } from "../../src/lib/theme";
+import { Bounce, Card, ErrorBox, Hard, Icon, Loading, Ring, Row, Screen, SectionTitle, VerdictCard } from "../../src/components/ui";
+import { fmtDate, num } from "../../src/lib/format";
+import { CATEGORY_ICON, growthVerdict, immunizationVerdict, kpspVerdict, nutritionVerdict } from "../../src/lib/friendly";
+import { colors, font, INK_BORDER, spacing, tones, type Tone } from "../../src/lib/theme";
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 11) return { text: "Selamat pagi", emoji: "🌤️" };
-  if (h < 15) return { text: "Selamat siang", emoji: "☀️" };
-  if (h < 18) return { text: "Selamat sore", emoji: "🌇" };
-  return { text: "Selamat malam", emoji: "🌙" };
+  if (h < 11) return "Selamat pagi";
+  if (h < 15) return "Selamat siang";
+  if (h < 18) return "Selamat sore";
+  return "Selamat malam";
 }
 
 const ALERT_ROUTE: Record<AlertItem["category"], Href> = { Growth: "/(tabs)/growth", Nutrition: "/(tabs)/nutrition", Development: "/(tabs)/development", Immunization: "/immunization" };
@@ -37,7 +36,7 @@ export default function Home() {
       try {
         setReport(await api.report(active.id));
       } catch (err) {
-        setError(errorMessage(err, "Could not load the overview."));
+        setError(errorMessage(err, "Data belum bisa dimuat."));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -50,8 +49,7 @@ export default function Home() {
     load();
   }, [load]);
 
-  const g = greeting();
-  const name = active?.name ?? "your child";
+  const name = active?.name ?? "si kecil";
   const latest = report?.latest;
   const growth = growthVerdict(name, report?.status?.stunting, report?.status?.weight, report?.status?.wasting);
   const nutrition = report ? nutritionVerdict(report.nutrition_7d.fulfillment_percent?.energy, report.nutrition_7d.logged_today || report.nutrition_7d.days_logged > 0) : null;
@@ -63,30 +61,30 @@ export default function Home() {
 
   return (
     <Screen padded={false} refreshing={refreshing} onRefresh={() => load(true)}>
-      <GradientHeader>
+      <View style={styles.header}>
         <Row style={{ justifyContent: "space-between", marginBottom: spacing.md }}>
-          <View>
-            <Text style={styles.greet}>
-              {g.text} {g.emoji}
-            </Text>
-            <Text style={styles.title}>How is {name} today?</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greet}>{greeting()}</Text>
+            <Text style={styles.title}>Bagaimana {name} hari ini?</Text>
           </View>
-          <Bounce onPress={() => router.push("/alerts")} style={styles.bell} accessibilityLabel="Alerts">
-            <Ionicons name="notifications" size={22} color={colors.orange} />
-            {alerts.length > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{alerts.length}</Text>
-              </View>
-            ) : null}
+          <Bounce onPress={() => router.push("/alerts")} accessibilityLabel="Pengingat">
+            <View style={styles.bell}>
+              <Icon name="notifications" size={22} color={colors.yellow} />
+              {alerts.length > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{alerts.length}</Text>
+                </View>
+              ) : null}
+            </View>
           </Bounce>
         </Row>
-        <ChildSwitcher light />
-        <Row style={{ gap: spacing.md, marginTop: -4 }}>
-          <Stat emoji="⚖️" label="Weight" value={latest ? `${latest.weight_kg} kg` : "—"} />
-          <Stat emoji="📏" label="Height" value={latest ? `${latest.height_cm} cm` : "—"} />
-          <Stat emoji="📅" label="Measured" value={latest ? fmtDate(latest.date, { day: "numeric", month: "short" }) : "never"} />
+        <ChildSwitcher />
+        <Row style={{ gap: spacing.sm }}>
+          <Stat label="Berat" value={latest ? `${num(latest.weight_kg)} kg` : "—"} />
+          <Stat label="Tinggi" value={latest ? `${num(latest.height_cm)} cm` : "—"} />
+          <Stat label="Diukur" value={latest ? fmtDate(latest.date, "dayMonth") : "belum"} />
         </Row>
-      </GradientHeader>
+      </View>
 
       <View style={styles.body}>
         <ErrorBox message={error} onRetry={() => load()} />
@@ -94,46 +92,46 @@ export default function Home() {
           <Loading />
         ) : (
           <>
-            <VerdictCard {...growth} onPress={() => router.push(latest ? "/(tabs)/growth" : "/measurement")} action={latest ? "See the growth curve" : "Measure now"} />
+            <VerdictCard {...growth} onPress={() => router.push(latest ? "/(tabs)/growth" : "/measurement")} action={latest ? "Lihat grafik pertumbuhan" : "Ukur sekarang"} />
 
             <View style={styles.quick}>
-              <Quick emoji="⚖️" label="Measure" tone="orange" onPress={() => router.push("/measurement")} />
-              <Quick emoji="🍲" label="Log meal" tone="teal" onPress={() => router.push("/meal")} />
-              <Quick emoji="💉" label="Vaccines" tone="yellow" onPress={() => router.push("/immunization")} />
-              <Quick emoji="📄" label="Report" tone="lavender" onPress={() => router.push("/reports")} />
+              <Quick icon="resize-outline" label="Ukur" tone="coral" onPress={() => router.push("/measurement")} />
+              <Quick icon="restaurant-outline" label="Catat makan" tone="teal" onPress={() => router.push("/meal")} />
+              <Quick icon="medical-outline" label="Imunisasi" tone="yellow" onPress={() => router.push("/immunization")} />
+              <Quick icon="document-text-outline" label="Laporan" tone="violet" onPress={() => router.push("/reports")} />
             </View>
 
-            <SectionTitle title="Today's plate" emoji="🍽️" action="Meals" onAction={() => router.push("/(tabs)/nutrition")} />
+            <SectionTitle title="Makan hari ini" action="Lihat" onAction={() => router.push("/(tabs)/nutrition")} />
             <Card onPress={() => router.push("/(tabs)/nutrition")}>
-              <Row style={{ gap: spacing.lg, justifyContent: "center" }}>
-                <Ring value={energyPct} color={colors.orange} label={`${Math.round(energyPct)}%`} sub="energy" size={96} />
-                <Ring value={proteinPct} color={colors.teal} label={`${Math.round(proteinPct)}%`} sub="protein" size={96} />
+              <Row style={{ gap: spacing.xl, justifyContent: "center" }}>
+                <Ring value={energyPct} color={colors.coral} label={`${Math.round(energyPct)}%`} sub="ENERGI" />
+                <Ring value={proteinPct} color={colors.teal} label={`${Math.round(proteinPct)}%`} sub="PROTEIN" />
               </Row>
-              <Text style={styles.plateHeadline}>
-                {nutrition?.emoji} {nutrition?.headline}
-              </Text>
+              <Text style={styles.plateHeadline}>{nutrition?.headline}</Text>
               <Text style={styles.plateDetail}>{nutrition?.detail}</Text>
             </Card>
 
-            <SectionTitle title="Keeping up" emoji="🌈" />
-            {immun ? <VerdictCard {...immun} onPress={() => router.push("/immunization")} action="Open schedule" /> : null}
-            {kpsp ? <VerdictCard {...kpsp} onPress={() => router.push("/(tabs)/development")} action="Open milestones" /> : null}
+            <SectionTitle title="Perlu diperhatikan" />
+            {immun ? <VerdictCard {...immun} onPress={() => router.push("/immunization")} action="Buka jadwal imunisasi" /> : null}
+            {kpsp ? <VerdictCard {...kpsp} onPress={() => router.push("/(tabs)/development")} action="Buka perkembangan" /> : null}
 
             {alerts.length > 0 ? (
               <>
-                <SectionTitle title="Gentle reminders" emoji="🔔" action="All" onAction={() => router.push("/alerts")} />
+                <SectionTitle title="Pengingat" action="Semua" onAction={() => router.push("/alerts")} />
                 {alerts.slice(0, 3).map((a) => (
-                  <Card key={a.id} onPress={() => router.push(ALERT_ROUTE[a.category])} style={styles.alert}>
-                    <View style={[styles.alertIcon, { backgroundColor: tones[SEVERITY[a.severity]].bg }]}>
-                      <Text style={{ fontSize: 20 }}>{CATEGORY_EMOJI[a.category]}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.alertTitle}>{a.title}</Text>
-                      <Text style={styles.alertBody} numberOfLines={2}>
-                        {a.description}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                  <Card key={a.id} onPress={() => router.push(ALERT_ROUTE[a.category])} pad={spacing.md}>
+                    <Row style={{ gap: spacing.md }}>
+                      <View style={[styles.alertIcon, { backgroundColor: tones[SEVERITY[a.severity]].bg }]}>
+                        <Icon name={CATEGORY_ICON[a.category]} size={22} color={tones[SEVERITY[a.severity]].fg} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.alertTitle}>{a.title}</Text>
+                        <Text style={styles.alertBody} numberOfLines={2}>
+                          {a.description}
+                        </Text>
+                      </View>
+                      <Icon name="chevron-forward" size={20} color={colors.muted} />
+                    </Row>
                   </Card>
                 ))}
               </>
@@ -145,45 +143,46 @@ export default function Home() {
   );
 }
 
-function Stat({ emoji, label, value }: { emoji: string; label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.stat}>
-      <Text style={{ fontSize: 18 }}>{emoji}</Text>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
-function Quick({ emoji, label, tone, onPress }: { emoji: string; label: string; tone: Tone; onPress: () => void }) {
+function Quick({ icon, label, tone, onPress }: { icon: string; label: string; tone: Tone; onPress: () => void }) {
   return (
     <Bounce onPress={onPress} style={styles.quickItem} scale={0.92}>
-      <View style={[styles.quickIcon, { backgroundColor: tones[tone].bg }]}>
-        <Text style={{ fontSize: 26 }}>{emoji}</Text>
-      </View>
+      <Hard r={20} offset={3} bg={tones[tone].bg}>
+        <View style={styles.quickIcon}>
+          <Icon name={icon} size={28} color={tones[tone].fg} />
+        </View>
+      </Hard>
       <Text style={styles.quickLabel}>{label}</Text>
     </Bounce>
   );
 }
 
 const styles = StyleSheet.create({
-  greet: { fontFamily: font.bold, fontSize: 13, color: "rgba(255,255,255,0.9)" },
-  title: { fontFamily: font.black, fontSize: 22, color: colors.white, marginTop: 2 },
-  bell: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" },
-  badge: { position: "absolute", top: -3, right: -3, minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.red, alignItems: "center", justifyContent: "center", paddingHorizontal: 5, borderWidth: 2, borderColor: colors.white },
-  badgeText: { color: colors.white, fontSize: 10, fontFamily: font.black },
-  stat: { flex: 1, backgroundColor: "rgba(255,255,255,0.92)", borderRadius: radius.md, paddingVertical: 10, alignItems: "center", gap: 2 },
-  statValue: { fontFamily: font.black, fontSize: 16, color: colors.text },
-  statLabel: { fontFamily: font.bold, fontSize: 11, color: colors.muted },
-  body: { paddingHorizontal: spacing.lg, marginTop: -spacing.lg },
-  quick: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.xs },
-  quickItem: { flex: 1, alignItems: "center", gap: 6 },
-  quickIcon: { width: 60, height: 60, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  quickLabel: { fontFamily: font.extra, fontSize: 12, color: colors.text },
-  plateHeadline: { fontFamily: font.extra, fontSize: 15, color: colors.text, lineHeight: 20, marginTop: spacing.md, textAlign: "center" },
-  plateDetail: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 17, textAlign: "center" },
-  alert: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
-  alertIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  alertTitle: { fontFamily: font.extra, fontSize: 14, color: colors.text },
-  alertBody: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 },
+  header: { backgroundColor: colors.yellow, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl + 8, borderBottomWidth: INK_BORDER, borderColor: colors.ink },
+  greet: { fontFamily: font.bold, fontSize: 14, color: colors.headerSub },
+  title: { fontFamily: font.display, fontSize: 25, color: colors.ink, marginTop: 2, lineHeight: 30 },
+  bell: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  badge: { position: "absolute", top: -4, right: -4, minWidth: 22, height: 22, borderRadius: 11, backgroundColor: colors.coral, alignItems: "center", justifyContent: "center", paddingHorizontal: 5, borderWidth: INK_BORDER, borderColor: colors.ink },
+  badgeText: { color: colors.white, fontSize: 12, fontFamily: font.extra },
+  stat: { flex: 1, backgroundColor: colors.ink, borderRadius: 16, paddingVertical: 12, alignItems: "center", gap: 2 },
+  statValue: { fontFamily: font.display, fontSize: 18, color: colors.white },
+  statLabel: { fontFamily: font.bold, fontSize: 13, color: "rgba(255,255,255,0.8)" },
+  body: { paddingHorizontal: spacing.lg, marginTop: -spacing.lg, paddingTop: spacing.xs },
+  quick: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm, marginTop: spacing.xs },
+  quickItem: { flex: 1, alignItems: "center", gap: 8 },
+  quickIcon: { width: 62, height: 62, alignItems: "center", justifyContent: "center" },
+  quickLabel: { fontFamily: font.extra, fontSize: 13, color: colors.ink, textAlign: "center" },
+  plateHeadline: { fontFamily: font.display, fontSize: 17, color: colors.ink, textAlign: "center", marginTop: spacing.sm },
+  plateDetail: { fontFamily: font.regular, fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 20 },
+  alertIcon: { width: 46, height: 46, borderRadius: 14, borderWidth: INK_BORDER, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  alertTitle: { fontFamily: font.extra, fontSize: 15, color: colors.ink },
+  alertBody: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 2, lineHeight: 18 },
 });

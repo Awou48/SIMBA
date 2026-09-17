@@ -122,19 +122,19 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
     response = await fetch(buildUrl(path, query), { method, headers, body: payload, signal: controller.signal });
   } catch (err) {
     const timedOut = err instanceof Error && err.name === "AbortError";
-    throw new ApiError(0, `${timedOut ? "Timed out reaching" : "Cannot reach"} the SIMBA server at ${API_URL}. Check that the backend is running with --host 0.0.0.0, port ${API_PORT} is open in the firewall, and the phone is on the same Wi-Fi.`);
+    throw new ApiError(0, `${timedOut ? "Terlalu lama menghubungi" : "Tidak bisa menghubungi"} server SIMBA di ${API_URL}. Pastikan server berjalan dan HP terhubung ke Wi-Fi yang sama.`);
   } finally {
     clearTimeout(timer);
   }
 
   if (response.status === 401 && auth) {
     await handleUnauthorized();
-    throw new ApiError(401, "Your session has expired. Please sign in again.");
+    throw new ApiError(401, "Sesi Anda sudah berakhir. Silakan masuk lagi.");
   }
 
   const text = await response.text();
   const data = text ? safeJson(text) : null;
-  if (!response.ok) throw new ApiError(response.status, formatDetail(data, `Request failed (${response.status})`));
+  if (!response.ok) throw new ApiError(response.status, formatDetail(data, `Permintaan gagal (${response.status})`));
   return data as T;
 }
 
@@ -406,7 +406,7 @@ export const api = {
     apiFetch<MilestoneChecklist>(`/api/v1/user/child/${childId}/milestones/${milestoneId}`, { method: "PUT", body: { achieved } }),
 };
 
-export function errorMessage(err: unknown, fallback = "Something went wrong."): string {
+export function errorMessage(err: unknown, fallback = "Terjadi kesalahan."): string {
   if (err instanceof ApiError) return err.message;
   if (err instanceof Error && err.message) return err.message;
   return fallback;

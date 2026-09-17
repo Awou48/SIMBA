@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { api, errorMessage, MEAL_TYPES, type FoodItem, type MealType } from "../src/lib/api";
 import { useChildren } from "../src/state/child";
-import { toDateString } from "../src/lib/format";
-import { MEAL_EMOJI } from "../src/lib/friendly";
-import { Bounce, Button, Card, Celebrate, Chips, ErrorBox, Header, Pill, Row, Screen, Stepper } from "../src/components/ui";
-import { colors, font, radius, spacing } from "../src/lib/theme";
+import { fmtDate, num, toDateString } from "../src/lib/format";
+import { MEAL_ICON, MEAL_LABEL } from "../src/lib/friendly";
+import { Bounce, Button, Card, Celebrate, Chips, ErrorBox, Hard, Icon, Pill, Row, Screen, Stepper, YellowBar } from "../src/components/ui";
+import { colors, font, INK_BORDER, spacing } from "../src/lib/theme";
 
 const SUGGESTIONS = ["Bubur", "Nasi", "Telur", "Ayam", "Ikan", "Tempe", "Tahu", "Pisang", "Susu", "Sayur"];
 
@@ -58,7 +57,7 @@ export default function NewMeal() {
       setSaved(true);
       setTimeout(() => router.back(), 1100);
     } catch (err) {
-      setError(errorMessage(err, "Could not log the meal."));
+      setError(errorMessage(err, "Makanan belum bisa dicatat."));
     } finally {
       setBusy(false);
     }
@@ -67,102 +66,110 @@ export default function NewMeal() {
   if (saved && food) {
     return (
       <Screen edges={["top", "bottom"]}>
-        <Celebrate emoji={MEAL_EMOJI[mealType]} title="Yum, logged!" body={`${food.name} · ${servings} serving${servings === 1 ? "" : "s"}`} />
+        <Celebrate icon="restaurant" title="Tercatat!" body={`${food.name} · ${num(servings)} porsi`} />
       </Screen>
     );
   }
 
   if (food) {
     return (
-      <Screen edges={["top", "bottom"]}>
-        <Header title="Add meal" emoji="🍲" subtitle={date} onBack={() => setFood(null)} />
-        <ErrorBox message={error} />
-        <Card>
-          <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-            <Text style={styles.foodName}>{food.name}</Text>
-            <Pill tone={food.safe ? "good" : "warn"} small>
-              {food.safe ? "Toddler-friendly" : "Check age"}
-            </Pill>
-          </Row>
-          <Text style={styles.meta}>
-            {food.category} · one serving has {Math.round(food.energy)} kcal and {food.protein.toFixed(1)} g protein
-          </Text>
-        </Card>
-
-        <Text style={styles.label}>Which meal?</Text>
-        <Chips options={MEAL_TYPES.map((m) => ({ value: m, label: m, emoji: MEAL_EMOJI[m] }))} value={mealType} onChange={setMealType} />
-
-        <Text style={styles.label}>How much?</Text>
-        <Card>
-          <Stepper value={servings} onChange={setServings} step={0.5} min={0.5} max={10} unit={servings === 1 ? "serving" : "servings"} big />
-          <Text style={styles.totals}>
-            ≈ {Math.round(food.energy * servings)} kcal · {(food.protein * servings).toFixed(1)} g protein
-          </Text>
-        </Card>
-        <Button title="Log this meal" emoji="✅" onPress={save} loading={busy} />
+      <Screen padded={false} edges={["top", "bottom"]}>
+        <YellowBar title="Tambah makanan" subtitle={date === toDateString(new Date()) ? "Hari ini" : fmtDate(date, "day")} onBack={() => setFood(null)} />
+        <View style={styles.body}>
+          <ErrorBox message={error} />
+          <Card>
+            <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+              <Text style={styles.foodName}>{food.name}</Text>
+              <Pill tone={food.safe ? "good" : "warn"}>{food.safe ? "Aman untuk balita" : "Cek usia"}</Pill>
+            </Row>
+            <Text style={styles.meta}>
+              1 porsi = {num(food.energy, 0)} kkal dan {num(food.protein)} g protein
+            </Text>
+          </Card>
+          <Text style={styles.label}>Makan yang mana?</Text>
+          <Chips options={MEAL_TYPES.map((m) => ({ value: m, label: MEAL_LABEL[m], icon: MEAL_ICON[m] }))} value={mealType} onChange={setMealType} />
+          <Text style={styles.label}>Berapa banyak?</Text>
+          <Card>
+            <Stepper value={servings} onChange={setServings} step={0.5} min={0.5} max={10} unit="porsi" color={colors.teal} />
+            <Text style={styles.totals}>
+              = {num(food.energy * servings, 0)} kkal · {num(food.protein * servings)} g protein
+            </Text>
+          </Card>
+          <Button title="Catat" icon="checkmark" onPress={save} loading={busy} />
+        </View>
       </Screen>
     );
   }
 
   return (
-    <Screen scroll={false} edges={["top", "bottom"]} style={{ flex: 1 }}>
-      <Header title="What did they eat?" emoji="🍽️" onBack={() => router.back()} />
-      <View style={styles.search}>
-        <Ionicons name="search" size={20} color={colors.muted} />
-        <TextInput value={q} onChangeText={setQ} placeholder="Search a food…" placeholderTextColor="#C4C9D6" style={styles.searchInput} autoFocus autoCorrect={false} />
-        {q ? (
-          <Bounce onPress={() => setQ("")} hitSlop={8} haptic={false}>
-            <Ionicons name="close-circle" size={20} color={colors.muted} />
-          </Bounce>
+    <Screen scroll={false} padded={false} edges={["top", "bottom"]} style={{ flex: 1 }}>
+      <YellowBar title="Apa yang dimakan?" subtitle="Ketik nama makanan atau pilih di bawah" onBack={() => router.back()} />
+      <View style={[styles.body, { flex: 1 }]}>
+        <Hard r={999} offset={3} style={{ marginBottom: spacing.md }}>
+          <Row style={styles.search}>
+            <Icon name="search" size={22} color={colors.muted} />
+            <TextInput value={q} onChangeText={setQ} placeholder="Contoh: bubur ayam" placeholderTextColor="#B9AE9E" style={styles.searchInput} autoFocus autoCorrect={false} />
+            {q ? (
+              <Bounce onPress={() => setQ("")} hitSlop={8} haptic={false} accessibilityLabel="Hapus pencarian">
+                <Icon name="close-circle" size={22} color={colors.muted} />
+              </Bounce>
+            ) : null}
+          </Row>
+        </Hard>
+        {!q ? (
+          <View style={styles.suggest}>
+            {SUGGESTIONS.map((s) => (
+              <Bounce key={s} onPress={() => setQ(s)} style={styles.suggestChip}>
+                <Text style={styles.suggestText}>{s}</Text>
+              </Bounce>
+            ))}
+          </View>
         ) : null}
-      </View>
-      {!q ? (
-        <View style={styles.suggest}>
-          {SUGGESTIONS.map((s) => (
-            <Bounce key={s} onPress={() => setQ(s)} style={styles.suggestChip}>
-              <Text style={styles.suggestText}>{s}</Text>
+        <ErrorBox message={error} />
+        <FlatList
+          data={results}
+          keyExtractor={(f) => String(f.id)}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          ListEmptyComponent={<Text style={[styles.meta, { textAlign: "center", marginTop: spacing.xl }]}>{!q.trim() ? "Ketik nama makanan atau ketuk pilihan di atas." : searching ? "Mencari…" : "Tidak ditemukan. Coba kata yang lebih sederhana."}</Text>}
+          renderItem={({ item }) => (
+            <Bounce onPress={() => setFood(item)} scale={0.98} style={{ marginBottom: spacing.sm }}>
+              <Hard r={18} offset={3}>
+                <Row style={styles.result}>
+                  <View style={[styles.resultIcon, { backgroundColor: item.safe ? colors.tealSoft : colors.yellowSoft }]}>
+                    <Icon name={item.safe ? "restaurant-outline" : "alert-circle-outline"} size={24} color={item.safe ? "#00777A" : "#7A5A00"} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.resultName}>{item.name}</Text>
+                    <Text style={styles.meta}>{num(item.energy, 0)} kkal per porsi</Text>
+                  </View>
+                  <View style={styles.addBtn}>
+                    <Icon name="add" size={22} color={colors.white} />
+                  </View>
+                </Row>
+              </Hard>
             </Bounce>
-          ))}
-        </View>
-      ) : null}
-      <ErrorBox message={error} />
-      <FlatList
-        data={results}
-        keyExtractor={(f) => String(f.id)}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: spacing.xxl }}
-        ListEmptyComponent={<Text style={[styles.meta, { textAlign: "center", marginTop: spacing.xl }]}>{!q.trim() ? "Type a food or tap a suggestion above 👆" : searching ? "Searching…" : "No foods match. Try a simpler word."}</Text>}
-        renderItem={({ item }) => (
-          <Bounce onPress={() => setFood(item)} style={styles.result} scale={0.98}>
-            <View style={styles.resultIcon}>
-              <Text style={{ fontSize: 20 }}>{item.safe ? "🥣" : "⚠️"}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.resultName}>{item.name}</Text>
-              <Text style={styles.meta}>
-                {item.category} · {Math.round(item.energy)} kcal
-              </Text>
-            </View>
-            <Ionicons name="add-circle" size={24} color={colors.orange} />
-          </Bounce>
-        )}
-      />
+          )}
+        />
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  search: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.white, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 12, marginBottom: spacing.md },
-  searchInput: { flex: 1, fontSize: 16, color: colors.text, fontFamily: font.bold },
+  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  search: { gap: 10, paddingHorizontal: 16, minHeight: 56 },
+  searchInput: { flex: 1, fontSize: 17, color: colors.ink, fontFamily: font.bold, paddingVertical: 12 },
   suggest: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.md },
-  suggestChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.orangeSoft },
-  suggestText: { fontFamily: font.extra, fontSize: 13, color: colors.orange },
-  result: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: radius.md, backgroundColor: colors.white, marginBottom: 8 },
-  resultIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: colors.cream, alignItems: "center", justifyContent: "center" },
-  resultName: { fontFamily: font.extra, fontSize: 15, color: colors.text },
-  meta: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
-  foodName: { fontFamily: font.black, fontSize: 18, color: colors.text, flex: 1, marginRight: 8 },
-  label: { fontFamily: font.extra, fontSize: 14, color: colors.text, marginBottom: 8 },
-  totals: { fontFamily: font.bold, fontSize: 13, color: colors.muted, textAlign: "center", marginTop: spacing.sm },
+  suggestChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.white, borderWidth: INK_BORDER, borderColor: colors.ink },
+  suggestText: { fontFamily: font.extra, fontSize: 14, color: colors.ink },
+  result: { gap: 12, padding: 12 },
+  resultIcon: { width: 46, height: 46, borderRadius: 14, borderWidth: INK_BORDER, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  resultName: { fontFamily: font.extra, fontSize: 16, color: colors.ink },
+  addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.coral, borderWidth: INK_BORDER, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  meta: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 2 },
+  foodName: { fontFamily: font.display, fontSize: 22, color: colors.ink, flex: 1, marginRight: 8 },
+  label: { fontFamily: font.extra, fontSize: 16, color: colors.ink, marginBottom: 8 },
+  totals: { fontFamily: font.bold, fontSize: 14, color: colors.muted, textAlign: "center", marginTop: spacing.sm },
 });

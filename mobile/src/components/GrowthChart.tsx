@@ -17,9 +17,9 @@ interface Props {
   height?: number;
 }
 
-const PAD = { top: 12, right: 14, bottom: 26, left: 38 };
+const PAD = { top: 12, right: 14, bottom: 28, left: 40 };
 
-export function GrowthChart({ standards, points, unit, height = 240 }: Props) {
+export function GrowthChart({ standards, points, unit, height = 230 }: Props) {
   const [width, setWidth] = useState(0);
   if (!standards.length) return null;
 
@@ -51,37 +51,32 @@ export function GrowthChart({ standards, points, unit, height = 240 }: Props) {
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ width: "100%" }}>
       {width > 0 && (
         <Svg width={width} height={height}>
-          <Path d={band("p3", "p97")} fill="#EAF7EF" />
-          <Path d={band("p15", "p85")} fill="#CFEEDC" />
+          <Path d={band("p3", "p97")} fill={colors.greenSoft} stroke={colors.ink} strokeWidth={1.5} strokeDasharray="4 4" />
+          <Path d={band("p15", "p85")} fill="#B9EBCF" />
           {yTicks.map((v) => (
-            <Line key={`y${v}`} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke="#F1EDE6" strokeWidth={1} />
+            <Line key={`y${v}`} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={colors.track} strokeWidth={1} />
           ))}
-          {(["p3", "p97"] as const).map((k) => (
-            <Path key={k} d={path(k)} stroke="#A9DEBE" strokeWidth={1} fill="none" strokeDasharray="4 4" />
-          ))}
-          <Path d={path("p50")} stroke={colors.green} strokeWidth={2} fill="none" />
-          {childPath ? <Path d={childPath} stroke={colors.orange} strokeWidth={3} fill="none" strokeLinejoin="round" /> : null}
+          <Path d={path("p50")} stroke={colors.green} strokeWidth={2.5} fill="none" />
+          {childPath ? <Path d={childPath} stroke={colors.coral} strokeWidth={3} fill="none" strokeLinejoin="round" /> : null}
           {points.map((p, i) => (
-            <Circle key={i} cx={x(p.ageMonths)} cy={y(p.value)} r={i === points.length - 1 ? 6 : 4} fill={i === points.length - 1 ? colors.pink : colors.orange} stroke={colors.white} strokeWidth={2.5} />
+            <Circle key={i} cx={x(p.ageMonths)} cy={y(p.value)} r={i === points.length - 1 ? 8 : 6} fill={i === points.length - 1 ? colors.yellow : colors.coral} stroke={colors.ink} strokeWidth={2} />
           ))}
           {xTicks.map((t) => (
-            <SvgText key={`xt${t}`} x={x(t)} y={height - 8} fontSize={10} fill={colors.muted} textAnchor="middle">
+            <SvgText key={`xt${t}`} x={x(t)} y={height - 8} fontSize={12} fontFamily={font.bold} fill={colors.muted} textAnchor="middle">
               {t}
             </SvgText>
           ))}
           {yTicks.map((v) => (
-            <SvgText key={`yt${v}`} x={PAD.left - 6} y={y(v) + 3} fontSize={10} fill={colors.muted} textAnchor="end">
+            <SvgText key={`yt${v}`} x={PAD.left - 6} y={y(v) + 4} fontSize={12} fontFamily={font.bold} fill={colors.muted} textAnchor="end">
               {v}
             </SvgText>
           ))}
         </Svg>
       )}
       <View style={styles.legend}>
-        <LegendItem color={colors.green} label="Typical child" />
-        <LegendItem color="#CFEEDC" label="Most children" block />
-        <LegendItem color="#EAF7EF" label="Healthy range" block />
-        <LegendItem color={colors.orange} label="Your child" />
-        <Text style={styles.legendText}>· {unit} by age in months</Text>
+        <LegendItem color="#B9EBCF" label="Rentang sehat" block />
+        <LegendItem color={colors.green} label="Rata-rata anak" />
+        <LegendItem color={colors.coral} label={`Anak Anda (${unit})`} />
       </View>
     </View>
   );
@@ -90,7 +85,7 @@ export function GrowthChart({ standards, points, unit, height = 240 }: Props) {
 function LegendItem({ color, label, block }: { color: string; label: string; block?: boolean }) {
   return (
     <View style={styles.legendItem}>
-      <View style={[styles.swatch, { backgroundColor: color }, block ? { height: 10, borderRadius: 2 } : null]} />
+      <View style={[styles.swatch, { backgroundColor: color }, block ? { height: 12, borderRadius: 3, borderWidth: 1.5, borderColor: colors.ink } : null]} />
       <Text style={styles.legendText}>{label}</Text>
     </View>
   );
@@ -99,6 +94,6 @@ function LegendItem({ color, label, block }: { color: string; label: string; blo
 const styles = StyleSheet.create({
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  swatch: { width: 14, height: 3, borderRadius: 2 },
-  legendText: { fontSize: 11, color: colors.muted, fontFamily: font.bold },
+  swatch: { width: 16, height: 4, borderRadius: 2 },
+  legendText: { fontSize: 13, color: colors.muted, fontFamily: font.bold },
 });
