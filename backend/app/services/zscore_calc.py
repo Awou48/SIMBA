@@ -69,9 +69,9 @@ def classify_stunting(z: float | None) -> str:
     if z is None:
         return NOT_COMPUTED
     if z < -3.0:
-        return "Sangat Pendek (Severely Stunted)"
+        return "Sangat Pendek"
     if z < -2.0:
-        return "Pendek (Stunted)"
+        return "Pendek"
     if z <= 3.0:
         return "Normal"
     return "Tinggi"
@@ -81,9 +81,9 @@ def classify_weight(z: float | None) -> str:
     if z is None:
         return NOT_COMPUTED
     if z < -3.0:
-        return "Berat Badan Sangat Kurang (Severely Underweight)"
+        return "Berat Badan Sangat Kurang"
     if z < -2.0:
-        return "Berat Badan Kurang (Underweight)"
+        return "Berat Badan Kurang"
     if z <= 1.0:
         return "Berat Badan Normal"
     return "Risiko Berat Badan Lebih"
@@ -94,16 +94,16 @@ def classify_wasting(z: float | None) -> str:
     if z is None:
         return NOT_COMPUTED
     if z < -3.0:
-        return "Gizi Buruk (Severely Wasted)"
+        return "Gizi Buruk"
     if z < -2.0:
-        return "Gizi Kurang (Wasted)"
+        return "Gizi Kurang"
     if z <= 1.0:
-        return "Gizi Baik (Normal)"
+        return "Gizi Baik"
     if z <= 2.0:
-        return "Berisiko Gizi Lebih (Possible risk of overweight)"
+        return "Berisiko Gizi Lebih"
     if z <= 3.0:
-        return "Gizi Lebih (Overweight)"
-    return "Obesitas (Obese)"
+        return "Gizi Lebih"
+    return "Obesitas"
 
 
 def _lookup(metric: str, gender: str, age_in_days: int):

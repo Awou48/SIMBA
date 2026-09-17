@@ -108,13 +108,13 @@ export default function Growth() {
               {[...rows].reverse().map((r, i) => (
                 <View key={r.id} style={[styles.historyRow, i > 0 && styles.divider]}>
                   <View style={styles.dot} />
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.historyDate}>{fmtDate(r.date_logged)}</Text>
                     <Text style={styles.meta}>
                       {Math.floor(r.age_in_days / 30.4375)} bulan · {num(r.weight_kg)} kg · {num(r.height_cm)} cm
                     </Text>
                   </View>
-                  <Pill tone={statusTone(r.stunting_status)}>{r.stunting_status}</Pill>
+                  <Pill tone={statusTone(r.stunting_status)} style={{ flexShrink: 0, maxWidth: "45%" }}>{r.stunting_status}</Pill>
                 </View>
               ))}
             </Card>
