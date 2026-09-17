@@ -1,24 +1,23 @@
-import React from "react";
 import { createBrowserRouter, Navigate } from "react-router";
-import { MobileFrame } from "./components/MobileFrame";
-import { MainLayout } from "./components/MainLayout";
 import { RequireAuth } from "./components/RequireAuth";
 import { ChildProvider } from "./ChildContext";
-import { SplashScreen } from "./components/screens/SplashScreen";
-import { OnboardingScreen } from "./components/screens/OnboardingScreen";
-import { LoginScreen } from "./components/screens/LoginScreen";
-import { RegisterScreen } from "./components/screens/RegisterScreen";
-import { AddChildScreen } from "./components/screens/AddChildScreen";
-import { HomeScreen } from "./components/screens/HomeScreen";
-import { GrowthScreen } from "./components/screens/GrowthScreen";
-import { FoodDiaryScreen } from "./components/screens/FoodDiaryScreen";
-import { RecipesScreen } from "./components/screens/RecipesScreen";
-import { ImmunizationScreen } from "./components/screens/ImmunizationScreen";
-import { ReportsScreen } from "./components/screens/ReportsScreen";
-import { ExploreScreen } from "./components/screens/ExploreScreen";
-import { SettingsScreen } from "./components/screens/SettingsScreen";
-import { AlertsScreen } from "./components/screens/AlertsScreen";
-import { MilestonesScreen } from "./components/screens/MilestonesScreen";
+import { session } from "../lib/api";
+import { ParentShell } from "../parent/ParentShell";
+import { ParentLogin } from "../parent/pages/Login";
+import { ParentRegister } from "../parent/pages/Register";
+import { AddChild, EditChild } from "../parent/pages/ChildForm";
+import { Home } from "../parent/pages/Home";
+import { Growth } from "../parent/pages/Growth";
+import { Measure } from "../parent/pages/Measure";
+import { Meals } from "../parent/pages/Meals";
+import { AddMeal } from "../parent/pages/AddMeal";
+import { Development } from "../parent/pages/Development";
+import { More } from "../parent/pages/More";
+import { Immunization } from "../parent/pages/Immunization";
+import { Calendar } from "../parent/pages/Calendar";
+import { Alerts } from "../parent/pages/Alerts";
+import { Reports } from "../parent/pages/Reports";
+import { Article, Explore } from "../parent/pages/Explore";
 import { HMShell } from "../web/HMShell";
 import { HMLogin } from "../web/pages/Login";
 import { Dashboard as HMDashboard } from "../web/pages/Dashboard";
@@ -32,26 +31,21 @@ import { Milestones as HMMilestones } from "../web/pages/Milestones";
 import { Education as HMEducation } from "../web/pages/Education";
 import { System as HMSystem } from "../web/pages/System";
 
-function FramedScreen({ children }: { children: React.ReactNode }) {
+function ParentLayout() {
   return (
-    <MobileFrame>
-      <div
-        className="h-full overflow-y-auto"
-        style={{ background: "#FFF8EF", fontFamily: "'Nunito', sans-serif" }}
-      >
-        {children}
-      </div>
-    </MobileFrame>
+    <RequireAuth role="Parent" loginPath="/masuk">
+      <ChildProvider>
+        <ParentShell />
+      </ChildProvider>
+    </RequireAuth>
   );
 }
 
-function FramedLayout() {
+function ParentPage({ children }: { children: React.ReactNode }) {
   return (
-    <RequireAuth role="Parent">
+    <RequireAuth role="Parent" loginPath="/masuk">
       <ChildProvider>
-        <MobileFrame>
-          <MainLayout />
-        </MobileFrame>
+        <div className="sb min-h-screen">{children}</div>
       </ChildProvider>
     </RequireAuth>
   );
@@ -65,44 +59,35 @@ function PortalLayout() {
   );
 }
 
+function Root() {
+  return <Navigate to={session.isLoggedInAs("Parent") ? "/beranda" : "/masuk"} replace />;
+}
+
 export const router = createBrowserRouter([
+  { path: "/", element: <Root /> },
+  { path: "/masuk", element: <ParentLogin /> },
+  { path: "/daftar", element: <ParentRegister /> },
+  { path: "/login", element: <Navigate to="/masuk" replace /> },
+  { path: "/register", element: <Navigate to="/daftar" replace /> },
+  { path: "/home", element: <Navigate to="/beranda" replace /> },
+  { path: "/tambah-anak", element: <ParentPage><AddChild /></ParentPage> },
+  { path: "/ukur", element: <ParentPage><Measure /></ParentPage> },
+  { path: "/makan/tambah", element: <ParentPage><AddMeal /></ParentPage> },
   {
-    path: "/",
-    element: <FramedScreen><SplashScreen /></FramedScreen>,
-  },
-  {
-    path: "/onboarding",
-    element: <FramedScreen><OnboardingScreen /></FramedScreen>,
-  },
-  {
-    path: "/login",
-    element: <FramedScreen><LoginScreen /></FramedScreen>,
-  },
-  {
-    path: "/register",
-    element: <FramedScreen><RegisterScreen /></FramedScreen>,
-  },
-  {
-    path: "/add-child",
-    element: (
-      <RequireAuth role="Parent">
-        <FramedScreen><AddChildScreen /></FramedScreen>
-      </RequireAuth>
-    ),
-  },
-  {
-    element: <FramedLayout />,
+    element: <ParentLayout />,
     children: [
-      { path: "/home",         element: <HomeScreen /> },
-      { path: "/growth",       element: <GrowthScreen /> },
-      { path: "/food-diary",   element: <FoodDiaryScreen /> },
-      { path: "/recipes",      element: <RecipesScreen /> },
-      { path: "/immunization", element: <ImmunizationScreen /> },
-      { path: "/reports",      element: <ReportsScreen /> },
-      { path: "/explore",      element: <ExploreScreen /> },
-      { path: "/settings",     element: <SettingsScreen /> },
-      { path: "/alerts",       element: <AlertsScreen /> },
-      { path: "/milestones",   element: <MilestonesScreen /> },
+      { path: "/beranda", element: <Home /> },
+      { path: "/tumbuh", element: <Growth /> },
+      { path: "/makan", element: <Meals /> },
+      { path: "/kembang", element: <Development /> },
+      { path: "/lainnya", element: <More /> },
+      { path: "/imunisasi", element: <Immunization /> },
+      { path: "/kalender", element: <Calendar /> },
+      { path: "/pengingat", element: <Alerts /> },
+      { path: "/laporan", element: <Reports /> },
+      { path: "/artikel", element: <Explore /> },
+      { path: "/artikel/:id", element: <Article /> },
+      { path: "/anak/:id", element: <EditChild /> },
     ],
   },
   { path: "/hm/login", element: <HMLogin /> },
@@ -124,4 +109,5 @@ export const router = createBrowserRouter([
       { path: "system", element: <HMSystem /> },
     ],
   },
+  { path: "*", element: <Navigate to="/" replace /> },
 ]);
