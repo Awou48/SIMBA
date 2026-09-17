@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes on the `claude/project-build-improve-548c26` branch (September 2026), newest first.
+All notable changes on the `SIMBA-Ver-02` branch (September 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
 
 ## 1.5.0 — Indonesian "Sunny Yellow Storybook" mobile app
