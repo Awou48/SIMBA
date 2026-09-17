@@ -160,6 +160,13 @@ def seed_akg(db: Session, reset: bool = False) -> int:
     return len(rows)
 
 
+def _indonesian_age_label(label: str) -> str:
+    lo, hi = _parse_age_label(label)
+    if lo % 12 == 0 and hi % 12 == 0 and hi > 36:
+        return f"{lo // 12} - {hi // 12} tahun"
+    return f"{lo} - {hi} bulan"
+
+
 def _parse_age_label(label: str) -> tuple[int, int]:
     """'0 - 6 Months' -> (0, 6); '2 - 3 Years' -> (24, 36)."""
     nums = [int(n) for n in re.findall(r"\d+", label)]
@@ -185,7 +192,7 @@ def seed_milestones(db: Session, reset: bool = False) -> int:
             models.Milestone(
                 min_months=lo,
                 max_months=hi,
-                age_label=str(r["Age Bracket"]).strip(),
+                age_label=_indonesian_age_label(str(r["Age Bracket"])),
                 domain=str(r["Category"]).strip(),
                 question=str(r["Milestone Question (Indonesian)"]).strip(),
                 active=True,

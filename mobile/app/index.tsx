@@ -8,7 +8,9 @@ export default function Index() {
   if (!ready) {
     return (
       <View style={styles.splash}>
-        <Image source={require("../assets/logo_mark.png")} style={styles.logo} resizeMode="contain" />
+        <View style={styles.logoBox}>
+          <Image source={require("../assets/logo_mark.png")} style={styles.logo} resizeMode="contain" />
+        </View>
       </View>
     );
   }
@@ -16,6 +18,7 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.orange },
-  logo: { width: 140, height: 140 },
+  splash: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.yellow },
+  logoBox: { width: 150, height: 150, borderRadius: 44, backgroundColor: colors.white, borderWidth: 2, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  logo: { width: 124, height: 124 },
 });

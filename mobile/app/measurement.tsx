@@ -4,9 +4,9 @@ import { useRouter } from "expo-router";
 import Slider from "@react-native-community/slider";
 import { api, errorMessage, type Measurement } from "../src/lib/api";
 import { useChildren } from "../src/state/child";
-import { fmtZ, isValidDate, statusTone, toDateString } from "../src/lib/format";
+import { num, statusTone, toDateString } from "../src/lib/format";
 import { growthVerdict, zPlain } from "../src/lib/friendly";
-import { Button, Card, Celebrate, Chips, ErrorBox, Field, Header, Pill, Screen, Stepper, VerdictCard } from "../src/components/ui";
+import { Button, Card, Celebrate, Chips, DateField, ErrorBox, Pill, Screen, Stepper, VerdictCard, YellowBar } from "../src/components/ui";
 import { colors, font, spacing } from "../src/lib/theme";
 
 type When = "today" | "yesterday" | "other";
@@ -46,75 +46,65 @@ export default function NewMeasurement() {
 
   const submit = async () => {
     if (!active) return;
-    if (!isValidDate(date)) return setError("Please enter the date as YYYY-MM-DD.");
     setBusy(true);
     setError("");
     try {
       setResult(await api.logMeasurement(active.id, { weight_kg: +weight.toFixed(1), height_cm: +height.toFixed(1), date_logged: date }));
     } catch (err) {
-      setError(errorMessage(err, "Could not save the measurement."));
+      setError(errorMessage(err, "Pengukuran belum bisa disimpan."));
     } finally {
       setBusy(false);
     }
   };
 
   if (result) {
-    const v = growthVerdict(active?.name ?? "Your child", result.stunting_status, result.weight_status, result.wasting_status);
+    const v = growthVerdict(active?.name ?? "Si kecil", result.stunting_status, result.weight_status, result.wasting_status);
     return (
       <Screen edges={["top", "bottom"]}>
-        <Celebrate emoji={v.emoji} title="Saved!" body={`${active?.name} · ${result.weight_kg} kg · ${result.height_cm} cm`} />
+        <Celebrate title="Tersimpan!" body={`${active?.name} · ${num(result.weight_kg)} kg · ${num(result.height_cm)} cm`} />
         <VerdictCard {...v} />
         <Card>
-          <Text style={styles.cardTitle}>Compared with children the same age</Text>
-          <Plain label="Weight" z={result.wfa_zscore} status={result.weight_status} />
-          <Plain label="Height" z={result.lhfa_zscore} status={result.stunting_status} />
-          {result.wfh_zscore !== null ? <Plain label="Weight for height" z={result.wfh_zscore} status={result.wasting_status} /> : null}
+          <Text style={styles.cardTitle}>Dibanding anak seusianya</Text>
+          <Plain label="Berat badan" z={result.wfa_zscore} status={result.weight_status} />
+          <Plain label="Tinggi badan" z={result.lhfa_zscore} status={result.stunting_status} />
+          {result.wfh_zscore !== null ? <Plain label="Berat menurut tinggi" z={result.wfh_zscore} status={result.wasting_status} /> : null}
         </Card>
-        <Button title="Done" onPress={() => router.back()} />
-        <Button
-          title="Add another"
-          variant="ghost"
-          onPress={() => {
-            setResult(null);
-          }}
-        />
+        <Button title="Selesai" icon="checkmark" onPress={() => router.back()} />
       </Screen>
     );
   }
 
   return (
-    <Screen edges={["top", "bottom"]}>
-      <Header title="New measurement" emoji="⚖️" subtitle={active ? `For ${active.name}` : undefined} onBack={() => router.back()} />
-      <ErrorBox message={error} />
-
-      <Card>
-        <Text style={styles.cardTitle}>Weight</Text>
-        <Stepper value={weight} onChange={setWeight} step={0.1} min={1} max={40} unit="kilograms" big />
-        <Slider style={styles.slider} minimumValue={1} maximumValue={40} step={0.1} value={weight} onValueChange={(v: number) => setWeight(+v.toFixed(1))} minimumTrackTintColor={colors.orange} maximumTrackTintColor="#F1EDE6" thumbTintColor={colors.orange} />
-      </Card>
-
-      <Card>
-        <Text style={styles.cardTitle}>Height</Text>
-        <Stepper value={height} onChange={setHeight} step={0.5} min={30} max={130} unit="centimetres" big />
-        <Slider style={styles.slider} minimumValue={30} maximumValue={130} step={0.5} value={height} onValueChange={(v: number) => setHeight(+v.toFixed(1))} minimumTrackTintColor={colors.teal} maximumTrackTintColor="#F1EDE6" thumbTintColor={colors.teal} />
-        <Text style={styles.hint}>Under 2 years: measure lying down. Over 2: standing against a wall.</Text>
-      </Card>
-
-      <Card>
-        <Text style={styles.cardTitle}>When was this measured?</Text>
-        <Chips
-          options={[
-            { value: "today", label: "Today", emoji: "📍" },
-            { value: "yesterday", label: "Yesterday", emoji: "⏪" },
-            { value: "other", label: "Another day", emoji: "🗓️" },
-          ]}
-          value={when}
-          onChange={setWhen}
-        />
-        {when === "other" ? <Field label="Date" value={otherDate} onChangeText={setOtherDate} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" /> : null}
-      </Card>
-
-      <Button title="Save measurement" emoji="✅" onPress={submit} loading={busy} />
+    <Screen padded={false} edges={["top", "bottom"]}>
+      <YellowBar title={`Ukur ${active?.name ?? ""}`} subtitle="Masukkan berat dan tinggi hari ini" onBack={() => router.back()} />
+      <View style={styles.body}>
+        <ErrorBox message={error} />
+        <Card>
+          <Text style={styles.cardTitle}>Berat badan</Text>
+          <Stepper value={weight} onChange={setWeight} step={0.1} min={1} max={40} unit="kilogram" color={colors.coral} />
+          <Slider style={styles.slider} minimumValue={1} maximumValue={40} step={0.1} value={weight} onValueChange={(v: number) => setWeight(+v.toFixed(1))} minimumTrackTintColor={colors.coral} maximumTrackTintColor={colors.track} thumbTintColor={colors.coral} />
+        </Card>
+        <Card>
+          <Text style={styles.cardTitle}>Tinggi badan</Text>
+          <Stepper value={height} onChange={setHeight} step={0.5} min={30} max={130} unit="sentimeter" color={colors.teal} />
+          <Slider style={styles.slider} minimumValue={30} maximumValue={130} step={0.5} value={height} onValueChange={(v: number) => setHeight(+v.toFixed(1))} minimumTrackTintColor={colors.teal} maximumTrackTintColor={colors.track} thumbTintColor={colors.teal} />
+          <Text style={styles.hint}>Di bawah 2 tahun: ukur sambil berbaring. Di atas 2 tahun: berdiri tegak.</Text>
+        </Card>
+        <Card>
+          <Text style={styles.cardTitle}>Kapan diukur?</Text>
+          <Chips
+            options={[
+              { value: "today", label: "Hari ini", icon: "location-outline" },
+              { value: "yesterday", label: "Kemarin", icon: "time-outline" },
+              { value: "other", label: "Tanggal lain", icon: "calendar-outline" },
+            ]}
+            value={when}
+            onChange={setWhen}
+          />
+          {when === "other" ? <DateField label="Tanggal pengukuran" value={otherDate} onChange={setOtherDate} /> : null}
+        </Card>
+        <Button title="Simpan" icon="checkmark" onPress={submit} loading={busy} />
+      </View>
     </Screen>
   );
 }
@@ -126,19 +116,16 @@ function Plain({ label, z, status }: { label: string; z: number | null; status: 
         <Text style={styles.plainLabel}>{label}</Text>
         <Text style={styles.hint}>{zPlain(z)}</Text>
       </View>
-      <Text style={styles.z}>{fmtZ(z)}</Text>
-      <Pill tone={statusTone(status)} small>
-        {status ?? "—"}
-      </Pill>
+      <Pill tone={statusTone(status)}>{status ?? "—"}</Pill>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  cardTitle: { fontFamily: font.extra, fontSize: 15, color: colors.text, marginBottom: spacing.sm },
+  body: { padding: spacing.lg },
+  cardTitle: { fontFamily: font.extra, fontSize: 16, color: colors.ink, marginBottom: spacing.xs },
   slider: { width: "100%", height: 40, marginTop: spacing.xs },
-  hint: { fontFamily: font.regular, fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 17 },
-  plainRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.line },
-  plainLabel: { fontFamily: font.extra, fontSize: 14, color: colors.text },
-  z: { fontFamily: font.black, fontSize: 13, color: colors.muted, width: 48, textAlign: "right" },
+  hint: { fontFamily: font.regular, fontSize: 13, color: colors.muted, marginTop: 4, lineHeight: 18 },
+  plainRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 10, borderTopWidth: 2, borderStyle: "dashed", borderColor: colors.track },
+  plainLabel: { fontFamily: font.extra, fontSize: 15, color: colors.ink },
 });

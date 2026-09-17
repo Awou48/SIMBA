@@ -124,77 +124,77 @@ def build_alerts(child: models.Child, db: Session) -> list[dict]:
 
     latest = latest_measurement(child, db)
     if latest is None:
-        alerts.append(_alert("growth-none", "Growth", "medium", "No measurements yet",
-                             f"Log {name}'s weight and height to start WHO growth monitoring.", today, "/growth"))
+        alerts.append(_alert("growth-none", "Growth", "medium", "Belum ada pengukuran",
+                             f"Catat berat dan tinggi {name} untuk mulai memantau pertumbuhannya.", today, "/growth"))
     else:
         logged = latest.date_logged.date()
         if latest.lhfa_zscore is not None and latest.lhfa_zscore < -2:
             sev = "high"
-            alerts.append(_alert("growth-stunting", "Growth", sev, "Height-for-age below -2 SD",
-                                 f"{name}'s latest height-for-age z-score is {latest.lhfa_zscore} ({classify_stunting(latest.lhfa_zscore)}). Please consult a Posyandu/Puskesmas health worker.",
+            alerts.append(_alert("growth-stunting", "Growth", sev, "Tinggi badan di bawah rata-rata",
+                                 f"Tinggi {name} tergolong {classify_stunting(latest.lhfa_zscore).lower()} untuk usianya. Sebaiknya periksa ke Posyandu atau Puskesmas.",
                                  logged, "/growth"))
         if latest.wfa_zscore is not None and latest.wfa_zscore < -2:
-            alerts.append(_alert("growth-underweight", "Growth", "high", "Weight-for-age below -2 SD",
-                                 f"{name}'s weight-for-age z-score is {latest.wfa_zscore} ({classify_weight(latest.wfa_zscore)}). Review daily intake and seek advice.",
+            alerts.append(_alert("growth-underweight", "Growth", "high", "Berat badan kurang",
+                                 f"Berat {name} tergolong {classify_weight(latest.wfa_zscore).lower()} untuk usianya. Perhatikan makan hariannya dan minta saran petugas kesehatan.",
                                  logged, "/food-diary"))
         if latest.wfh_zscore is not None and latest.wfh_zscore < -2:
-            alerts.append(_alert("growth-wasting", "Growth", "high", "Possible wasting",
-                                 f"Weight-for-height z-score is {latest.wfh_zscore} ({classify_wasting(latest.wfh_zscore)}). Acute undernutrition needs prompt attention.",
+            alerts.append(_alert("growth-wasting", "Growth", "high", "Berat badan terlalu kurus",
+                                 f"Berat {name} kurang untuk tinggi badannya ({classify_wasting(latest.wfh_zscore).lower()}). Perlu segera diperiksa.",
                                  logged, "/growth"))
         elif latest.wfh_zscore is not None and latest.wfh_zscore > 2:
-            alerts.append(_alert("growth-overweight", "Growth", "medium", "Weight-for-height above +2 SD",
-                                 f"Weight-for-height z-score is {latest.wfh_zscore} ({classify_wasting(latest.wfh_zscore)}). Consider reviewing snacks and sugary drinks.",
+            alerts.append(_alert("growth-overweight", "Growth", "medium", "Berat badan berlebih",
+                                 f"Berat {name} lebih untuk tinggi badannya ({classify_wasting(latest.wfh_zscore).lower()}). Kurangi camilan manis dan minuman bergula.",
                                  logged, "/food-diary"))
         if (today - logged).days > MEASUREMENT_STALE_DAYS:
-            alerts.append(_alert("growth-stale", "Growth", "medium", "Time for a new measurement",
-                                 f"{name} was last measured {(today - logged).days} days ago. Monthly measurements keep the growth curve accurate.",
+            alerts.append(_alert("growth-stale", "Growth", "medium", "Saatnya mengukur lagi",
+                                 f"{name} terakhir diukur {(today - logged).days} hari lalu. Mengukur tiap bulan membuat grafiknya tetap akurat.",
                                  today, "/growth"))
         if not any(a["category"] == "Growth" and a["severity"] == "high" for a in alerts):
-            alerts.append(_alert("growth-ok", "Growth", "low", "Growth on track",
-                                 f"{name}'s latest measurement ({latest.weight_kg} kg, {latest.height_cm} cm) is within the WHO normal range. Keep it up!",
+            alerts.append(_alert("growth-ok", "Growth", "low", "Pertumbuhan sesuai",
+                                 f"Pengukuran terakhir {name} ({latest.weight_kg} kg, {latest.height_cm} cm) berada di rentang normal WHO. Lanjutkan!",
                                  logged, "/growth"))
 
     nut = nutrition_last_days(child, db)
     if nut["days_logged"] == 0:
-        alerts.append(_alert("nutrition-none", "Nutrition", "low", "Start the food diary",
-                             f"No meals logged for {name} in the last 7 days. Logging meals unlocks AKG comparisons.", today, "/food-diary"))
+        alerts.append(_alert("nutrition-none", "Nutrition", "low", "Mulai catat makan",
+                             f"Belum ada catatan makan {name} dalam 7 hari terakhir. Mencatat makan membantu melihat kecukupan gizinya.", today, "/food-diary"))
     else:
         pct = nut["fulfillment_percent"] or {}
         if pct.get("energy", 100) < 70:
-            alerts.append(_alert("nutrition-energy", "Nutrition", "high" if pct["energy"] < 50 else "medium", "Energy intake below target",
-                                 f"Average intake over {nut['days_logged']} logged day(s) is {nut['average']['energy']:.0f} kcal — {pct['energy']:.0f}% of the {nut['targets']['energy']:.0f} kcal AKG target.",
+            alerts.append(_alert("nutrition-energy", "Nutrition", "high" if pct["energy"] < 50 else "medium", "Makan masih kurang",
+                                 f"Rata-rata {nut['average']['energy']:.0f} kkal per hari dari {nut['days_logged']} hari tercatat, baru {pct['energy']:.0f}% dari kebutuhan {nut['targets']['energy']:.0f} kkal.",
                                  today, "/food-diary"))
         if pct.get("protein", 100) < 70:
-            alerts.append(_alert("nutrition-protein", "Nutrition", "medium", "Low protein intake",
-                                 f"Average protein is {nut['average']['protein']:.1f} g/day — {pct['protein']:.0f}% of the {nut['targets']['protein']:.0f} g target. Add eggs, tempe, fish or milk.",
+            alerts.append(_alert("nutrition-protein", "Nutrition", "medium", "Protein masih kurang",
+                                 f"Rata-rata protein {nut['average']['protein']:.1f} g per hari, {pct['protein']:.0f}% dari kebutuhan {nut['targets']['protein']:.0f} g. Tambahkan telur, tempe, ikan, atau susu.",
                                  today, "/food-diary"))
         if not nut["logged_today"]:
-            alerts.append(_alert("nutrition-today", "Nutrition", "low", "No meals logged today",
-                                 f"Remember to log what {name} eats today.", today, "/food-diary"))
+            alerts.append(_alert("nutrition-today", "Nutrition", "low", "Belum ada catatan hari ini",
+                                 f"Jangan lupa catat apa yang {name} makan hari ini.", today, "/food-diary"))
 
     ms = milestone_progress(child, db)
     if ms["total"]:
         if ms["interpretation"] in ("Meragukan", "Penyimpangan"):
-            alerts.append(_alert("dev-result", "Development", "high", f"KPSP result: {ms['interpretation']}",
-                                 f"{name} achieved {ms['achieved']}/{ms['total']} milestones for {ms['age_label']}. "
-                                 + ("Stimulate and re-check in 2 weeks." if ms["interpretation"] == "Meragukan" else "Please see a health worker for a full assessment."),
+            alerts.append(_alert("dev-result", "Development", "high", f"Perkembangan: {ms['interpretation']}",
+                                 f"{name} mencapai {ms['achieved']} dari {ms['total']} kemampuan usia {ms['age_label']}. "
+                                 + ("Latih sambil bermain dan cek lagi 2 minggu ke depan." if ms["interpretation"] == "Meragukan" else "Sebaiknya periksa ke petugas kesehatan."),
                                  today, "/milestones"))
         elif ms["answered"] < ms["total"]:
-            alerts.append(_alert("dev-pending", "Development", "medium", "Milestone check due",
-                                 f"{ms['total'] - ms['answered']} KPSP question(s) for {ms['age_label']} are still unanswered.", today, "/milestones"))
+            alerts.append(_alert("dev-pending", "Development", "medium", "Ada pertanyaan perkembangan",
+                                 f"{ms['total'] - ms['answered']} pertanyaan untuk usia {ms['age_label']} belum dijawab.", today, "/milestones"))
 
     im = immunization_progress(child, db)
     if im["overdue"]:
         names = ", ".join(im["overdue_names"][:3]) + ("…" if len(im["overdue_names"]) > 3 else "")
-        alerts.append(_alert("immun-overdue", "Immunization", "high", f"{im['overdue']} vaccine dose(s) overdue",
-                             f"Overdue: {names}. Visit Posyandu/Puskesmas for catch-up doses.", today, "/immunization"))
+        alerts.append(_alert("immun-overdue", "Immunization", "high", f"{im['overdue']} imunisasi terlambat",
+                             f"Terlambat: {names}. Datang ke Posyandu atau Puskesmas untuk mengejar.", today, "/immunization"))
     if im["due"]:
-        alerts.append(_alert("immun-due", "Immunization", "medium", f"{im['due']} vaccine dose(s) due now",
-                             "These doses are within their recommended window.", today, "/immunization"))
+        alerts.append(_alert("immun-due", "Immunization", "medium", f"{im['due']} imunisasi saatnya diberikan",
+                             "Dosis ini sedang dalam masa yang dianjurkan.", today, "/immunization"))
     nd = im["next_dose"]
     if nd and nd["status"] == "upcoming" and (nd["due_date"] - today).days <= 14:
-        alerts.append(_alert("immun-upcoming", "Immunization", "low", f"{nd['name']} coming up",
-                             f"Due on {nd['due_date'].strftime('%d %b %Y')}. Bring the immunization card.", today, "/immunization"))
+        alerts.append(_alert("immun-upcoming", "Immunization", "low", f"{nd['name']} sebentar lagi",
+                             f"Jadwal {nd['due_date'].strftime('%d/%m/%Y')}. Bawa buku KIA.", today, "/immunization"))
 
     severity_rank = {"high": 0, "medium": 1, "low": 2}
     return sorted(alerts, key=lambda a: (severity_rank[a["severity"]], a["date"]), reverse=False)
