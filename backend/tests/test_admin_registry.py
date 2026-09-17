@@ -24,7 +24,7 @@ def test_children_registry_list_filters_and_masking(client, parent_token, admin_
     assert body["total"] == 3
     by_name = {r["name"]: r for r in body["items"]}
     assert by_name["Budi"]["flags"] == ["stunted"]
-    assert by_name["Budi"]["latest"]["stunting_status"] == "Pendek (Stunted)"
+    assert by_name["Budi"]["latest"]["stunting_status"] == "Pendek"
     assert by_name["Ani"]["flags"] == ["stale"]
     assert by_name["Cici"]["flags"] == ["no_data"] and by_name["Cici"]["latest"] is None
     assert by_name["Budi"]["parent_email_masked"] == "p***@example.com"
