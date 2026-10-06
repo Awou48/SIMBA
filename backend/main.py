@@ -16,9 +16,10 @@ from app.db import models  # noqa: F401  (register models with Base before creat
 from app.db.database import engine
 from app.db.migrate import sync_schema
 
-sync_schema(engine)
+if settings.AUTO_SYNC_SCHEMA:
+    sync_schema(engine)
 
-app = FastAPI(title="SIMBA Backend API", version="1.2.0")
+app = FastAPI(title="SIMBA Backend API", version="1.6.0")
 
 app.add_middleware(
     CORSMiddleware,

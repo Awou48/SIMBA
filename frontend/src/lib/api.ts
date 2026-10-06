@@ -1,6 +1,14 @@
 
-export const API_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "http://127.0.0.1:8000";
+const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/$/, "");
+
+if (!configuredApiUrl && !import.meta.env.DEV) {
+  throw new Error(
+    "VITE_API_URL is not set. A production build must be given the backend base URL, " +
+      "e.g. VITE_API_URL=https://your-api.example.com npm run build",
+  );
+}
+
+export const API_URL: string = configuredApiUrl || "http://127.0.0.1:8000";
 
 
 export type Role = "Parent" | "Health Manager";
