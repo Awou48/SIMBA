@@ -1,7 +1,32 @@
 # Changelog
 
-All notable changes on the `SIMBA-Ver-02` branch (September 2026), newest first.
+All notable changes on the `SIMBA-Ver-02` branch (September-October 2026), newest first.
 The starting point was the Figma-exported UI prototype with a partially wired FastAPI backend.
+
+## 1.7.0 — Closure pass
+Stabilisation and archival: no new product features.
+
+- **Secrets:** `backend/.env.example` no longer carries a real local PostgreSQL password or a real-looking
+  `SECRET_KEY`; both are placeholders with instructions. The old values remain in the published history.
+- **Production config separated from development:** new `ENVIRONMENT` setting, which refuses to start with the
+  placeholder `SECRET_KEY` or the documented default superadmin password; `CORS_ORIGIN_REGEX` (the private-LAN allowance for a phone on the same Wi-Fi) now
+  defaults to unset instead of always-on; new `AUTO_SYNC_SCHEMA` so `create_all` can be turned off and Alembic
+  owns the schema.
+- **Frontend:** a production build without `VITE_API_URL` now throws at load instead of silently calling
+  `127.0.0.1:8000`.
+- **Deployment:** `render.yaml` (Render free web service + free static site) and `docs/DEPLOYMENT.md` for a
+  Neon free PostgreSQL. The static site gets the SPA rewrite the Indonesian routes need. The start sequence was
+  rehearsed locally in production mode against a throwaway database; nothing has been deployed yet.
+- **Cleanup:** removed 43 unused shadcn/ui component files and 46 unused npm dependencies (MUI, emotion, 23
+  Radix packages, react-dnd, react-slick, date-fns, motion, sonner, vaul and others). `npm install` drops to 160
+  packages and the built CSS from 114 KB to 59 KB. `react`/`react-dom` are now declared as real dependencies
+  rather than optional peers.
+- **Docs:** README and `docs/ARCHITECTURE.md` no longer describe the deleted phone-frame prototype; added an
+  environment-variable table, a deployment section, known limitations and team attribution. `docs/TESTING.md`
+  stopped quoting default admin credentials that `.env.example` no longer provides.
+- Verified: 82 pytest tests, `alembic upgrade head` / `check` / `downgrade base`, frontend typecheck + build,
+  mobile typecheck, and the live API (role boundaries, ownership checks, z-scores at the WHO median, PDF).
+- `main.py` version string had been stuck at 1.2.0.
 
 ## 1.6.0 — Parent website
 - The phone-framed prototype at `/` is replaced by a real responsive parent website (`frontend/src/parent`):

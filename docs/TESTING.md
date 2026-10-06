@@ -31,7 +31,7 @@ cd backend
 python -m venv venv
 source venv/Scripts/activate        # Windows Git Bash — venv/bin/activate on macOS/Linux
 pip install -r requirements.txt
-cp .env.example .env                # edit DATABASE_URL / SECRET_KEY / FIRST_ADMIN_* if you like
+cp .env.example .env                # required: fill in DATABASE_URL, SECRET_KEY, FIRST_ADMIN_*
 python seed_db.py
 ```
 **Expect:**
@@ -42,7 +42,7 @@ akg_targets        seeded 4 rows
 growth_standards   seeded 366 rows
 milestones         seeded 20 rows
 articles           seeded 4 rows
-superadmin login: admin@simba.id / (FIRST_ADMIN_PASSWORD from .env)
+superadmin login: <FIRST_ADMIN_EMAIL> / (FIRST_ADMIN_PASSWORD from .env)
 ```
 Run it again: every line says `skipped (already populated)`.
 
@@ -244,7 +244,7 @@ Desktop website at `http://localhost:5173/hm/login`; use a window ≥ 1024 px wi
 |----|--------|
 | Open `/hm/login`. | Split page: animated brand panel (gradient, floating orbs, bobbing lion) left, sign-in form right, button **Sign In**. |
 | Wrong password. | *Incorrect admin email or password*. |
-| Sign in as `admin@simba.id` / `admin1234` (from `backend/.env`). | **Dashboard**. Sidebar groups Monitor / Reference / Content / Admin; big lion logo top-left; your name + role at the bottom; top bar with **API docs** and **Log out**. |
+| Sign in with `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` from `backend/.env`. | **Dashboard**. Sidebar groups Monitor / Reference / Content / Admin; big lion logo top-left; your name + role at the bottom; top bar with **API docs** and **Log out**. |
 | Open `/hm/dashboard` in a private window. | Redirect to `/hm/login`. |
 | Shrink below 1024 px. | Sidebar hides behind ☰. |
 

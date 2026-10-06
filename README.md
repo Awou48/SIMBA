@@ -9,20 +9,22 @@ Child growth & nutrition monitoring: one **FastAPI + PostgreSQL** backend, three
 - **Parent website** (`frontend/`, routes `/masuk`, `/beranda`, …) — the same Indonesian parent experience as the
   mobile app, as a responsive website (bottom tabs on phones, side navigation on desktop). Same design, same API.
 
-📚 **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Step-by-step test guide](docs/TESTING.md) · [Changelog](docs/CHANGELOG.md)
+📚 **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Step-by-step test guide](docs/TESTING.md) · [Deployment](docs/DEPLOYMENT.md) · [Changelog](docs/CHANGELOG.md)
 
 ## Quick start (TL;DR)
 
 ```bash
 # backend
-cd backend && pip install -r requirements.txt && cp .env.example .env && python seed_db.py && uvicorn main:app --reload
+cd backend && pip install -r requirements.txt && cp .env.example .env
+# edit backend/.env: DATABASE_URL, SECRET_KEY and FIRST_ADMIN_* are placeholders
+python seed_db.py && uvicorn main:app --reload
 # frontend (new terminal)
 cd frontend && npm install && npm run dev
 # mobile app (new terminal) — Android emulator / iOS simulator / Expo Go / web
 cd mobile && npm install && cp .env.example .env && npx expo start
 ```
-- **Web portal:** http://localhost:5173/hm/login — sign in with the superadmin from `backend/.env`
-  (`admin@simba.id` / `admin1234` by default — change it).
+- **Web portal:** http://localhost:5173/hm/login — sign in with the `FIRST_ADMIN_EMAIL` /
+  `FIRST_ADMIN_PASSWORD` you put in `backend/.env`; `seed_db.py` creates that account.
 - **Parent website:** http://localhost:5173 — *Daftar di sini* to create a parent account (Indonesian UI).
 - **Mobile app:** press `a`/`i`/`w` in the Expo terminal or scan the QR with Expo Go; point
   `EXPO_PUBLIC_API_URL` at the backend as seen from the phone (details in `mobile/README.md`).
@@ -68,7 +70,7 @@ Interactive docs: `http://127.0.0.1:8000/docs`.
 cd backend
 python -m venv venv && source venv/Scripts/activate   # Windows Git Bash; use venv/bin/activate on macOS/Linux
 pip install -r requirements.txt
-cp .env.example .env            # then edit DATABASE_URL, SECRET_KEY, FIRST_ADMIN_*
+cp .env.example .env            # then fill in DATABASE_URL, SECRET_KEY, FIRST_ADMIN_*
 python seed_db.py               # create tables + load WHO / AKG / food reference data, bootstrap superadmin
 uvicorn main:app --reload       # http://127.0.0.1:8000/docs
 ```
@@ -86,13 +88,33 @@ pytest
 
 Tests run against an in-memory SQLite database; PostgreSQL does not need to be running.
 
+### Environment variables
+
+`backend/.env` (see `backend/.env.example`; environment variables of the same name win over the file):
+
+| Variable | Default | Notes |
+|---|---|---|
+| `ENVIRONMENT` | `development` | `production` refuses to start with the placeholder `SECRET_KEY` or the default `FIRST_ADMIN_PASSWORD` |
+| `DATABASE_URL` | local Postgres | SQLAlchemy URL; must start with `postgresql://` |
+| `SECRET_KEY` | placeholder | JWT signing key. `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `ALGORITHM` | `HS256` | |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` (7 days) | both roles |
+| `CORS_ORIGINS` | the two localhost dev ports | JSON list of allowed browser origins |
+| `CORS_ORIGIN_REGEX` | unset | development only: also allow the private-LAN origin a phone running Expo uses |
+| `AUTO_SYNC_SCHEMA` | `true` | create missing tables/nullable columns at startup; set `false` in production |
+| `FIRST_ADMIN_EMAIL` / `_PASSWORD` / `_NAME` | placeholders | the superadmin `seed_db.py` creates when `admins` is empty |
+
+`frontend/.env`: `VITE_API_URL`. `mobile/.env`: `EXPO_PUBLIC_API_URL` (leave empty to auto-detect).
+
 ### Schema changes
 
 Two mechanisms, pick by environment:
 
-- **Development:** `main.py` and `seed_db.py` call `app/db/migrate.sync_schema`, which creates missing tables
-  and adds new **nullable** columns to existing tables. Zero ceremony.
-- **Shared / production:** Alembic. `alembic/env.py` reads `DATABASE_URL` from `.env`.
+- **Development:** `main.py` (while `AUTO_SYNC_SCHEMA` is true) and `seed_db.py` call
+  `app/db/migrate.sync_schema`, which creates missing tables and adds new **nullable** columns to existing
+  tables. Zero ceremony.
+- **Shared / production:** `AUTO_SYNC_SCHEMA=false` plus Alembic. `alembic/env.py` reads `DATABASE_URL`
+  from the environment or `.env`.
   ```bash
   cd backend
   alembic upgrade head                                  # fresh database
@@ -192,119 +214,91 @@ npm run dev                     # http://localhost:5173
 npm run typecheck               # tsc --noEmit (strict); `npm run build` runs it too
 ```
 
-The API base URL comes from `VITE_API_URL` (copy `frontend/.env.example` to `frontend/.env`; defaults to
-`http://127.0.0.1:8000`). All requests go through `src/lib/api.ts`, which attaches the bearer token and, on a
-401, clears the session and redirects to the right login page.
+The API base URL comes from `VITE_API_URL` (copy `frontend/.env.example` to `frontend/.env`). In development it
+falls back to `http://127.0.0.1:8000`; a **production build throws at load if it is not set**, so a deployed
+bundle can never quietly call localhost. All requests go through `src/lib/api.ts`, which attaches the bearer
+token and, on a 401, clears the session and redirects to the login page for that role.
 
+- `src/parent/` — the **parent website** (Indonesian): `ParentShell` (side nav at 768px and up, bottom tabs
+  below), `pages/` (Login, Register, ChildForm, Home, Growth, Measure, Meals, AddMeal, Development,
+  Immunization, Calendar, Alerts, Reports, Explore, More), `components/ui.tsx` (Storybook kit) and
+  `components/GrowthChart.tsx` (Recharts WHO bands). Styled with `styles/parent.css`.
 - `src/web/` — the **Health Manager portal** (desktop web): `HMShell` (sidebar + top bar, collapses to a
   drawer below 1024px), `pages/` (Dashboard, Children, ChildDetail, Regions, GrowthStandards, AkgTargets,
   Foods, Milestones, Education, System) and `components/ui.tsx` (PageHeader, Panel, StatCard, badges).
-  Styled with the shadcn/ui primitives in `app/components/ui` plus `styles/portal.css` tokens.
-- `src/app/` — the **parent mobile prototype** (phone frame, bottom nav). Parent screens share the active
-  child via `ChildContext.tsx`.
+  Styled with `styles/portal.css` tokens.
+- `src/app/` — what both share: `routes.tsx`, `ChildContext.tsx` (active child), `components/RequireAuth.tsx`
+  (role guard) and the four shadcn/ui primitives still in use in `components/ui/`.
 
 ### Folder structure
 
 ```
 frontend/
-├── package.json
-|── index.html
-|── postcss.config.mjs
-|── vite.config.ts
+├── package.json             # 11 runtime dependencies; react/react-dom are declared here, not as peers
+├── index.html
+├── postcss.config.mjs
+├── vite.config.ts
 ├── .env.example             # VITE_API_URL
 ├── tsconfig.json            # strict TypeScript; `npm run typecheck`
-├── src/
-|   |── main.tsx
-|   |── lib/
-|   |   |── api.ts               # Typed API client + session helpers (single place that knows the backend)
-|   |── web/                     # Health Manager web portal (desktop)
-|   |   |── HMShell.tsx          # Sidebar + top bar layout
-|   |   |── components/ui.tsx    # Portal building blocks
-|   |   |── pages/               # Login, Dashboard, Children, ChildDetail, Regions, GrowthStandards,
-|   |   |                        # AkgTargets, Foods, Milestones, Education, System
-│   ├── app                      # Parent mobile prototype
-│   │   ├── App.tsx
-│   │   ├── routes.tsx           # Routes; parent tree in RequireAuth("Parent"), /hm/* in RequireAuth("Health Manager")
-│   │   ├── ChildContext.tsx     # Active-child state shared by parent screens
-│   │   ├── components/
-|   |   |   |── RequireAuth.tsx
-|   |   |   |── FrameModal.tsx       # Overlay portal clipped to the phone frame
-|   |   |   |── BottomNav.tsx
-|   |   |   |── MainLayout.tsx
-|   |   |   |── MobileFrame.tsx
-|   |   |   |── figma/
-|   |   |   |   |── ImageWithFallback.tsx
-|   |   |   |── screens/
-|   |   |   |   |── AddChildScreen.tsx
-|   |   |   |   |── AlertScreen.tsx
-|   |   |   |   |── ExploreScreen.tsx
-|   |   |   |   |── FoodDiaryScreen.tsx
-|   |   |   |   |── GrowthScreen.tsx
-|   |   |   |   |── HomeScreen.tsx
-|   |   |   |   |── ImmunizationScreen.tsx
-|   |   |   |   |── LoginScreen.tsx
-|   |   |   |   |── OnboardingScreen.tsx
-|   |   |   |   |── RecipesScreen.tsx
-|   |   |   |   |── RegisterScreen.tsx
-|   |   |   |   |── ReportsScreen.tsx
-|   |   |   |   |── SettingsScreen.tsx
-|   |   |   |   |── SplashScreen.tsx
-|   |   |   |── ui/
-|   |   |   |   |── accordion.tsx
-|   |   |   |   |── alert-dialog.tsx
-|   |   |   |   |── alert.tsx
-|   |   |   |   |── aspect-ratio.tsx
-|   |   |   |   |── avatar.tsx
-|   |   |   |   |── badge.tsx
-|   |   |   |   |── breadcrumb.tsx
-|   |   |   |   |── button.tsx
-|   |   |   |   |── calendar.tsx
-|   |   |   |   |── card.tsx
-|   |   |   |   |── carousel.tsx
-|   |   |   |   |── chart.tsx
-|   |   |   |   |── checkbox.tsx
-|   |   |   |   |── collapsible.tsx
-|   |   |   |   |── command.tsx
-|   |   |   |   |── context-menu.tsx                    
-|   |   |   |   |── dialog.tsx
-|   |   |   |   |── drawer.tsx
-|   |   |   |   |── dropdown-menu.tsx
-|   |   |   |   |── form.tsx
-|   |   |   |   |── hover-card.tsx
-|   |   |   |   |── input-otp.tsx
-|   |   |   |   |── input.tsx
-|   |   |   |   |── label.tsx
-|   |   |   |   |── menubar.tsx
-|   |   |   |   |── navigation-menu.tsx
-|   |   |   |   |── pagination.tsx
-|   |   |   |   |── popover.tsx
-|   |   |   |   |── progress.tsx
-|   |   |   |   |── radio-group.tsx
-|   |   |   |   |── resizable.tsx
-|   |   |   |   |── scroll-area.tsx
-|   |   |   |   |── select.tsx
-|   |   |   |   |── separator.tsx
-|   |   |   |   |── sheet.tsx
-|   |   |   |   |── sidebar.tsx
-|   |   |   |   |── skeleton.tsx
-|   |   |   |   |── slider.tsx
-|   |   |   |   |── sonner.tsx
-|   |   |   |   |── switch.tsx
-|   |   |   |   |── table.tsx
-|   |   |   |   |── tabs.tsx
-|   |   |   |   |── textarea.tsx
-|   |   |   |   |── toggle-group.tsx
-|   |   |   |   |── toggle.tsx
-|   |   |   |   |── tooltip.tsx
-|   |   |   |   |── use-mobile.ts
-|   |   |   |   |── utils.ts
-│   ├── imports/             
-│   │   ├── logo_1.png            
-│   │   ├── logo_2.png         
-|   |── styles/
-│   │   ├── fonts.css
-│   │   ├── index.css
-│   │   ├── tailwind.css
-│   │   ├── theme.css
-│   │   ├── portal.css           # Health Manager portal tokens
+└── src/
+    ├── main.tsx
+    ├── lib/
+    │   ├── api.ts           # Typed API client + session helpers (single place that knows the backend)
+    │   └── id.ts            # Indonesian dates/numbers + plain-language verdicts
+    ├── app/
+    │   ├── routes.tsx       # Indonesian parent routes + /hm/*; old English paths redirect
+    │   ├── ChildContext.tsx
+    │   └── components/
+    │       ├── RequireAuth.tsx
+    │       └── ui/          # button, dialog, input, table, utils
+    ├── parent/
+    │   ├── ParentShell.tsx
+    │   ├── components/      # ui.tsx, ChildSwitcher.tsx, GrowthChart.tsx
+    │   └── pages/
+    ├── web/
+    │   ├── HMShell.tsx
+    │   ├── components/ui.tsx
+    │   └── pages/
+    ├── imports/logo_mark.png
+    └── styles/              # fonts, tailwind, theme, parent.css, portal.css
 ```
+
+## Deployment
+
+`render.yaml` deploys the API and the web bundle to Render's free tier against a Neon free PostgreSQL database.
+Full steps, the environment variables each service needs, and the limitations of that tier are in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). The blueprint and the production start sequence
+(`alembic upgrade head && python seed_db.py && uvicorn main:app`) were rehearsed locally with
+`ENVIRONMENT=production`; **nothing has actually been deployed from this repository** — that needs the owner's
+Render and Neon accounts.
+
+## Known limitations
+
+- **Not a clinical tool.** The z-scores and AKG percentages implement WHO LMS, Permenkes 2/2020 cut-offs and
+  AKG 2019 as published, for monitoring and coursework. They are not a diagnosis and were not validated against
+  a reference implementation beyond the regression tests in `backend/tests/test_growth.py` and
+  `test_nutrition.py`.
+- WHO LMS tables cover **0–1856 days (about 5 years)**. A measurement outside that range is rejected with an
+  explanatory error rather than extrapolated.
+- Food categories in the seeded database are derived from a keyword map over Indonesian food names, so many of
+  the 1,651 rows fall back to `Other`.
+- `region` on a child is free text typed by the parent, so the portal's regional prevalence is only as
+  consistent as that typing.
+- The frontend ships as a single ~1.6 MB JavaScript bundle (385 KB gzipped). It is not code-split.
+- On Render's free tier the API sleeps after 15 minutes idle; the first request afterwards takes about a minute.
+- The mobile app has not been built for the stores. It runs in Expo Go or a development build.
+- `backend/.env.example` previously contained a real local PostgreSQL password and a real-looking `SECRET_KEY`.
+  Both are placeholders now, but the old values remain in this repository's published history.
+
+## Team project
+
+SIMBA is a Software Engineering course team project. The repository was pushed from a single account, so its
+git history does not separate individual contributors: every commit is authored by the repository owner.
+
+- The starting point (`Code Prototype 1`, `feat: Complete UI prototype for Parent and Admin`) is the team's
+  Figma-exported React/TypeScript/Tailwind screen set together with a partially wired FastAPI backend.
+- The repository owner's own area is the backend: SQLAlchemy models, role-based auth and ownership checks, the
+  WHO z-score and AKG services, the admin/statistics endpoints, seeding, migrations and the test suite — and
+  wiring the three clients to it.
+
+It is finished and archived; it is not being actively developed.
