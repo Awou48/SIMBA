@@ -84,7 +84,8 @@ fixed national programme; per-child status is computed from `birth_date` + recor
 - Passwords never travel in URLs (JSON bodies only); `SECRET_KEY` and the DB URL come from `.env`.
 
 ### Schema changes
-`sync_schema` keeps a dev database usable when models gain columns. For anything shared, use Alembic:
+`sync_schema` keeps a dev database usable when models gain columns; it runs at startup only while
+`AUTO_SYNC_SCHEMA` is true. Set `AUTO_SYNC_SCHEMA=false` for anything shared and use Alembic:
 ```bash
 alembic revision --autogenerate -m "describe change"
 alembic upgrade head
@@ -92,51 +93,59 @@ alembic upgrade head
 
 ## Frontend
 
-### Two front-ends, one bundle
-| | Health Manager portal (`src/web`) | Parent app (`src/app`) |
+### Three clients, two bundles
+`frontend/` builds one SPA that serves both web audiences; `mobile/` is a separate Expo app.
+
+| | Health Manager portal (`src/web`) | Parent website (`src/parent`) |
 |---|---|---|
-| Audience | Puskesmas/Posyandu staff on laptops | Parents on phones |
-| Shell | `HMShell`: 256px sidebar + top bar, drawer below 1024px | `MobileFrame` phone mock-up + bottom nav |
-| Login | `/hm/login` (split page) | `/login` inside the frame |
+| Audience | Puskesmas/Posyandu staff on laptops | Parents, phone or laptop |
+| Shell | `HMShell`: 256px sidebar + top bar, drawer below 1024px | `ParentShell`: side nav at 768px and up, bottom tabs below |
+| Login | `/hm/login` (split page) | `/masuk` |
 | Guard | `RequireAuth role="Health Manager" loginPath="/hm/login"` | `RequireAuth role="Parent"` |
-| UI kit | shadcn/ui primitives (`app/components/ui`) + `web/components/ui.tsx` + `styles/portal.css` tokens | hand-styled Nunito components, `FrameModal` |
-| Future | This is the website | Reference for the native mobile app (React Native/Flutter) against the same API |
+| UI kit | `web/components/ui.tsx` + `styles/portal.css` tokens | `parent/components/ui.tsx` Storybook kit + `styles/parent.css` |
+
+`src/app` holds what both share: the router, the active-child context and the role guard. Four shadcn/ui
+primitives are still used (`app/components/ui`: button, dialog, input, table); the rest of the generated set was
+removed in the closure pass.
 
 ### Layout
 ```
 frontend/src/
-├── lib/api.ts                  API_URL (VITE_API_URL), session helpers, apiFetch, typed endpoint map, types
+├── lib/
+│   ├── api.ts                  API_URL (VITE_API_URL), session helpers, apiFetch, typed endpoint map, types
+│   └── id.ts                   Indonesian formatting + plain-language verdicts (mirrors mobile/src/lib/friendly.ts)
+├── app/
+│   ├── routes.tsx              Indonesian parent routes + /hm/*; the old English paths redirect
+│   ├── ChildContext.tsx        loads the parent's children, persists the active child id
+│   └── components/
+│       ├── RequireAuth.tsx     role guard + listens for the API client's 401 broadcast
+│       └── ui/                 button, dialog, input, table, utils
+├── parent/
+│   ├── ParentShell.tsx         side nav / bottom tabs
+│   ├── components/             ui.tsx (Storybook kit), ChildSwitcher, GrowthChart (Recharts WHO bands)
+│   └── pages/                  Login, Register, ChildForm, Home, Growth, Measure, Meals, AddMeal, Development,
+│                               Immunization, Calendar, Alerts, Reports, Explore, More
 ├── web/
 │   ├── HMShell.tsx             portal layout (sidebar nav groups, top bar, footer)
 │   ├── components/ui.tsx       PageHeader, Panel, StatCard, FlagBadge, ZBadge, EmptyState, formatting helpers
 │   └── pages/                  Login, Dashboard, Children, ChildDetail, Regions, GrowthStandards, AkgTargets,
 │                               Foods, Milestones, Education, System
-├── app/routes.tsx              routes; parent tree wrapped in RequireAuth("Parent") + ChildProvider,
-│                               /hm/* in RequireAuth("Health Manager") → HMShell
-├── app/ChildContext.tsx        loads the parent's children, persists the active child id
-├── app/components/
-│   ├── RequireAuth.tsx         role guard + listens for the API client's 401 broadcast
-│   ├── FrameModal.tsx          portal overlay clipped to the phone mock-up (#mobile-frame)
-│   ├── MobileFrame / MainLayout / BottomNav
-│   └── screens/                parent screens
-└── styles/                     Tailwind 4 + theme
+└── styles/                     Tailwind 4 + theme, portal.css, parent.css
 ```
 
 ### Conventions
 - **All** network calls go through `api.parent.*` / `api.admin.*`. Errors become `ApiError` with a readable
   message (FastAPI `detail` strings and 422 arrays are flattened); screens show them in a red banner.
-- A `401` anywhere clears the session and dispatches `simba:unauthorized`; `RequireAuth` navigates to `/login`.
+- A `401` anywhere clears the session and dispatches `simba:unauthorized`; `RequireAuth` navigates to the login
+  page for that role.
 - Screens read the active child from `useChildren()` and refetch when `activeChild.id` changes.
-- Modals use `FrameModal` so they stay inside the device frame.
 - Dates are exchanged as `YYYY-MM-DD` (`toDateString`) to avoid UTC day shifts.
+- `VITE_API_URL` must be set for a production build; `src/lib/api.ts` throws at load if it is missing so a
+  deployed bundle can never fall back to `127.0.0.1`.
 
 ### Privacy in the portal
 Health Managers see children by name and region but parent emails are masked (`u***@example.com`); all portal
 reads are aggregated or per child, never per parent account.
-
-### Still presentational (parent prototype only)
-Recipes screen, Explore video/forum cards, Home recipe strip and the "restaurants nearby" button are
-editorial placeholders with no backing data.
 
 ## Mobile app (`mobile/`)
 
@@ -157,16 +166,14 @@ Design decisions:
   so it renders identically on Android, iOS and web and has no native-module risk.
 - PDF sharing fetches `/report.pdf` with the bearer token, writes it to the cache directory with the new
   `expo-file-system` `File` API and hands it to `expo-sharing`; on web it opens a blob URL.
-- Dates are typed as `YYYY-MM-DD` text fields (validated) to avoid a native date-picker dependency; swap in
-  `@react-native-community/datetimepicker` later if desired.
-- `EXPO_PUBLIC_API_URL` selects the backend; the default `10.0.2.2` targets the Android emulator's host loopback.
+- `DateField` uses `@react-native-community/datetimepicker` on device with a pencil button to type the date
+  instead; on web it falls back to typing. `Stepper` likewise accepts a tapped-in exact value.
+- The backend address is auto-detected from the host serving the Expo bundle (port 8000); set
+  `EXPO_PUBLIC_API_URL` only when the backend runs elsewhere. Requests time out after 15 s with a message that
+  names the URL that was tried.
 
 ## Parent website (`frontend/src/parent`)
 
-Same routes and screens as the mobile app, rendered with React + Tailwind inside the portal's Vite project:
-`ParentShell` (side nav ≥ 768 px, bottom tabs below), `components/ui.tsx` (Storybook kit: `sb-hard` outline +
-offset shadow, Stepper with typed input, Chips, Ring, Progress), `components/GrowthChart.tsx` (Recharts range
-areas for the WHO bands), pages under `pages/`. Copy helpers live in `src/lib/id.ts` and mirror
-`mobile/src/lib/friendly.ts`. Sessions use the same `session` store as the portal but with role `Parent`, so a
-parent token never opens `/hm/*`.
-
+The website mirrors the mobile app screen for screen against the same `/api/v1/user/*` endpoints, so a family can
+use either. Copy helpers live in `src/lib/id.ts` and mirror `mobile/src/lib/friendly.ts`. It uses the same
+`session` store as the portal but with role `Parent`, so a parent token never opens `/hm/*`.
